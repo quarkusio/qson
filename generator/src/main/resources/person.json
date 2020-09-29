@@ -1,0 +1,72 @@
+{
+  "one": [
+    {
+      "name": "Ritchie"
+    },
+    {
+      "name": "Joani"
+    }
+  ],
+  "two": [
+    {
+      "name": "Fonzi"
+    },
+    {
+      "name": "Potsi"
+    }
+  ]
+}
+
+{
+  "intMap": {
+    "one": 1,
+    "two": 2
+  },
+  "name": "Bill",
+  "age": 50,
+  "money": 123.23,
+  "married": true,
+  "junkInt": 666,
+  "kids": {
+    "Sammy": {
+      "name": "Sammy",
+      "age": 6
+    },
+    "Suzi": {
+      "name": "Suzi",
+      "age": 6
+    }
+  },
+  "siblings": [
+    {
+      "name": "Ritchie"
+    },
+    {
+      "name": "Joani"
+    }
+  ],
+  "pets": [ "itchy", "scratchy"],
+  "junkFloat": 6.66,
+  "junkBool": true,
+  "junkList": ["1", "2"],
+  "junkMap": {
+    "foo": "bar",
+    "one": 1,
+    "list": [1, 2, 3, 4]
+  },
+  "dad": {
+    "name": "John",
+    "married": true
+  }
+}
+
+[
+  "one",
+  2,
+  3.0,
+  true,
+  {
+    "name": "John",
+    "married": true
+  }
+]

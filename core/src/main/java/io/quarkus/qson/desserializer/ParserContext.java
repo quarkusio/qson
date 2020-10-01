@@ -1,277 +1,61 @@
 package io.quarkus.qson.desserializer;
 
-import java.io.IOException;
-import java.io.UnsupportedEncodingException;
-import java.util.ArrayDeque;
-import java.util.LinkedList;
+public interface ParserContext {
+    void pushState(ParserState ps);
 
-import static io.quarkus.qson.IntChar.*;
+    void pushState(ParserState ps, int at);
 
-public class ParserContext {
-    protected LinkedList<ParserState> state;
-    protected ArrayDeque<Object> target = new ArrayDeque<>();
-    protected BufferBuilder tokenBuffer;
-    protected byte[] buffer;
-    protected int ptr;
-    protected ParserState initialState;
+    void popState();
 
+    int stateIndex();
 
-    protected boolean buildingToken;
-    protected int tokenStart = -1;
-    protected int tokenEnd = -1;
+    boolean isBufferEmpty();
 
-    public ParserContext(ParserState initialState) {
-        this.initialState = initialState;
-    }
+    int consume();
 
-    public void pushState(ParserState ps) {
-        if (state == null) state = new LinkedList<>();
-        state.push(ps);
-    }
+    void createTokenBuffer();
 
-    public void pushState(ParserState ps, int at) {
-        if (state == null) state = new LinkedList<>();
-        state.add(state.size() - at, ps);
-    }
+    void rewind();
 
-    public void popState() {
-        if (state == null) return;
-        state.pop();
-    }
+    void startToken();
 
-    public int stateIndex() {
-        return state == null ? 0 : state.size();
-    }
+    void startTokenNextConsumed();
 
-    public boolean isBufferEmpty() {
-        return ptr >= buffer.length;
-    }
+    void endToken();
 
-    public int consume() {
-        if (ptr >= buffer.length) {
-            if (buildingToken) {
-                if (tokenBuffer == null ) {
-                    if (tokenStart >= 0) {
-                        createTokenBuffer();
-                        tokenBuffer.write(buffer, tokenStart, ptr - tokenStart);
-                    } else {
-                        tokenStart = 0;
-                    }
-                } else {
-                    try {
-                        tokenBuffer.write(buffer);
-                    } catch (IOException e) {
-                        // should be unreachable
-                        throw new RuntimeException(e);
-                    }
+    void clearToken();
 
-                }
-            }
-            return 0;
-        }
-        return buffer[ptr++] & 0xFF;
-    }
+    int skipWhitespace();
 
-    public void createTokenBuffer() {
-        tokenBuffer = new BufferBuilder(1024);
-    }
+    int skipToQuote();
 
-    public void rewind() {
-        ptr--;
-    }
-    public void startToken() {
-        buildingToken = true;
-        tokenStart = ptr - 1;
-    }
+    int skipDigits();
 
-    public void startTokenNextConsumed() {
-        buildingToken = true;
-        // if current pointer points outside of buffer, set it to start of next buffer.
-        if (ptr >= buffer.length) tokenStart = -1;
-        else tokenStart = ptr;
-    }
+    int skipAlphabetic();
 
-    public void endToken() {
-        buildingToken = false;
-        if (tokenBuffer != null) {
-            if (ptr - 1 > 0) tokenBuffer.write(buffer, 0, ptr - 1);
-        } else {
-            if (tokenStart < 0) tokenStart = 0;  // when asked to start token at next buffer tokenStart will be -1
-            tokenEnd = ptr - 1;
-        }
-    }
+    int tokenCharAt(int index);
 
-    public void clearToken() {
-        buildingToken = false;
-        tokenBuffer = null;
-        tokenStart = -1;
-        tokenEnd = -1;
-    }
+    boolean compareToken(int index, String str);
 
-    public int skipWhitespace() {
-        int ch = 0;
-        do {
-            ch = consume();
-            if (isWhitespace(ch)) continue;
-            return ch;
-        } while (ch != 0);
-         return 0;
-    }
+    String popToken();
 
-    public int skipToQuote() {
-        int ch = 0;
-        do {
-            ch = consume();
-            if (ch != INT_QUOTE) continue;
-            return ch;
-        } while (ch != 0);
-        return 0;
-    }
-    public int skipDigits() {
-        int ch = 0;
-        do {
-            ch = consume();
-            if (isDigit(ch)) continue;
-            return ch;
-        } while (ch != 0);
-        return 0;
-    }
+    boolean popBooleanToken();
 
-    public int skipAlphabetic() {
-        int ch = 0;
-        do {
-            ch = consume();
-            if (Character.isAlphabetic(ch)) continue;
-            return ch;
-        } while (ch != 0);
-        return 0;
-    }
+    int popIntToken();
 
+    short popShortToken();
 
-    public int tokenCharAt(int index) {
-        if (tokenBuffer == null) {
-            return buffer[tokenStart + index] & 0xFF;
-        } else {
-            return tokenBuffer.getBuffer()[index] & 0xFF;
-        }
-    }
+    byte popByteToken();
 
-    public boolean compareToken(int index, String str) {
-        if (tokenBuffer == null) {
-            int size = tokenEnd - tokenStart - index;
-            if (size != str.length()) return false;
-            for (int i = 0; i < size; i++) {
-                int c = buffer[tokenStart + i + index] & 0xFF;
-                if (c != str.charAt(i)) return false;
-            }
-            clearToken();
-            return true;
-        } else {
-            int size = tokenBuffer.size() - index;
-            if (size != str.length()) return false;
-            byte[] buf = tokenBuffer.getBuffer();
-            for (int i = 0; i < size; i++) {
-                int c = buf[i + index] & 0xFF;
-                if (c != str.charAt(i)) return false;
-            }
-            clearToken();
-            return true;
-        }
-    }
+    float popFloatToken();
 
-    public String popToken() {
-        String val;
-        if (tokenBuffer == null) {
-            if (tokenStart < 0) throw new RuntimeException("Token not started.");
-            if (tokenEnd < 0) throw new RuntimeException("Token not ended.");
-            val = ParsePrimitives.readString(buffer, tokenStart, tokenEnd);
-        } else {
-            val = ParsePrimitives.readString(tokenBuffer.getBuffer(), 0, tokenBuffer.size());
-        }
-        clearToken();
-        return val;
-    }
+    double popDoubleToken();
 
-    public boolean popBooleanToken() {
-        boolean val;
-        if (tokenBuffer == null) {
-            if (tokenStart < 0) throw new RuntimeException("Token not started.");
-            if (tokenEnd < 0) throw new RuntimeException("Token not ended.");
-            val = ParsePrimitives.readBoolean(buffer, tokenStart, tokenEnd);
-        } else {
-            val = ParsePrimitives.readBoolean(tokenBuffer.getBuffer(), 0, tokenBuffer.size());
-        }
-        clearToken();
-        return val;
-    }
+    long popLongToken();
 
-    public int popIntToken() {
-        return (int) popLongToken();
-    }
-    public short popShortToken() {
-        return (short) popLongToken();
-    }
-    public byte popByteToken() {
-        return (byte) popLongToken();
-    }
+    <T> T target();
 
-    public float popFloatToken() {
-        return Float.parseFloat(popToken());
-    }
+    void pushTarget(Object obj);
 
-    public double popDoubleToken() {
-        return Double.parseDouble(popToken());
-    }
-
-    public long popLongToken() {
-        long val;
-        if (tokenBuffer == null) {
-            val = ParsePrimitives.readLong(buffer, tokenStart, tokenEnd);
-        } else {
-            val = ParsePrimitives.readLong(tokenBuffer.getBuffer(), 0, tokenBuffer.size());
-        }
-        clearToken();
-        return val;
-    }
-
-    public boolean parse(byte[] buffer) {
-        if (buffer == null || buffer.length == 0) return false;
-
-        this.buffer = buffer;
-        this.ptr = 0;
-
-        if (state == null || state.isEmpty()) {
-            return initialState.parse(this);
-        }
-
-        while (ptr < buffer.length || (state != null && !state.isEmpty())) {
-            if (!state.peek().parse(this)) {
-                return false;
-            }
-        }
-        return state != null && state.isEmpty();
-    }
-
-    public boolean parse(String fullJson) {
-        byte[] bytes = null;
-        try {
-            bytes = fullJson.getBytes("UTF-8");
-        } catch (UnsupportedEncodingException e) {
-            throw new RuntimeException(e);
-        }
-        return parse(bytes);
-    }
-
-    public <T> T target() {
-        return (T)target.peek();
-    }
-
-    public void pushTarget(Object obj) {
-
-        target.push(obj);
-    }
-
-    public <T> T popTarget() {
-        return (T)target.pop();
-    }
+    <T> T popTarget();
 }

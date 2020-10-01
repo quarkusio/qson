@@ -12,13 +12,13 @@ import io.quarkus.gizmo.MethodCreator;
 import io.quarkus.gizmo.MethodDescriptor;
 import io.quarkus.gizmo.ResultHandle;
 import io.quarkus.qson.desserializer.BaseParser;
+import io.quarkus.qson.desserializer.ParserContext;
 import io.quarkus.qson.desserializer.ContextValue;
 import io.quarkus.qson.desserializer.GenericParser;
 import io.quarkus.qson.desserializer.GenericSetParser;
 import io.quarkus.qson.desserializer.ListParser;
 import io.quarkus.qson.desserializer.MapParser;
 import io.quarkus.qson.desserializer.ObjectParser;
-import io.quarkus.qson.desserializer.ParserContext;
 import io.quarkus.qson.desserializer.ParserState;
 import io.quarkus.qson.desserializer.SetParser;
 
@@ -726,89 +726,89 @@ public class Deserializer {
         }
 
         public ResultHandle consume(BytecodeCreator scope) {
-            return scope.invokeVirtualMethod(MethodDescriptor.ofMethod(ParserContext.class, "consume", int.class), ctx);
+            return scope.invokeInterfaceMethod(MethodDescriptor.ofMethod(ParserContext.class, "consume", int.class), ctx);
         }
 
         public void clearToken(BytecodeCreator scope) {
-            scope.invokeVirtualMethod(MethodDescriptor.ofMethod(ParserContext.class, "clearToken", void.class), ctx);
+            scope.invokeInterfaceMethod(MethodDescriptor.ofMethod(ParserContext.class, "clearToken", void.class), ctx);
         }
 
         public void popState(BytecodeCreator scope) {
-            scope.invokeVirtualMethod(MethodDescriptor.ofMethod(ParserContext.class, "popState", void.class), ctx);
+            scope.invokeInterfaceMethod(MethodDescriptor.ofMethod(ParserContext.class, "popState", void.class), ctx);
         }
 
         public void endToken(BytecodeCreator scope) {
-            scope.invokeVirtualMethod(MethodDescriptor.ofMethod(ParserContext.class, "endToken", void.class), ctx);
+            scope.invokeInterfaceMethod(MethodDescriptor.ofMethod(ParserContext.class, "endToken", void.class), ctx);
         }
 
         public ResultHandle compareToken(BytecodeCreator scope, ResultHandle index, ResultHandle str) {
-            return scope.invokeVirtualMethod(MethodDescriptor.ofMethod(ParserContext.class, "compareToken", boolean.class, int.class, String.class), ctx, index, str);
+            return scope.invokeInterfaceMethod(MethodDescriptor.ofMethod(ParserContext.class, "compareToken", boolean.class, int.class, String.class), ctx, index, str);
         }
 
         public ResultHandle tokenCharAt(BytecodeCreator scope, int index) {
-            return scope.invokeVirtualMethod(MethodDescriptor.ofMethod(ParserContext.class, "tokenCharAt", int.class, int.class), ctx, scope.load(index));
+            return scope.invokeInterfaceMethod(MethodDescriptor.ofMethod(ParserContext.class, "tokenCharAt", int.class, int.class), ctx, scope.load(index));
         }
 
 
         public ResultHandle popToken(BytecodeCreator scope) {
-            return scope.invokeVirtualMethod(MethodDescriptor.ofMethod(ParserContext.class, "popToken", String.class), ctx);
+            return scope.invokeInterfaceMethod(MethodDescriptor.ofMethod(ParserContext.class, "popToken", String.class), ctx);
         }
 
 
         public ResultHandle popBooleanToken(BytecodeCreator scope) {
-            return scope.invokeVirtualMethod(MethodDescriptor.ofMethod(ParserContext.class, "popBooleanToken", boolean.class), ctx);
+            return scope.invokeInterfaceMethod(MethodDescriptor.ofMethod(ParserContext.class, "popBooleanToken", boolean.class), ctx);
         }
 
         public ResultHandle popIntToken(BytecodeCreator scope) {
-            return scope.invokeVirtualMethod(MethodDescriptor.ofMethod(ParserContext.class, "popIntToken", int.class), ctx);
+            return scope.invokeInterfaceMethod(MethodDescriptor.ofMethod(ParserContext.class, "popIntToken", int.class), ctx);
         }
 
         public ResultHandle popShortToken(BytecodeCreator scope) {
-            return scope.invokeVirtualMethod(MethodDescriptor.ofMethod(ParserContext.class, "popShortToken", short.class), ctx);
+            return scope.invokeInterfaceMethod(MethodDescriptor.ofMethod(ParserContext.class, "popShortToken", short.class), ctx);
         }
 
         public ResultHandle popByteToken(BytecodeCreator scope) {
-            return scope.invokeVirtualMethod(MethodDescriptor.ofMethod(ParserContext.class, "popByteToken", byte.class), ctx);
+            return scope.invokeInterfaceMethod(MethodDescriptor.ofMethod(ParserContext.class, "popByteToken", byte.class), ctx);
         }
 
         public ResultHandle popLongToken(BytecodeCreator scope) {
-            return scope.invokeVirtualMethod(MethodDescriptor.ofMethod(ParserContext.class, "popLongToken", long.class), ctx);
+            return scope.invokeInterfaceMethod(MethodDescriptor.ofMethod(ParserContext.class, "popLongToken", long.class), ctx);
         }
 
         public ResultHandle popFloatToken(BytecodeCreator scope) {
-            return scope.invokeVirtualMethod(MethodDescriptor.ofMethod(ParserContext.class, "popFloatToken", float.class), ctx);
+            return scope.invokeInterfaceMethod(MethodDescriptor.ofMethod(ParserContext.class, "popFloatToken", float.class), ctx);
         }
 
         public ResultHandle popDoubleToken(BytecodeCreator scope) {
-            return scope.invokeVirtualMethod(MethodDescriptor.ofMethod(ParserContext.class, "popDoubleToken", double.class), ctx);
+            return scope.invokeInterfaceMethod(MethodDescriptor.ofMethod(ParserContext.class, "popDoubleToken", double.class), ctx);
         }
 
         public ResultHandle target(BytecodeCreator scope) {
-            return scope.invokeVirtualMethod(MethodDescriptor.ofMethod(ParserContext.class, "target", Object.class), ctx);
+            return scope.invokeInterfaceMethod(MethodDescriptor.ofMethod(ParserContext.class, "target", Object.class), ctx);
         }
 
         public void pushTarget(BytecodeCreator scope, ResultHandle obj) {
-            scope.invokeVirtualMethod(MethodDescriptor.ofMethod(ParserContext.class, "pushTarget", void.class, Object.class), ctx, obj);
+            scope.invokeInterfaceMethod(MethodDescriptor.ofMethod(ParserContext.class, "pushTarget", void.class, Object.class), ctx, obj);
         }
 
         public void pushState(BytecodeCreator scope, ResultHandle func, ResultHandle index) {
-            scope.invokeVirtualMethod(MethodDescriptor.ofMethod(ParserContext.class, "pushState", void.class, ParserState.class, int.class), ctx, func, index);
+            scope.invokeInterfaceMethod(MethodDescriptor.ofMethod(ParserContext.class, "pushState", void.class, ParserState.class, int.class), ctx, func, index);
         }
 
         public void pushState(BytecodeCreator scope, ResultHandle func) {
-            scope.invokeVirtualMethod(MethodDescriptor.ofMethod(ParserContext.class, "pushState", void.class, ParserState.class), ctx, func);
+            scope.invokeInterfaceMethod(MethodDescriptor.ofMethod(ParserContext.class, "pushState", void.class, ParserState.class), ctx, func);
         }
 
         public ResultHandle popTarget(BytecodeCreator scope) {
-            return scope.invokeVirtualMethod(MethodDescriptor.ofMethod(ParserContext.class, "popTarget", Object.class), ctx);
+            return scope.invokeInterfaceMethod(MethodDescriptor.ofMethod(ParserContext.class, "popTarget", Object.class), ctx);
         }
 
         public ResultHandle stateIndex(BytecodeCreator scope) {
-            return scope.invokeVirtualMethod(MethodDescriptor.ofMethod(ParserContext.class, "stateIndex", int.class), ctx);
+            return scope.invokeInterfaceMethod(MethodDescriptor.ofMethod(ParserContext.class, "stateIndex", int.class), ctx);
         }
 
         public ResultHandle skipToQuote(BytecodeCreator scope) {
-            return scope.invokeVirtualMethod(MethodDescriptor.ofMethod(ParserContext.class, "skipToQuote", int.class), ctx);
+            return scope.invokeInterfaceMethod(MethodDescriptor.ofMethod(ParserContext.class, "skipToQuote", int.class), ctx);
         }
 
 

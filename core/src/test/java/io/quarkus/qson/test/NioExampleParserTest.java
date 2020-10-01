@@ -4,6 +4,7 @@ import com.fasterxml.jackson.databind.DeserializationFeature;
 import com.fasterxml.jackson.databind.MapperFeature;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.ObjectReader;
+import io.quarkus.qson.desserializer.ByteArrayParserContext;
 import io.quarkus.qson.desserializer.GenericParser;
 import io.quarkus.qson.desserializer.JsonParser;
 import io.quarkus.qson.desserializer.ParserContext;
@@ -93,7 +94,7 @@ public class NioExampleParserTest {
     @Test
     public void testNioArrayOnly() {
         List<String> breakup = breakup(arrayOnly, 1);
-        ParserContext ctx = new ParserContext(NioPersonParser.PARSER.parser());
+        ByteArrayParserContext ctx = new ByteArrayParserContext(NioPersonParser.PARSER.parser());
         for (String str : breakup) {
             if (ctx.parse(str)) break;
         }
@@ -119,7 +120,7 @@ public class NioExampleParserTest {
     @Test
     public void testNioMapObjectOnly() {
         List<String> breakup = breakup(kidsOnly, 1);
-        ParserContext ctx = new ParserContext(NioPersonParser.PARSER.parser());
+        ByteArrayParserContext ctx = new ByteArrayParserContext(NioPersonParser.PARSER.parser());
         for (String str : breakup) {
             if (ctx.parse(str)) break;
         }
@@ -141,7 +142,7 @@ public class NioExampleParserTest {
     @Test
     public void testNioObjectOnly() {
         List<String> breakup = breakup(dadOnly, 1);
-        ParserContext ctx = new ParserContext(NioPersonParser.PARSER.parser());
+        ByteArrayParserContext ctx = new ByteArrayParserContext(NioPersonParser.PARSER.parser());
         for (String str : breakup) {
             if (ctx.parse(str)) break;
         }
@@ -158,7 +159,7 @@ public class NioExampleParserTest {
         for (int i = 1; i <= json.length(); i++) {
             System.out.println("Buffer size: " + i);
             List<String> breakup = breakup(json, i);
-            ParserContext ctx = new ParserContext(NioPersonParser.PARSER.parser());
+            ByteArrayParserContext ctx = new ByteArrayParserContext(NioPersonParser.PARSER.parser());
             for (String str : breakup) {
                 if (ctx.parse(str)) break;
             }
@@ -166,7 +167,7 @@ public class NioExampleParserTest {
             validatePerson(person);
 
         }
-        ParserContext ctx = new ParserContext(NioPersonParser.PARSER.parser());
+        ByteArrayParserContext ctx = new ByteArrayParserContext(NioPersonParser.PARSER.parser());
         Assertions.assertTrue(ctx.parse(json));
         Person person = ctx.target();
         validatePerson(person);
@@ -175,7 +176,7 @@ public class NioExampleParserTest {
     @Test
     public void testNioParser() {
         List<String> breakup = breakup(json, 7);
-        ParserContext ctx = new ParserContext(NioPersonParser.PARSER.parser());
+        ByteArrayParserContext ctx = new ByteArrayParserContext(NioPersonParser.PARSER.parser());
         for (String str : breakup) {
             if (ctx.parse(str)) break;
         }
@@ -186,7 +187,7 @@ public class NioExampleParserTest {
     }
     @Test
     public void testNioParserBuffered() {
-        ParserContext ctx = new ParserContext(NioPersonParser.PARSER.parser());
+        ByteArrayParserContext ctx = new ByteArrayParserContext(NioPersonParser.PARSER.parser());
         ctx.parse(json);
         System.out.println();
         Person person = ctx.target();
@@ -266,7 +267,7 @@ public class NioExampleParserTest {
         for (int i = 1; i <= generic.length(); i++) {
             System.out.println("Buffer size: " + i);
             List<String> breakup = breakup(generic, i);
-            ParserContext ctx = new ParserContext(GenericParser.PARSER.parser());
+            ByteArrayParserContext ctx = new ByteArrayParserContext(GenericParser.PARSER.parser());
             for (String str : breakup) {
                 //System.out.println(str);
                 if (ctx.parse(str)) break;
@@ -275,7 +276,7 @@ public class NioExampleParserTest {
 
         }
 
-        ParserContext ctx = new ParserContext(GenericParser.PARSER.parser());
+        ByteArrayParserContext ctx = new ByteArrayParserContext(GenericParser.PARSER.parser());
         Assertions.assertTrue(ctx.parse(generic));
         validateGeneric(ctx);
 
@@ -320,7 +321,7 @@ public class NioExampleParserTest {
     @Test
     public void testGenericList() {
         JsonParser p = GenericParser.PARSER;
-        ParserContext ctx = new ParserContext(p.parser());
+        ByteArrayParserContext ctx = new ByteArrayParserContext(p.parser());
         Assertions.assertTrue(ctx.parse(genericList));
 
         List list = ctx.target();
@@ -344,7 +345,7 @@ public class NioExampleParserTest {
         int ITERATIONS = 10000;
         for (int i = 0; i < ITERATIONS; i++) {
             reader.readValue(array);
-            new ParserContext(parser.parser()).parse(array);
+            new ByteArrayParserContext(parser.parser()).parse(array);
         }
         long start = 0;
         System.gc();
@@ -352,7 +353,7 @@ public class NioExampleParserTest {
 
         start = System.currentTimeMillis();
         for (int i = 0; i < ITERATIONS; i++) {
-            new ParserContext(parser.parser()).parse(array);
+            new ByteArrayParserContext(parser.parser()).parse(array);
         }
         System.out.println("Nio took: " + (System.currentTimeMillis() - start) + " (ms)");
 

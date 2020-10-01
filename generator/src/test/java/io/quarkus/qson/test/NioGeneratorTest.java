@@ -1,8 +1,8 @@
 package io.quarkus.qson.test;
 
 import io.quarkus.gizmo.TestClassLoader;
+import io.quarkus.qson.desserializer.ByteArrayParserContext;
 import io.quarkus.qson.desserializer.JsonParser;
-import io.quarkus.qson.desserializer.ParserContext;
 import io.quarkus.qson.generator.Serializer;
 import io.quarkus.qson.generator.Deserializer;
 import io.quarkus.qson.serializer.ByteArrayByteWriter;
@@ -38,7 +38,7 @@ public class NioGeneratorTest {
 
         Class deserializer = loader.loadClass(Deserializer.fqn(Single.class, Single.class));
         JsonParser parser = (JsonParser)deserializer.newInstance();
-        ParserContext ctx = new ParserContext(parser.parser());
+        ByteArrayParserContext ctx = new ByteArrayParserContext(parser.parser());
         Assertions.assertTrue(ctx.parse(simpleJson));
         Single single = ctx.popTarget();
         Assertions.assertEquals(1, single.getName());
@@ -50,7 +50,7 @@ public class NioGeneratorTest {
 
         Class deserializer = loader.loadClass(Deserializer.fqn(Simple.class, Simple.class));
         JsonParser parser = (JsonParser)deserializer.newInstance();
-        ParserContext ctx = new ParserContext(parser.parser());
+        ByteArrayParserContext ctx = new ByteArrayParserContext(parser.parser());
         Assertions.assertTrue(ctx.parse(simpleJson));
         Simple simple = ctx.popTarget();
         Assertions.assertEquals(1, simple.getName());
@@ -140,7 +140,7 @@ public class NioGeneratorTest {
 
         Class deserializer = loader.loadClass(Deserializer.fqn(Person2.class, Person2.class));
         JsonParser parser = (JsonParser)deserializer.newInstance();
-        ParserContext ctx = new ParserContext(parser.parser());
+        ByteArrayParserContext ctx = new ByteArrayParserContext(parser.parser());
         Assertions.assertTrue(ctx.parse(json));
         Person2 person = ctx.target();
         validatePerson(person);
@@ -158,7 +158,7 @@ public class NioGeneratorTest {
 
         // validate serializer
 
-        ctx = new ParserContext(parser.parser());
+        ctx = new ByteArrayParserContext(parser.parser());
         Assertions.assertTrue(ctx.parse(bytes));
         person = ctx.target();
         validatePerson(person);

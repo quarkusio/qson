@@ -31,9 +31,8 @@ public class GenericParser extends BaseParser implements JsonParser {
 
 
     @Override
-    public ParserContext parser() {
-        ParserContext ctx = new ParserContext(value);
-        return ctx;
+    public ParserState parser() {
+        return value;
     }
 
     @Override

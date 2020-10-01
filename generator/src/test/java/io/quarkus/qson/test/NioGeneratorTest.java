@@ -38,7 +38,7 @@ public class NioGeneratorTest {
 
         Class deserializer = loader.loadClass(Deserializer.fqn(Single.class, Single.class));
         JsonParser parser = (JsonParser)deserializer.newInstance();
-        ParserContext ctx = parser.parser();
+        ParserContext ctx = new ParserContext(parser.parser());
         Assertions.assertTrue(ctx.parse(simpleJson));
         Single single = ctx.popTarget();
         Assertions.assertEquals(1, single.getName());
@@ -50,7 +50,7 @@ public class NioGeneratorTest {
 
         Class deserializer = loader.loadClass(Deserializer.fqn(Simple.class, Simple.class));
         JsonParser parser = (JsonParser)deserializer.newInstance();
-        ParserContext ctx = parser.parser();
+        ParserContext ctx = new ParserContext(parser.parser());
         Assertions.assertTrue(ctx.parse(simpleJson));
         Simple simple = ctx.popTarget();
         Assertions.assertEquals(1, simple.getName());
@@ -140,7 +140,7 @@ public class NioGeneratorTest {
 
         Class deserializer = loader.loadClass(Deserializer.fqn(Person2.class, Person2.class));
         JsonParser parser = (JsonParser)deserializer.newInstance();
-        ParserContext ctx = parser.parser();
+        ParserContext ctx = new ParserContext(parser.parser());
         Assertions.assertTrue(ctx.parse(json));
         Person2 person = ctx.target();
         validatePerson(person);
@@ -158,7 +158,7 @@ public class NioGeneratorTest {
 
         // validate serializer
 
-        ctx = parser.parser();
+        ctx = new ParserContext(parser.parser());
         Assertions.assertTrue(ctx.parse(bytes));
         person = ctx.target();
         validatePerson(person);

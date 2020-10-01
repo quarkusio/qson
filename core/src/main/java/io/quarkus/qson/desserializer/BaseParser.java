@@ -10,9 +10,8 @@ public class BaseParser implements JsonParser {
     }
 
     @Override
-    public ParserContext parser() {
-        ParserContext ctx = new ParserContext(start);
-        return ctx;
+    public ParserState parser() {
+        return start;
     }
 
     // we do fields to avoid object creations

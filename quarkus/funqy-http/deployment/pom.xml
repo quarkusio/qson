@@ -19,16 +19,16 @@
             <artifactId>quarkus-funqy-http-qson</artifactId>
         </dependency>
         <dependency>
+            <groupId>io.quarkus.qson</groupId>
+            <artifactId>qson-generator</artifactId>
+        </dependency>
+        <dependency>
             <groupId>io.quarkus</groupId>
             <artifactId>quarkus-funqy-server-common-deployment</artifactId>
         </dependency>
         <dependency>
             <groupId>io.quarkus</groupId>
             <artifactId>quarkus-vertx-http-deployment</artifactId>
-        </dependency>
-        <dependency>
-            <groupId>io.quarkus</groupId>
-            <artifactId>quarkus-jackson-deployment</artifactId>
         </dependency>
         <dependency>
             <groupId>io.quarkus</groupId>

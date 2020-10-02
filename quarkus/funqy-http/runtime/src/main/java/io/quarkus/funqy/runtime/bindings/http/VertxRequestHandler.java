@@ -1,15 +1,16 @@
 package io.quarkus.funqy.runtime.bindings.http;
 
-import com.fasterxml.jackson.core.JsonProcessingException;
-import com.fasterxml.jackson.databind.ObjectReader;
-import com.fasterxml.jackson.databind.ObjectWriter;
-import io.netty.buffer.ByteBufInputStream;
 import io.quarkus.arc.ManagedContext;
 import io.quarkus.arc.runtime.BeanContainer;
 import io.quarkus.funqy.runtime.FunctionInvoker;
 import io.quarkus.funqy.runtime.FunctionRecorder;
 import io.quarkus.funqy.runtime.RequestContextImpl;
 import io.quarkus.funqy.runtime.query.QueryReader;
+import io.quarkus.qson.desserializer.JsonParser;
+import io.quarkus.qson.desserializer.VertxBufferParserContext;
+import io.quarkus.qson.serializer.ByteArrayByteWriter;
+import io.quarkus.qson.serializer.JsonByteWriter;
+import io.quarkus.qson.serializer.ObjectWriter;
 import io.quarkus.security.identity.CurrentIdentityAssociation;
 import io.quarkus.security.identity.SecurityIdentity;
 import io.quarkus.vertx.http.runtime.CurrentVertxRequest;
@@ -17,6 +18,7 @@ import io.quarkus.vertx.http.runtime.security.QuarkusHttpUser;
 import io.smallrye.mutiny.Uni;
 import io.vertx.core.Handler;
 import io.vertx.core.Vertx;
+import io.vertx.core.buffer.Buffer;
 import io.vertx.core.http.HttpMethod;
 import io.vertx.ext.web.RoutingContext;
 import org.jboss.logging.Logger;
@@ -97,28 +99,34 @@ public class VertxRequestHandler implements Handler<RoutingContext> {
                 dispatch(routingContext, invoker, finalInput);
             });
         } else if (routingContext.request().method() == HttpMethod.POST) {
-            routingContext.request().bodyHandler(buff -> {
-                Object input = null;
-                if (buff.length() > 0) {
-                    ByteBufInputStream in = new ByteBufInputStream(buff.getByteBuf());
-                    ObjectReader reader = (ObjectReader) invoker.getBindingContext().get(ObjectReader.class.getName());
-                    try {
-                        input = reader.readValue((InputStream) in);
-                    } catch (Exception e) {
-                        log.error("Failed to unmarshal input", e);
-                        routingContext.fail(400);
-                        return;
-                    }
-                }
-                Object finalInput = input;
-                executor.execute(() -> {
-                    dispatch(routingContext, invoker, finalInput);
-                });
-            });
+            post(routingContext, invoker);
         } else {
             routingContext.fail(405);
             log.error("Must be POST or GET for: " + invoker.getName());
         }
+    }
+
+    private void post(RoutingContext routingContext, FunctionInvoker invoker) {
+        routingContext.request().bodyHandler(buff -> {
+            Object input = null;
+            if (buff.length() > 0) {
+                JsonParser reader = (JsonParser) invoker.getBindingContext().get(JsonParser.class.getName());
+                try {
+                    VertxBufferParserContext ctx = new VertxBufferParserContext(reader.parser());
+                    // todo handle integer case where parse returns false as it can't know its the end
+                    ctx.parse(buff);
+                    input = reader.getTarget(ctx);
+                } catch (Exception e) {
+                    log.error("Failed to unmarshal input", e);
+                    routingContext.fail(400);
+                    return;
+                }
+            }
+            Object finalInput = input;
+            executor.execute(() -> {
+                dispatch(routingContext, invoker, finalInput);
+            });
+        });
     }
 
     private void dispatch(RoutingContext routingContext, FunctionInvoker invoker, Object input) {
@@ -140,8 +148,12 @@ public class VertxRequestHandler implements Handler<RoutingContext> {
                             routingContext.response().putHeader("Content-Type", "application/json");
                             ObjectWriter writer = (ObjectWriter) invoker.getBindingContext().get(ObjectWriter.class.getName());
                             try {
-                                routingContext.response().end(writer.writeValueAsString(o));
-                            } catch (JsonProcessingException e) {
+                                ByteArrayByteWriter byteWriter = new ByteArrayByteWriter();
+                                JsonByteWriter jsonWriter = new JsonByteWriter(byteWriter);
+                                writer.write(jsonWriter, o);
+
+                                routingContext.response().end(Buffer.buffer(byteWriter.getBytes()));
+                            } catch (Exception e) {
                                 log.error("Failed to marshal", e);
                                 routingContext.fail(400);
                             }

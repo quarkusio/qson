@@ -79,7 +79,8 @@ public class SimpleTest {
                 .body("\"Bill\"")
                 .post(path)
                 .then().statusCode(200)
-                .body(equalTo("{\"name\":\"Bill\",\"message\":\"Hello Bill!\"}"));
+                .body("name", equalTo("Bill"))
+                .body("message", equalTo("Hello Bill!"));
 
         RestAssured.given().contentType("application/json")
                 .body("{\"greeting\":\"Guten tag\",\"punctuation\":\".\"}")
@@ -90,7 +91,8 @@ public class SimpleTest {
                 .body("\"Bill\"")
                 .post(path)
                 .then().statusCode(200)
-                .body(equalTo("{\"name\":\"Bill\",\"message\":\"Guten tag Bill.\"}"));
+                .body("name", equalTo("Bill"))
+                .body("message", equalTo("Guten tag Bill."));
 
     }
 

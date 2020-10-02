@@ -8,7 +8,16 @@ import io.quarkus.gizmo.FieldDescriptor;
 import io.quarkus.gizmo.MethodCreator;
 import io.quarkus.gizmo.MethodDescriptor;
 import io.quarkus.gizmo.ResultHandle;
+import io.quarkus.qson.desserializer.BooleanParser;
+import io.quarkus.qson.desserializer.ByteParser;
+import io.quarkus.qson.desserializer.DoubleParser;
+import io.quarkus.qson.desserializer.FloatParser;
+import io.quarkus.qson.desserializer.IntegerParser;
+import io.quarkus.qson.desserializer.LongParser;
+import io.quarkus.qson.desserializer.ShortParser;
+import io.quarkus.qson.desserializer.StringParser;
 import io.quarkus.qson.serializer.CollectionWriter;
+import io.quarkus.qson.serializer.GenericObjectWriter;
 import io.quarkus.qson.serializer.JsonWriter;
 import io.quarkus.qson.serializer.MapWriter;
 import io.quarkus.qson.serializer.ObjectWriter;
@@ -43,6 +52,8 @@ public class Serializer {
         Class targetType;
         Type targetGenericType;
         ClassOutput output;
+        String className;
+        String keyName;
 
         private Builder() {
         }
@@ -61,10 +72,25 @@ public class Serializer {
             this.output = output;
             return this;
         }
+        public String className() {
+            return className;
+        }
 
-        public void generate() {
+        public String keyName() {
+            return keyName;
+        }
+
+        public Builder generate() {
+            if (isGeneric(targetType, targetGenericType)) {
+                className = GenericObjectWriter.class.getName();
+                keyName = targetGenericType == null ? targetType.getTypeName() : targetGenericType.getTypeName();
+                return this;
+            }
             if (targetGenericType == null) targetGenericType = targetType;
             new Serializer(output, targetType, targetGenericType).generate();
+            className = fqn(targetType, targetGenericType);
+            keyName = targetGenericType.getTypeName();
+            return this;
         }
     }
 
@@ -413,6 +439,29 @@ public class Serializer {
             return false;
         }
         return true;
+    }
+
+    private static boolean isGeneric(Class type, Type generic) {
+        if (type.isPrimitive()) return true;
+        if (type.equals(String.class)
+                || type.equals(Integer.class)
+                || type.equals(Short.class)
+                || type.equals(Long.class)
+                || type.equals(Byte.class)
+                || type.equals(Boolean.class)
+                || type.equals(Double.class)
+                || type.equals(Float.class)
+                || type.equals(Character.class)) {
+            return true;
+        }
+        if (Map.class.isAssignableFrom(type)
+                || List.class.isAssignableFrom(type)
+                || Set.class.isAssignableFrom(type)) {
+            // todo for now, return true until we can support generating complex generics
+            //return generic == null || !(generic instanceof ParameterizedType);
+            return true;
+        }
+        return false;
     }
 
     private boolean hasCollectionWriter(Getter getter) {

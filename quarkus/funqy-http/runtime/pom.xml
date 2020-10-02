@@ -27,10 +27,6 @@
             <groupId>io.quarkus</groupId>
             <artifactId>quarkus-funqy-server-common</artifactId>
         </dependency>
-        <dependency>
-            <groupId>io.quarkus</groupId>
-            <artifactId>quarkus-jackson</artifactId>
-        </dependency>
     </dependencies>
 
     <build>

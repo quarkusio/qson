@@ -12,6 +12,12 @@ import io.quarkus.gizmo.MethodCreator;
 import io.quarkus.gizmo.MethodDescriptor;
 import io.quarkus.gizmo.ResultHandle;
 import io.quarkus.qson.desserializer.BaseParser;
+import io.quarkus.qson.desserializer.BooleanParser;
+import io.quarkus.qson.desserializer.ByteParser;
+import io.quarkus.qson.desserializer.DoubleParser;
+import io.quarkus.qson.desserializer.FloatParser;
+import io.quarkus.qson.desserializer.IntegerParser;
+import io.quarkus.qson.desserializer.LongParser;
 import io.quarkus.qson.desserializer.ParserContext;
 import io.quarkus.qson.desserializer.ContextValue;
 import io.quarkus.qson.desserializer.GenericParser;
@@ -21,6 +27,8 @@ import io.quarkus.qson.desserializer.MapParser;
 import io.quarkus.qson.desserializer.ObjectParser;
 import io.quarkus.qson.desserializer.ParserState;
 import io.quarkus.qson.desserializer.SetParser;
+import io.quarkus.qson.desserializer.ShortParser;
+import io.quarkus.qson.desserializer.StringParser;
 
 import java.lang.reflect.Method;
 import java.lang.reflect.Modifier;
@@ -56,6 +64,8 @@ public class Deserializer {
         Class targetType;
         Type targetGenericType;
         ClassOutput output;
+        String className;
+        String keyName;
 
         private Builder() {
         }
@@ -75,9 +85,76 @@ public class Deserializer {
             return this;
         }
 
-        public void generate() {
+        public String className() {
+            return className;
+        }
+
+        public String keyName() {
+            return keyName;
+        }
+
+        public Builder generate() {
             if (targetGenericType == null) targetGenericType = targetType;
+            if (int.class.equals(targetType)
+                    || Integer.class.equals(targetType)) {
+                keyName = targetType.getName();
+                className = IntegerParser.class.getName();
+                return this;
+            }
+            if (short.class.equals(targetType)
+                    || Short.class.equals(targetType)) {
+                keyName = targetType.getName();
+                className = ShortParser.class.getName();
+                return this;
+            }
+            if (long.class.equals(targetType)
+                    || Long.class.equals(targetType)) {
+                keyName = targetType.getName();
+                className = LongParser.class.getName();
+                return this;
+            }
+            if (byte.class.equals(targetType)
+                    || Byte.class.equals(targetType)) {
+                keyName = targetType.getName();
+                className = ByteParser.class.getName();
+                return this;
+            }
+            if (float.class.equals(targetType)
+                    || Float.class.equals(targetType)
+            ) {
+                keyName = targetType.getName();
+                className = FloatParser.class.getName();
+                return this;
+            }
+            if (double.class.equals(targetType)
+                    || Double.class.equals(targetType)
+            ) {
+                keyName = targetType.getName();
+                className = DoubleParser.class.getName();
+                return this;
+            }
+            if (boolean.class.equals(targetType)
+                    || Boolean.class.equals(targetType)
+            ) {
+                keyName = targetType.getName();
+                className = BooleanParser.class.getName();
+                return this;
+            }
+            if (String.class.equals(targetType)) {
+                keyName = targetType.getName();
+                className = StringParser.class.getName();
+                return this;
+            }
+            if (Map.class.equals(targetType)) {
+                // todo handle complex maps where we need to generate a class, for now return generic
+                keyName = targetGenericType.getTypeName();
+                className = GenericParser.class.getName();
+                return this;
+            }
             new Deserializer(output, targetType, targetGenericType).generate();
+            className = fqn(targetType, targetGenericType);
+            keyName = targetGenericType.getTypeName();
+            return this;
         }
     }
 

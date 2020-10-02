@@ -10,8 +10,7 @@ public class GenericParser extends BaseParser implements JsonParser {
     public static final GenericParser PARSER = new GenericParser();
     private ParserState value = this::value;
 
-    protected GenericParser() {
-        // can only be subclassed
+    public GenericParser() {
     }
 
     @Override

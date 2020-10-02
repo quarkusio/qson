@@ -10,6 +10,11 @@ public class BaseParser implements JsonParser {
     }
 
     @Override
+    public <T> T getTarget(ParserContext ctx) {
+        return ctx.target();
+    }
+
+    @Override
     public ParserState parser() {
         return start;
     }
@@ -20,6 +25,8 @@ public class BaseParser implements JsonParser {
     public final ParserState start  = this::start;
     public final ParserState startStringValue  = this::startStringValue;
     public final ParserState startIntegerValue  = this::startIntegerValue;
+    public final ParserState startBooleanValue  = this::startBooleanValue;
+    public final ParserState startNumberValue  = this::startNumberValue;
     public final ParserState continueAddListValue = this::continueAddListValue;
     public final ParserState continueStartStringValue = this::continueStartStringValue;
     public final ParserState continueStartBooleanValue = this::continueStartBooleanValue;

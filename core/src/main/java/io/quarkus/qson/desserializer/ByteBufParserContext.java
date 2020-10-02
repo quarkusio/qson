@@ -1,50 +1,47 @@
 package io.quarkus.qson.desserializer;
 
-import java.io.IOException;
+import io.netty.buffer.ByteBuf;
+import io.netty.buffer.Unpooled;
+import io.vertx.core.buffer.Buffer;
+
 import java.io.UnsupportedEncodingException;
-import java.util.ArrayDeque;
-import java.util.LinkedList;
 
-import static io.quarkus.qson.IntChar.*;
-
-public class ByteArrayParserContext extends AbstractParserContext {
+public class ByteBufParserContext extends AbstractParserContext {
     protected BufferBuilder tokenBuffer;
-    protected byte[] buffer;
+    protected ByteBuf buffer;
 
 
-    public ByteArrayParserContext(ParserState initialState) {
+    public ByteBufParserContext(ParserState initialState) {
         super(initialState);
     }
 
     @Override
     public boolean isBufferEmpty() {
-        return ptr >= buffer.length;
+        return ptr >= buffer.writerIndex();
     }
 
     @Override
     public int consume() {
-        if (ptr >= buffer.length) {
+        if (ptr >= buffer.writerIndex()) {
             if (buildingToken) {
                 if (tokenBuffer == null ) {
                     if (tokenStart >= 0) {
                         createTokenBuffer();
-                        tokenBuffer.write(buffer, tokenStart, ptr - tokenStart);
+                        byte[] arr = new byte[ptr - tokenStart];
+                        buffer.getBytes(tokenStart, arr, 0, ptr - tokenStart);
+                        tokenBuffer.writeBytes(arr);
                     } else {
                         tokenStart = 0;
                     }
                 } else {
-                    try {
-                        tokenBuffer.write(buffer);
-                    } catch (IOException e) {
-                        // should be unreachable
-                        throw new RuntimeException(e);
-                    }
-
+                    byte[] arr = new byte[buffer.writerIndex()];
+                    buffer.getBytes(0, arr);
+                    tokenBuffer.writeBytes(arr);
                 }
             }
             return 0;
         }
-        return buffer[ptr++] & 0xFF;
+        return buffer.getByte(ptr++) & 0xFF;
     }
 
     @Override
@@ -56,7 +53,7 @@ public class ByteArrayParserContext extends AbstractParserContext {
     public void startTokenNextConsumed() {
         buildingToken = true;
         // if current pointer points outside of buffer, set it to start of next buffer.
-        if (ptr >= buffer.length) tokenStart = -1;
+        if (ptr >= buffer.writerIndex()) tokenStart = -1;
         else tokenStart = ptr;
     }
 
@@ -64,7 +61,11 @@ public class ByteArrayParserContext extends AbstractParserContext {
     public void endToken() {
         buildingToken = false;
         if (tokenBuffer != null) {
-            if (ptr - 1 > 0) tokenBuffer.write(buffer, 0, ptr - 1);
+            if (ptr - 1 > 0) {
+                byte[] arr = new byte[ptr - 1];
+                buffer.getBytes(0, arr, 0, ptr - 1);
+                tokenBuffer.writeBytes(arr);
+            }
         } else {
             if (tokenStart < 0) tokenStart = 0;  // when asked to start token at next buffer tokenStart will be -1
             tokenEnd = ptr - 1;
@@ -83,7 +84,7 @@ public class ByteArrayParserContext extends AbstractParserContext {
     @Override
     public int tokenCharAt(int index) {
         if (tokenBuffer == null) {
-            return buffer[tokenStart + index] & 0xFF;
+            return buffer.getByte(tokenStart + index) & 0xFF;
         } else {
             return tokenBuffer.getBuffer()[index] & 0xFF;
         }
@@ -95,7 +96,7 @@ public class ByteArrayParserContext extends AbstractParserContext {
             int size = tokenEnd - tokenStart - index;
             if (size != str.length()) return false;
             for (int i = 0; i < size; i++) {
-                int c = buffer[tokenStart + i + index] & 0xFF;
+                int c = buffer.getByte(tokenStart + i + index) & 0xFF;
                 if (c != str.charAt(i)) return false;
             }
             clearToken();
@@ -119,7 +120,7 @@ public class ByteArrayParserContext extends AbstractParserContext {
         if (tokenBuffer == null) {
             if (tokenStart < 0) throw new RuntimeException("Token not started.");
             if (tokenEnd < 0) throw new RuntimeException("Token not ended.");
-            val = ParsePrimitives.readString(buffer, tokenStart, tokenEnd);
+            val = ByteBufParsePrimitives.readString(buffer, tokenStart, tokenEnd);
         } else {
             val = ParsePrimitives.readString(tokenBuffer.getBuffer(), 0, tokenBuffer.size());
         }
@@ -133,7 +134,7 @@ public class ByteArrayParserContext extends AbstractParserContext {
         if (tokenBuffer == null) {
             if (tokenStart < 0) throw new RuntimeException("Token not started.");
             if (tokenEnd < 0) throw new RuntimeException("Token not ended.");
-            val = ParsePrimitives.readBoolean(buffer, tokenStart, tokenEnd);
+            val = ByteBufParsePrimitives.readBoolean(buffer, tokenStart, tokenEnd);
         } else {
             val = ParsePrimitives.readBoolean(tokenBuffer.getBuffer(), 0, tokenBuffer.size());
         }
@@ -168,7 +169,7 @@ public class ByteArrayParserContext extends AbstractParserContext {
     public long popLongToken() {
         long val;
         if (tokenBuffer == null) {
-            val = ParsePrimitives.readLong(buffer, tokenStart, tokenEnd);
+            val = ByteBufParsePrimitives.readLong(buffer, tokenStart, tokenEnd);
         } else {
             val = ParsePrimitives.readLong(tokenBuffer.getBuffer(), 0, tokenBuffer.size());
         }
@@ -176,8 +177,8 @@ public class ByteArrayParserContext extends AbstractParserContext {
         return val;
     }
 
-    public boolean parse(byte[] buffer) {
-        if (buffer == null || buffer.length == 0) return false;
+    public boolean parse(ByteBuf buffer) {
+        if (buffer == null || buffer.writerIndex() == 0) return false;
 
         this.buffer = buffer;
         this.ptr = 0;
@@ -186,7 +187,7 @@ public class ByteArrayParserContext extends AbstractParserContext {
             return initialState.parse(this);
         }
 
-        while (ptr < buffer.length || (state != null && !state.isEmpty())) {
+        while (ptr < buffer.writerIndex() || (state != null && !state.isEmpty())) {
             if (!state.peek().parse(this)) {
                 return false;
             }
@@ -201,7 +202,9 @@ public class ByteArrayParserContext extends AbstractParserContext {
         } catch (UnsupportedEncodingException e) {
             throw new RuntimeException(e);
         }
-        return parse(bytes);
+        ByteBuf buf = Unpooled.unreleasableBuffer(Unpooled.buffer(bytes.length, Integer.MAX_VALUE)).writeBytes(bytes);
+
+        return parse(buf);
     }
 
 }

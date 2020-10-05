@@ -25,6 +25,7 @@
     <modules>
         <module>core</module>
         <module>generator</module>
+        <module>benchmark</module>
         <module>quarkus/funqy-http</module>
     </modules>
 

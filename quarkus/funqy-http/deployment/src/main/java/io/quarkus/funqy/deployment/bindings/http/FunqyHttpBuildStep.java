@@ -46,7 +46,7 @@ import io.vertx.ext.web.RoutingContext;
 
 public class FunqyHttpBuildStep {
     private static final Logger log = Logger.getLogger(FunqyHttpBuildStep.class);
-    public static final String FUNQY_HTTP_FEATURE = "funqy-http";
+    public static final String FUNQY_HTTP_FEATURE = "funqy-qson";
 
     public final static class GeneratedReader extends MultiBuildItem {
         private String name;

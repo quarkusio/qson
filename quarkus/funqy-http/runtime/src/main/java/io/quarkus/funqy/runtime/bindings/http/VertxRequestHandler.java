@@ -6,6 +6,8 @@ import io.quarkus.funqy.runtime.FunctionInvoker;
 import io.quarkus.funqy.runtime.FunctionRecorder;
 import io.quarkus.funqy.runtime.RequestContextImpl;
 import io.quarkus.funqy.runtime.query.QueryReader;
+import io.quarkus.qson.desserializer.ByteArrayParserContext;
+import io.quarkus.qson.desserializer.ByteBufParserContext;
 import io.quarkus.qson.desserializer.JsonParser;
 import io.quarkus.qson.desserializer.VertxBufferParserContext;
 import io.quarkus.qson.serializer.ByteArrayByteWriter;
@@ -99,7 +101,7 @@ public class VertxRequestHandler implements Handler<RoutingContext> {
                 dispatch(routingContext, invoker, finalInput);
             });
         } else if (routingContext.request().method() == HttpMethod.POST) {
-            post(routingContext, invoker);
+            postBytes(routingContext, invoker);
         } else {
             routingContext.fail(405);
             log.error("Must be POST or GET for: " + invoker.getName());
@@ -115,6 +117,30 @@ public class VertxRequestHandler implements Handler<RoutingContext> {
                     VertxBufferParserContext ctx = new VertxBufferParserContext(reader.parser());
                     // todo handle integer case where parse returns false as it can't know its the end
                     ctx.parse(buff);
+                    input = reader.getTarget(ctx);
+                } catch (Exception e) {
+                    log.error("Failed to unmarshal input", e);
+                    routingContext.fail(400);
+                    return;
+                }
+            }
+            Object finalInput = input;
+            executor.execute(() -> {
+                dispatch(routingContext, invoker, finalInput);
+            });
+        });
+    }
+
+    private void postBytes(RoutingContext routingContext, FunctionInvoker invoker) {
+        routingContext.request().bodyHandler(buff -> {
+            Object input = null;
+            if (buff.length() > 0) {
+                JsonParser reader = (JsonParser) invoker.getBindingContext().get(JsonParser.class.getName());
+                try {
+                    byte[] bytes = buff.getBytes();
+                    ByteArrayParserContext ctx = new ByteArrayParserContext(reader.parser());
+                    // todo handle integer case where parse returns false as it can't know its the end
+                    ctx.parse(bytes);
                     input = reader.getTarget(ctx);
                 } catch (Exception e) {
                     log.error("Failed to unmarshal input", e);

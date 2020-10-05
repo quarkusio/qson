@@ -158,7 +158,7 @@ public class MyBenchmark {
         @Setup(Level.Trial)
         public void setup() {
             ObjectMapper mapper = new ObjectMapper().configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false)
-                    .configure(MapperFeature.ACCEPT_CASE_INSENSITIVE_PROPERTIES, true);
+                    .configure(MapperFeature.ACCEPT_CASE_INSENSITIVE_PROPERTIES, false);
             reader = mapper.readerFor(Person2.class);
             try {
                 jsonBytes = json.getBytes("UTF-8");
@@ -176,7 +176,7 @@ public class MyBenchmark {
         @Setup(Level.Trial)
         public void setup() {
             ObjectMapper mapper = new ObjectMapper().configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false)
-                    .configure(MapperFeature.ACCEPT_CASE_INSENSITIVE_PROPERTIES, true);
+                    .configure(MapperFeature.ACCEPT_CASE_INSENSITIVE_PROPERTIES, false);
             mapper.registerModule(new AfterburnerModule());
             reader = mapper.readerFor(Person2.class);
             try {

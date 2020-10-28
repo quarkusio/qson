@@ -182,6 +182,27 @@ public class NioExampleParserTest {
     }
 
     @Test
+    public void testQuotes() {
+        String json = "{ \"name\": \"The \\\"Dude\\\"\" }";
+
+        for (int i = 1; i <= json.length(); i++) {
+            System.out.println("Buffer size: " + i);
+            List<String> breakup = breakup(json, i);
+            ByteArrayParserContext ctx = new ByteArrayParserContext(NioPersonParser.PARSER.parser());
+            for (String str : breakup) {
+                if (ctx.parse(str)) break;
+            }
+            Person person = ctx.target();
+            Assertions.assertEquals("The \"Dude\"", person.getName());
+
+        }
+        ByteArrayParserContext ctx = new ByteArrayParserContext(NioPersonParser.PARSER.parser());
+        Assertions.assertTrue(ctx.parse(json));
+        Person person = ctx.target();
+        Assertions.assertEquals("The \"Dude\"", person.getName());
+    }
+
+    @Test
     public void testStringParser() {
         String stringJson = "\"hello\"";
         StringParser stringParser = new StringParser();

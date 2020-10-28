@@ -51,6 +51,7 @@ public class ByteBufParserContext extends AbstractParserContext {
 
     @Override
     public void startTokenNextConsumed() {
+        escaped = false;
         buildingToken = true;
         // if current pointer points outside of buffer, set it to start of next buffer.
         if (ptr >= buffer.writerIndex()) tokenStart = -1;

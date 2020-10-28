@@ -192,4 +192,43 @@ public class NioGeneratorTest {
         Assertions.assertTrue(person.getPets().contains("itchy"));
         Assertions.assertTrue(person.getPets().contains("scratchy"));
     }
+
+    @Test
+    public void testEscapes() throws Exception {
+        TestClassLoader loader = new TestClassLoader(Person2.class.getClassLoader());
+        Deserializer.create(Person2.class).output(loader).generate();
+        Serializer.create(Person2.class).output(loader).generate();
+        Class serializer = loader.loadClass(Serializer.fqn(Person2.class, Person2.class));
+        Class deserializer = loader.loadClass(Deserializer.fqn(Person2.class, Person2.class));
+        JsonParser parser = (JsonParser)deserializer.newInstance();
+        ObjectWriter objectWriter = (ObjectWriter)serializer.newInstance();
+
+        String json = "{ \"name\": \"The \\\"Dude\\\"\" }";
+        String expected = "The \"Dude\"";
+
+        testEscapes(parser, objectWriter, json, expected);
+    }
+
+    private void testEscapes(JsonParser parser, ObjectWriter objectWriter, String json, String expected) {
+        ByteArrayParserContext ctx = new ByteArrayParserContext(parser.parser());
+        Assertions.assertTrue(ctx.parse(json));
+        Person2 person = ctx.target();
+        Assertions.assertEquals(expected, person.getName());
+
+        // serializer
+
+        ByteArrayByteWriter writer = new ByteArrayByteWriter();
+        JsonByteWriter jsonWriter = new JsonByteWriter(writer);
+        objectWriter.write(jsonWriter, person);
+
+        byte[] bytes = writer.getBytes();
+        System.out.println(new String(bytes, JsonByteWriter.UTF8));
+
+        // validate serializer
+
+        ctx = new ByteArrayParserContext(parser.parser());
+        Assertions.assertTrue(ctx.parse(bytes));
+        person = ctx.target();
+        Assertions.assertEquals(expected, person.getName());
+    }
 }

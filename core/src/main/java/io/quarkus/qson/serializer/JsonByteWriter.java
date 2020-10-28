@@ -29,7 +29,6 @@ public class JsonByteWriter implements JsonWriter {
     @Override
     public void writeRCurley() {
         this.writer.write(IntChar.INT_RCURLY);
-
     }
 
     @Override
@@ -88,9 +87,7 @@ public class JsonByteWriter implements JsonWriter {
 
     @Override
     public void write(char val) {
-        writer.write(IntChar.INT_QUOTE);
-        writer.write(val);
-        writer.write(IntChar.INT_QUOTE);
+        write(Character.toString(val));
     }
 
     @Override
@@ -141,8 +138,105 @@ public class JsonByteWriter implements JsonWriter {
     @Override
     public void write(String val) {
         writer.write(IntChar.INT_QUOTE);
-        writer.write(val.getBytes(UTF8));
+        final int[] escCodes = sOutputEscapes128;
+        for (int i = 0; i < val.length(); i++) {
+            int ch = val.charAt(i);
+            if (ch <= 0x7F) {
+                int escape = escCodes[ch];
+                if (escape == 0) {
+                    writer.write(ch);
+                } else if (escape > 0) { // 2-char escape
+                    writer.write(IntChar.INT_BACKSLASH);
+                    writer.write(escape);
+                } else {
+                    // ctrl-char, 6-byte escape...
+                   writeGenericEscape(ch);
+                }
+            } else if (ch <= 0x7FF) { // fine, just needs 2 byte output
+                writer.write(0xc0 | (ch >> 6));
+                writer.write(0x80 | (ch & 0x3f));
+            } else {
+                outputMultiByteChar(ch);
+            }
+        }
         writer.write(IntChar.INT_QUOTE);
+    }
+
+    private final static int[] HEX_CHARS;
+    static {
+        String hex = "0123456789ABCDEF";
+        int len = hex.length();
+        HEX_CHARS = new int[len];
+        for (int i = 0; i < len; ++i) {
+            HEX_CHARS[i] = hex.charAt(i);
+        }
+    }
+
+
+    private void writeGenericEscape(int charToEscape)
+    {
+        writer.write(IntChar.INT_BACKSLASH);
+        writer.write(IntChar.INT_u);
+        if (charToEscape > 0xFF) {
+            int hi = (charToEscape >> 8) & 0xFF;
+            writer.write(HEX_CHARS[hi >> 4]);
+            writer.write(HEX_CHARS[hi & 0xF]);
+            charToEscape &= 0xFF;
+        } else {
+            writer.write(IntChar.INT_0);
+            writer.write(IntChar.INT_0);
+        }
+        // We know it's a control char, so only the last 2 chars are non-0
+        writer.write(HEX_CHARS[charToEscape >> 4]);
+        writer.write(HEX_CHARS[charToEscape & 0xF]);
+    }
+
+    public final static int SURR1_FIRST = 0xD800;
+    public final static int SURR1_LAST = 0xDBFF;
+    public final static int SURR2_FIRST = 0xDC00;
+    public final static int SURR2_LAST = 0xDFFF;
+
+
+    private final void outputMultiByteChar(int ch)
+    {
+        if (ch >= SURR1_FIRST && ch <= SURR2_LAST) { // yes, outside of BMP; add an escape
+            writer.write(IntChar.INT_BACKSLASH);
+            writer.write(IntChar.INT_u);
+
+            writer.write(HEX_CHARS[(ch >> 12) & 0xF]);
+            writer.write(HEX_CHARS[(ch >> 8) & 0xF]);
+            writer.write(HEX_CHARS[(ch >> 4) & 0xF]);
+            writer.write(HEX_CHARS[ch & 0xF]);
+        } else {
+            writer.write(0xe0 | (ch >> 12));
+            writer.write(0x80 | ((ch >> 6) & 0x3f));
+            writer.write(0x80 | (ch & 0x3f));
+        }
+    }
+
+
+
+    /**
+     * Lookup table used for determining which output characters in
+     * 7-bit ASCII range need to be quoted.
+     */
+    private final static int[] sOutputEscapes128;
+    static {
+        int[] table = new int[128];
+        // Control chars need generic escape sequence
+        for (int i = 0; i < 32; ++i) {
+            table[i] = -1;
+        }
+        // Others (and some within that range too) have explicit shorter sequences
+        table['"'] = '"';
+        table['\\'] = '\\';
+        // Escaping of slash is optional, so let's not add it
+        table[0x08] = 'b';
+        table[0x09] = 't';
+        table[0x0C] = 'f';
+        table[0x0A] = 'n';
+        table[0x0D] = 'r';
+        sOutputEscapes128 = table;
     }
 
     @Override

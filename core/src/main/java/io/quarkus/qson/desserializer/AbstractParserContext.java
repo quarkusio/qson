@@ -64,6 +64,7 @@ public abstract class AbstractParserContext implements ParserContext {
 
     @Override
     public void startToken() {
+        escaped = false;
         buildingToken = true;
         tokenStart = ptr - 1;
     }
@@ -79,12 +80,18 @@ public abstract class AbstractParserContext implements ParserContext {
          return 0;
     }
 
+    protected boolean escaped = false;
+
     @Override
     public int skipToQuote() {
         int ch = 0;
         do {
             ch = consume();
-            if (ch != INT_QUOTE) continue;
+            // make sure that last character wasn't escape character
+            if (ch != INT_QUOTE || (escaped && ch == INT_QUOTE)) {
+                if (ch != 0) escaped = escaped ? false : ch == INT_BACKSLASH;
+                continue;
+            }
             return ch;
         } while (ch != 0);
         return 0;

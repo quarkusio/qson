@@ -5,16 +5,6 @@ import java.util.Arrays;
 import static io.quarkus.qson.IntChar.*;
 
 public class ParsePrimitives {
-    static int[] TRUE_VALUE = {INT_t, INT_r, INT_u, INT_e};
-    static int[] FALSE_VALUE = {INT_f, INT_a, INT_l, INT_s, INT_e};
-
-    /*
-    public static String readString(byte[] buffer, int tokenStart, int tokenEnd) {
-        char[] charbuf = new char[tokenEnd - tokenStart];
-        for (int i = 0; i < tokenEnd - tokenStart; i++) charbuf[i] = (char)(buffer[tokenStart + i] & 0xFF);
-        return new String(charbuf);
-    }
-    */
 
     public static String readString(byte[] buffer, int tokenStart, int tokenEnd) {
         char[] charbuf = new char[tokenEnd - tokenStart];
@@ -63,7 +53,7 @@ public class ParsePrimitives {
                     int value = 0;
                     for (int i = 0; i < 4; ++i) {
                         int ch = buffer[ptr++] & 0xFF;
-                        int digit = sHexValues[ch & 0xFF];
+                        int digit = CharArrays.sHexValues[ch & 0xFF];
                         if (digit < 0) {
                             throw new RuntimeException("expected a hex-digit for character escape sequence");
                         }
@@ -73,34 +63,54 @@ public class ParsePrimitives {
                 }
             } else {
                 int tmp = c & 0xF0; // mask out top 4 bits to test for multibyte
-                if (tmp == 0xC0) {
+                String hex = Integer.toHexString(c);
+                String tmphex = Integer.toHexString(tmp);
+                if (tmp == 0xC0 || tmp == 0xD0) {
                     // 2 byte
+                    int d = (int) buffer[ptr++];
+                    if ((d & 0xC0) != 0x080) {
+                        throw new RuntimeException("Invalid UTF8 2 byte encoding");
+                    }
+                    c = ((c & 0x1F) << 6) | (d & 0x3F);
                 } else if (tmp == 0xE0) {
                     // 3 byte
+                    c &= 0x0F;
+                    int d = (int) buffer[ptr++];
+                    if ((d & 0xC0) != 0x080) {
+                        throw new RuntimeException("Invalid UTF8 3 byte encoding");
+                    }
+                    c = (c << 6) | (d & 0x3F);
+                    d = (int) buffer[ptr++];
+                    if ((d & 0xC0) != 0x080) {
+                        throw new RuntimeException("Invalid UTF8 3 byte encoding");
+                    }
+                    c = (c << 6) | (d & 0x3F);
                 } else if (tmp == 0xF0) {
                     // 4 byte
-                } else {
-                    charbuf[count++] = (char) c;
+                    int d = (int) buffer[ptr++];
+                    if ((d & 0xC0) != 0x080) {
+                        throw new RuntimeException("Invalid UTF8 4 byte encoding");
+                    }
+                    c = ((c & 0x07) << 6) | (d & 0x3F);
+                    d = (int) buffer[ptr++];
+                    if ((d & 0xC0) != 0x080) {
+                        throw new RuntimeException("Invalid UTF8 4 byte encoding");
+                    }
+                    c = (c << 6) | (d & 0x3F);
+                     d = (int) buffer[ptr++];
+                    if ((d & 0xC0) != 0x080) {
+                        throw new RuntimeException("Invalid UTF8 4 byte encoding");
+                    }
+                    c =  ((c << 6) | (d & 0x3F)) - 0x10000;
+                    charbuf[count++] = (char) (0xD800 | (c >> 10));
+                    c = 0xDC00 | (c & 0x3FF);
                 }
+                charbuf[count++] = (char) c;
             }
 
         }
         return new String(charbuf, 0, count);
     }
-
-    private final static int[] sHexValues = new int[256];
-
-    static {
-        Arrays.fill(sHexValues, -1);
-        for (int i = 0; i < 10; ++i) {
-            sHexValues['0' + i] = i;
-        }
-        for (int i = 0; i < 6; ++i) {
-            sHexValues['a' + i] = 10 + i;
-            sHexValues['A' + i] = 10 + i;
-        }
-    }
-
 
     public static boolean readBoolean(byte[] buffer, int tokenStart, int tokenEnd) {
         if (tokenStart < 0) throw new RuntimeException("Token not started.");
@@ -108,14 +118,14 @@ public class ParsePrimitives {
         int len = tokenEnd - tokenStart;
         if (len == 4) {
             for (int i = 0; i < 4; i++) {
-                if (TRUE_VALUE[i] != ((int) buffer[tokenStart + i] & 0xFF)) {
+                if (CharArrays.TRUE_VALUE[i] != ((int) buffer[tokenStart + i] & 0xFF)) {
                     break;
                 }
             }
             return true;
         } else if (len == 5) {
             for (int i = 0; i < 5; i++) {
-                if (FALSE_VALUE[i] != ((int) buffer[tokenStart + i] & 0xFF)) {
+                if (CharArrays.FALSE_VALUE[i] != ((int) buffer[tokenStart + i] & 0xFF)) {
                     break;
                 }
             }

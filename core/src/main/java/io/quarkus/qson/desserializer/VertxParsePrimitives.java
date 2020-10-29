@@ -5,29 +5,127 @@ import io.vertx.core.buffer.Buffer;
 import static io.quarkus.qson.IntChar.*;
 
 public class VertxParsePrimitives {
-    static int[] TRUE_VALUE = {INT_t, INT_r, INT_u, INT_e};
-    static int[] FALSE_VALUE = {INT_f, INT_a, INT_l, INT_s, INT_e};
-
     public static String readString(Buffer buffer, int tokenStart, int tokenEnd) {
         char[] charbuf = new char[tokenEnd - tokenStart];
-        for (int i = 0; i < tokenEnd - tokenStart; i++) charbuf[i] = (char)(buffer.getByte(tokenStart + i) & 0xFF);
-        return new String(charbuf);
+        int count = 0;
+        int ptr = tokenStart;
+        while (ptr < tokenEnd) {
+            int c = buffer.getByte(ptr++) & 0xFF;
+            if (c == '\\') {
+                c = buffer.getByte(ptr++) & 0xFF;
+                boolean encoded = false;
+                switch (c) {
+                    // First, ones that are mapped
+                    case 'b':
+                        charbuf[count++] = '\b';
+                        break;
+                    case 't':
+                        charbuf[count++] = '\t';
+                        break;
+                    case 'n':
+                        charbuf[count++] = '\n';
+                        break;
+                    case 'f':
+                        charbuf[count++] = '\f';
+                        break;
+                    case 'r':
+                        charbuf[count++] = '\r';
+                        break;
+
+                    // And these are to be returned as they are
+                    case '"':
+                    case '/':
+                    case '\\':
+                        charbuf[count++] = (char) c;
+                        break;
+
+                    case 'u': // and finally hex-escaped
+                        encoded = true;
+                        break;
+
+                    default:
+                        throw new RuntimeException("Unknown character format in string");
+                }
+
+                if (encoded) {
+                    // Ok, a hex escape. Need 4 characters
+                    int value = 0;
+                    for (int i = 0; i < 4; ++i) {
+                        int ch = buffer.getByte(ptr++) & 0xFF;
+                        int digit = CharArrays.sHexValues[ch & 0xFF];
+                        if (digit < 0) {
+                            throw new RuntimeException("expected a hex-digit for character escape sequence");
+                        }
+                        value = (value << 4) | digit;
+                    }
+                    charbuf[count++] = (char) value;
+                }
+            } else {
+                int tmp = c & 0xF0; // mask out top 4 bits to test for multibyte
+                String hex = Integer.toHexString(c);
+                String tmphex = Integer.toHexString(tmp);
+                if (tmp == 0xC0 || tmp == 0xD0) {
+                    // 2 byte
+                    int d = (int) buffer.getByte(ptr++);
+                    if ((d & 0xC0) != 0x080) {
+                        throw new RuntimeException("Invalid UTF8 2 byte encoding");
+                    }
+                    c = ((c & 0x1F) << 6) | (d & 0x3F);
+                } else if (tmp == 0xE0) {
+                    // 3 byte
+                    c &= 0x0F;
+                    int d = (int) buffer.getByte(ptr++);
+                    if ((d & 0xC0) != 0x080) {
+                        throw new RuntimeException("Invalid UTF8 3 byte encoding");
+                    }
+                    c = (c << 6) | (d & 0x3F);
+                    d = (int) buffer.getByte(ptr++);
+                    if ((d & 0xC0) != 0x080) {
+                        throw new RuntimeException("Invalid UTF8 3 byte encoding");
+                    }
+                    c = (c << 6) | (d & 0x3F);
+                } else if (tmp == 0xF0) {
+                    // 4 byte
+                    int d = (int) buffer.getByte(ptr++);
+                    if ((d & 0xC0) != 0x080) {
+                        throw new RuntimeException("Invalid UTF8 4 byte encoding");
+                    }
+                    c = ((c & 0x07) << 6) | (d & 0x3F);
+                    d = (int) buffer.getByte(ptr++);
+                    if ((d & 0xC0) != 0x080) {
+                        throw new RuntimeException("Invalid UTF8 4 byte encoding");
+                    }
+                    c = (c << 6) | (d & 0x3F);
+                    d = (int) buffer.getByte(ptr++);
+                    if ((d & 0xC0) != 0x080) {
+                        throw new RuntimeException("Invalid UTF8 4 byte encoding");
+                    }
+                    c =  ((c << 6) | (d & 0x3F)) - 0x10000;
+                    charbuf[count++] = (char) (0xD800 | (c >> 10));
+                    c = 0xDC00 | (c & 0x3FF);
+                }
+                charbuf[count++] = (char) c;
+            }
+
+        }
+        return new String(charbuf, 0, count);
     }
 
-    public static boolean readBoolean(Buffer buffer, int tokenStart, int tokenEnd) {
+
+     public static boolean readBoolean(Buffer buffer, int tokenStart, int tokenEnd) {
         if (tokenStart < 0) throw new RuntimeException("Token not started.");
         if (tokenEnd < 0) throw new RuntimeException("Token not ended.");
         int len = tokenEnd - tokenStart;
         if (len == 4) {
             for (int i = 0; i < 4; i++) {
-                if (TRUE_VALUE[i] != ((int)buffer.getByte(tokenStart + i) & 0xFF)) {
+                if (CharArrays.TRUE_VALUE[i] != ((int)buffer.getByte(tokenStart + i) & 0xFF)) {
                     break;
                 }
             }
             return true;
         } else if (len == 5) {
             for (int i = 0; i < 5; i++) {
-                if (FALSE_VALUE[i] != ((int)buffer.getByte(tokenStart + i) & 0xFF)) {
+                if (CharArrays.FALSE_VALUE[i] != ((int)buffer.getByte(tokenStart + i) & 0xFF)) {
                     break;
                 }
             }

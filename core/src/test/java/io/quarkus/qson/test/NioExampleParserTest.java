@@ -1,24 +1,14 @@
 package io.quarkus.qson.test;
 
-import com.fasterxml.jackson.databind.DeserializationFeature;
-import com.fasterxml.jackson.databind.MapperFeature;
-import com.fasterxml.jackson.databind.ObjectMapper;
-import com.fasterxml.jackson.databind.ObjectReader;
-import io.netty.buffer.ByteBuf;
-import io.netty.buffer.ByteBufInputStream;
 import io.quarkus.qson.desserializer.ByteArrayParserContext;
-import io.quarkus.qson.desserializer.ByteBufParserContext;
 import io.quarkus.qson.desserializer.GenericParser;
 import io.quarkus.qson.desserializer.JsonParser;
 import io.quarkus.qson.desserializer.ParserContext;
 import io.quarkus.qson.desserializer.StringParser;
 import io.quarkus.qson.desserializer.VertxBufferParserContext;
-import io.vertx.core.Vertx;
-import io.vertx.core.buffer.Buffer;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
 
-import java.io.InputStream;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
@@ -232,35 +222,8 @@ public class NioExampleParserTest {
     }
 
     @Test
-    public void testParserByteBuf() {
-        for (int i = 1; i <= json.length(); i++) {
-            System.out.println("Buffer size: " + i);
-            List<String> breakup = breakup(json, i);
-            ByteBufParserContext ctx = new ByteBufParserContext(NioPersonParser.PARSER.parser());
-            for (String str : breakup) {
-                if (ctx.parse(str)) break;
-            }
-            Person person = ctx.target();
-            validatePerson(person);
-
-        }
-        ByteBufParserContext ctx = new ByteBufParserContext(NioPersonParser.PARSER.parser());
-        Assertions.assertTrue(ctx.parse(json));
-        Person person = ctx.target();
-        validatePerson(person);
-    }
-
-    @Test
     public void testParserVertxSolo() {
         VertxBufferParserContext ctx = new VertxBufferParserContext(NioPersonParser.PARSER.parser());
-        Assertions.assertTrue(ctx.parse(json));
-        Person person = ctx.target();
-        validatePerson(person);
-    }
-
-    @Test
-    public void testParserByteBufSolo() {
-        ByteBufParserContext ctx = new ByteBufParserContext(NioPersonParser.PARSER.parser());
         Assertions.assertTrue(ctx.parse(json));
         Person person = ctx.target();
         validatePerson(person);
@@ -425,85 +388,5 @@ public class NioExampleParserTest {
         Assertions.assertEquals("John", ((Map)list.get(4)).get("name"));
         Assertions.assertEquals(true, ((Map)list.get(4)).get("married"));
 
-    }
-
-    @Test
-    public void testVsJackson() throws Exception {
-        ObjectMapper mapper = new ObjectMapper().configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false)
-                .configure(MapperFeature.ACCEPT_CASE_INSENSITIVE_PROPERTIES, true);
-        ObjectReader reader = mapper.readerFor(Person.class);
-        JsonParser parser = NioPersonParser.PARSER;
-        byte[] array = json.getBytes("UTF-8");
-        Buffer buffer = Buffer.buffer(array);
-        ByteBuf byteBuf = buffer.getByteBuf();
-        // warm up
-        int ITERATIONS = 10000;
-        for (int i = 0; i < ITERATIONS; i++) {
-            reader.readValue(array);
-            new ByteArrayParserContext(parser.parser()).parse(array);
-            new VertxBufferParserContext(parser.parser()).parse(buffer);
-            new ByteBufParserContext(parser.parser()).parse(byteBuf);
-            ByteBuf buf = buffer.getByteBuf();
-            reader.readValue((InputStream)new ByteBufInputStream(buf));
-        }
-        long start = 0;
-        System.gc();
-        Thread.sleep(100);
-
-        start = System.currentTimeMillis();
-        for (int i = 0; i < ITERATIONS; i++) {
-            new ByteArrayParserContext(parser.parser()).parse(array);
-        }
-        System.out.println("Nio byte array took: " + (System.currentTimeMillis() - start) + " (ms)");
-        System.gc();
-        Thread.sleep(100);
-
-        start = System.currentTimeMillis();
-        for (int i = 0; i < ITERATIONS; i++) {
-            new VertxBufferParserContext(parser.parser()).parse(buffer);
-        }
-        System.out.println("Nio vertx buffer took: " + (System.currentTimeMillis() - start) + " (ms)");
-
-        System.gc();
-        Thread.sleep(100);
-
-        start = System.currentTimeMillis();
-        for (int i = 0; i < ITERATIONS; i++) {
-            new ByteBufParserContext(parser.parser()).parse(byteBuf);
-        }
-        System.out.println("Nio bytebuf buffer took: " + (System.currentTimeMillis() - start) + " (ms)");
-
-        System.gc();
-        Thread.sleep(100);
-
-
-        start = System.currentTimeMillis();
-        for (int i = 0; i < ITERATIONS; i++) {
-            ByteBuf buf = buffer.getByteBuf();
-            reader.readValue((InputStream)new ByteBufInputStream(buf));
-        }
-        System.out.println("Jackson ByteBufInputStream took: " + (System.currentTimeMillis() - start) + " (ms)");
-
-        System.gc();
-        Thread.sleep(100);
-
-
-        start = System.currentTimeMillis();
-        for (int i = 0; i < ITERATIONS; i++) {
-            reader.readValue(array);
-        }
-        System.out.println("Jackson took: " + (System.currentTimeMillis() - start) + " (ms)");
-    }
-
-    @Test
-    public void testProfileVertx() throws Exception {
-        JsonParser parser = NioPersonParser.PARSER;
-        byte[] array = json.getBytes("UTF-8");
-        Buffer buffer = Buffer.buffer(array);
-        // warm up
-        int ITERATIONS = 100000;
-        for (int i = 0; i < ITERATIONS; i++) {
-            new VertxBufferParserContext(parser.parser()).parse(buffer);
-        }
     }
 }

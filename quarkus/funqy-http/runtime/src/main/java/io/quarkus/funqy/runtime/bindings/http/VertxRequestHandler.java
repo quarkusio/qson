@@ -7,7 +7,6 @@ import io.quarkus.funqy.runtime.FunctionRecorder;
 import io.quarkus.funqy.runtime.RequestContextImpl;
 import io.quarkus.funqy.runtime.query.QueryReader;
 import io.quarkus.qson.desserializer.ByteArrayParserContext;
-import io.quarkus.qson.desserializer.ByteBufParserContext;
 import io.quarkus.qson.desserializer.JsonParser;
 import io.quarkus.qson.desserializer.VertxBufferParserContext;
 import io.quarkus.qson.serializer.ByteArrayByteWriter;
@@ -27,7 +26,6 @@ import org.jboss.logging.Logger;
 
 import javax.enterprise.inject.Instance;
 import javax.enterprise.inject.spi.CDI;
-import java.io.InputStream;
 import java.util.concurrent.Executor;
 import java.util.function.Consumer;
 

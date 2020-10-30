@@ -59,6 +59,9 @@ public class Deserializer {
     public static Builder create(Class targetType) {
         return new Builder().type(targetType);
     }
+    public static Builder create(Class targetType, Type generic) {
+        return new Builder().type(targetType).generic(generic);
+    }
 
     public static class Builder {
         Class targetType;
@@ -66,6 +69,7 @@ public class Deserializer {
         ClassOutput output;
         String className;
         String keyName;
+        Map<Class, Type> referenced;
 
         private Builder() {
         }
@@ -93,6 +97,9 @@ public class Deserializer {
             return keyName;
         }
 
+        public Map<Class, Type> referenced() {
+            return referenced;
+        }
         public Builder generate() {
             if (targetGenericType == null) targetGenericType = targetType;
             if (int.class.equals(targetType)
@@ -151,7 +158,9 @@ public class Deserializer {
                 className = GenericParser.class.getName();
                 return this;
             }
-            new Deserializer(output, targetType, targetGenericType).generate();
+            Deserializer deserializer = new Deserializer(output, targetType, targetGenericType);
+            deserializer.generate();
+            referenced = deserializer.referenced;
             className = fqn(targetType, targetGenericType);
             keyName = targetGenericType.getTypeName();
             return this;
@@ -163,7 +172,7 @@ public class Deserializer {
     Class targetType;
     Type targetGenericType;
     List<Setter> setters = new LinkedList<>();
-    Map<Class, Type> requiredParesrs = new HashMap<>();
+    Map<Class, Type> referenced = new HashMap<>();
 
     public static String name(Class clz, Type genericType) {
         return clz.getSimpleName() + "__Parser";
@@ -768,6 +777,7 @@ public class Deserializer {
                 name = m.getName().substring(3).toLowerCase();
             }
             setters.add(new Setter(name, m, paramType, paramGenericType));
+            Types.addReference(referenced, paramType, paramGenericType);
         }
         Collections.sort(setters, (setter, t1) -> setter.name.compareTo(t1.name));
     }

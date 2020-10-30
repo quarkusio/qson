@@ -48,12 +48,17 @@ public class Serializer {
         return new Builder().type(targetType);
     }
 
+    public static Builder create(Class targetType, Type genericType) {
+        return new Builder().type(targetType).generic(genericType);
+    }
+
     public static class Builder {
         Class targetType;
         Type targetGenericType;
         ClassOutput output;
         String className;
         String keyName;
+        Map<Class, Type> referenced;
 
         private Builder() {
         }
@@ -80,6 +85,10 @@ public class Serializer {
             return keyName;
         }
 
+        public Map<Class, Type> referenced() {
+            return referenced;
+        }
+
         public Builder generate() {
             if (isGeneric(targetType, targetGenericType)) {
                 className = GenericObjectWriter.class.getName();
@@ -87,7 +96,10 @@ public class Serializer {
                 return this;
             }
             if (targetGenericType == null) targetGenericType = targetType;
-            new Serializer(output, targetType, targetGenericType).generate();
+            Serializer s = new Serializer(output, targetType, targetGenericType);
+            s.generate();
+            referenced = s.referenced;
+
             className = fqn(targetType, targetGenericType);
             keyName = targetGenericType.getTypeName();
             return this;
@@ -99,7 +111,7 @@ public class Serializer {
     Class targetType;
     Type targetGenericType;
     List<Getter> getters = new LinkedList<>();
-    HashMap<Class, Type> needed = new HashMap<>();
+    Map<Class, Type> referenced = new HashMap<>();
 
     public static String name(Class clz, Type genericType) {
         return clz.getSimpleName() + "__Serializer";
@@ -383,7 +395,6 @@ public class Serializer {
                         comma);
                 if (!forceComma) method.assign(comma, result);
             } else {
-                needed.put(getter.type, getter.genericType);
                 ResultHandle result = method.invokeInterfaceMethod(MethodDescriptor.ofMethod(JsonWriter.class, "writeObjectProperty", boolean.class, String.class, Object.class, ObjectWriter.class, boolean.class), jsonWriter,
                         method.load(getter.name),
                         method.invokeVirtualMethod(MethodDescriptor.ofMethod(targetType, getter.method.getName(), getter.type), target),
@@ -535,6 +546,7 @@ public class Serializer {
                 }
             }
             getters.add(new Getter(name, name, m, paramType, paramGenericType));
+            Types.addReference(referenced, paramType, paramGenericType);
         }
         Collections.sort(getters, (getter, t1) -> getter.name.compareTo(t1.name));
     }

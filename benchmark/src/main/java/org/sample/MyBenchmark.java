@@ -189,7 +189,7 @@ public class MyBenchmark {
 
     @Benchmark
     public Object testQsonParser(QsonParser q) {
-        ByteArrayParserContext ctx = new ByteArrayParserContext(q.parser.parser());
+        ByteArrayParserContext ctx = new ByteArrayParserContext(q.parser.startState());
         ctx.parse(q.jsonBytes);
         return ctx.target();
     }

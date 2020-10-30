@@ -15,7 +15,7 @@ public class BaseParser implements JsonParser {
     }
 
     @Override
-    public ParserState parser() {
+    public ParserState startState() {
         return start;
     }
 

@@ -6,8 +6,49 @@ import java.lang.reflect.ParameterizedType;
 import java.lang.reflect.Type;
 import java.lang.reflect.TypeVariable;
 import java.lang.reflect.WildcardType;
+import java.util.List;
+import java.util.Map;
+import java.util.Set;
 
 public class Types {
+    /**
+     * Checks to see if clz is a user object or contains one (i.e. List<UserObject>)
+     * If it does, it adds the class and generic type to the referenceMap
+     *
+     * @param referenceMap
+     * @param clz
+     * @param genericType
+     */
+    public static void addReference(Map<Class, Type> referenceMap, Class clz, Type genericType) {
+        if (clz.isPrimitive()) return;
+        if (clz.equals(String.class)
+                || clz.equals(Integer.class)
+                || clz.equals(Short.class)
+                || clz.equals(Long.class)
+                || clz.equals(Byte.class)
+                || clz.equals(Boolean.class)
+                || clz.equals(Double.class)
+                || clz.equals(Float.class)
+                || clz.equals(Character.class)) {
+            return;
+        }
+        if (Map.class.isAssignableFrom(clz)
+                || List.class.isAssignableFrom(clz)
+                || Set.class.isAssignableFrom(clz)) {
+            if (genericType != null && genericType instanceof ParameterizedType) {
+                ParameterizedType pt = (ParameterizedType)genericType;
+                if (Map.class.isAssignableFrom(clz)) {
+                    addReference(referenceMap, getRawType(pt.getActualTypeArguments()[1]), pt.getActualTypeArguments()[1]);
+                } else {
+                    addReference(referenceMap, getRawType(pt.getActualTypeArguments()[0]), pt.getActualTypeArguments()[0]);
+                }
+
+            }
+        } else {
+            referenceMap.put(clz, genericType);
+        }
+    }
+
     public static <T> Class<T> getRawType(Type type) {
         if (type instanceof Class<?>) {
             return (Class<T>) type;

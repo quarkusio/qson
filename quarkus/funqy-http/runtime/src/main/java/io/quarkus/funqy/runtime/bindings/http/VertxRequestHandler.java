@@ -112,7 +112,7 @@ public class VertxRequestHandler implements Handler<RoutingContext> {
             if (buff.length() > 0) {
                 JsonParser reader = (JsonParser) invoker.getBindingContext().get(JsonParser.class.getName());
                 try {
-                    VertxBufferParserContext ctx = new VertxBufferParserContext(reader.parser());
+                    VertxBufferParserContext ctx = new VertxBufferParserContext(reader.startState());
                     // todo handle integer case where parse returns false as it can't know its the end
                     ctx.parse(buff);
                     input = reader.getTarget(ctx);
@@ -136,7 +136,7 @@ public class VertxRequestHandler implements Handler<RoutingContext> {
                 JsonParser reader = (JsonParser) invoker.getBindingContext().get(JsonParser.class.getName());
                 try {
                     byte[] bytes = buff.getBytes();
-                    ByteArrayParserContext ctx = new ByteArrayParserContext(reader.parser());
+                    ByteArrayParserContext ctx = new ByteArrayParserContext(reader.startState());
                     // todo handle integer case where parse returns false as it can't know its the end
                     ctx.parse(bytes);
                     input = reader.getTarget(ctx);

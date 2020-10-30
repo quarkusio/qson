@@ -20,7 +20,7 @@ import static io.quarkus.qson.serializer.JsonByteWriter.UTF8;
 public class TestCharEscaping
 {
     private void _testSimpleEscaping(String json, String expected) {
-        ByteArrayParserContext ctx = new ByteArrayParserContext(GenericParser.PARSER.parser());
+        ByteArrayParserContext ctx = new ByteArrayParserContext(GenericParser.PARSER.startState());
         Assertions.assertTrue(ctx.parse(json));
         List list = ctx.target();
         Assertions.assertEquals(expected, list.get(0));
@@ -37,7 +37,7 @@ public class TestCharEscaping
 
     @Test
     public void testSimpleNameEscaping() throws Exception {
-        ByteArrayParserContext ctx = new ByteArrayParserContext(GenericParser.PARSER.parser());
+        ByteArrayParserContext ctx = new ByteArrayParserContext(GenericParser.PARSER.startState());
         Assertions.assertTrue(ctx.parse("{\"hello\\\"\" : 42}"));
         Map<String, Object> map = ctx.target();
         Long l = (Long)map.get("hello\"");
@@ -49,7 +49,7 @@ public class TestCharEscaping
     {
         // 2-char sequences not allowed:
         String DOC = "[\"\\u41=A\"]";
-        ByteArrayParserContext ctx = new ByteArrayParserContext(GenericParser.PARSER.parser());
+        ByteArrayParserContext ctx = new ByteArrayParserContext(GenericParser.PARSER.startState());
         try {
             ctx.parse(DOC);
             Assertions.fail();
@@ -66,7 +66,7 @@ public class TestCharEscaping
     @Test
     public void test8DigitSequence() throws Exception {
         String DOC = "[\"\\u00411234\"]";
-        ByteArrayParserContext ctx = new ByteArrayParserContext(GenericParser.PARSER.parser());
+        ByteArrayParserContext ctx = new ByteArrayParserContext(GenericParser.PARSER.startState());
         Assertions.assertTrue(ctx.parse(DOC));
         List l = ctx.target();
         Assertions.assertEquals("A1234", l.get(0));
@@ -75,7 +75,7 @@ public class TestCharEscaping
     public void testInvalidEscape() throws Exception
     {
         String DOC = "\"\\u\u0080...\"";
-        ByteArrayParserContext ctx = new ByteArrayParserContext(GenericParser.PARSER.parser());
+        ByteArrayParserContext ctx = new ByteArrayParserContext(GenericParser.PARSER.startState());
         try {
             ctx.parse(DOC);
             Assertions.fail();
@@ -135,7 +135,7 @@ public class TestCharEscaping
         Assertions.assertEquals(target, jackson);
 
         // now test our parser
-        ByteArrayParserContext ctx = new ByteArrayParserContext(GenericParser.PARSER.parser());
+        ByteArrayParserContext ctx = new ByteArrayParserContext(GenericParser.PARSER.startState());
         Assertions.assertTrue(ctx.parse(writer.getBytes()));
         String value = ctx.target();
         Assertions.assertEquals(target, value);
@@ -159,7 +159,7 @@ public class TestCharEscaping
         ByteArrayByteWriter writer = new ByteArrayByteWriter();
         JsonByteWriter jsonWriter = new JsonByteWriter(writer);
         jsonWriter.write(c);
-        ByteArrayParserContext ctx = new ByteArrayParserContext(GenericParser.PARSER.parser());
+        ByteArrayParserContext ctx = new ByteArrayParserContext(GenericParser.PARSER.startState());
         Assertions.assertTrue(ctx.parse(writer.getBytes()));
         String value = ctx.target();
         Assertions.assertEquals(Character.toString(c), value);

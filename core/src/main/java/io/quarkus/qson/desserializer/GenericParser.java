@@ -30,7 +30,7 @@ public class GenericParser extends BaseParser implements JsonParser {
 
 
     @Override
-    public ParserState parser() {
+    public ParserState startState() {
         return value;
     }
 

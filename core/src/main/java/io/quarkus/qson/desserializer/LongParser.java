@@ -2,7 +2,7 @@ package io.quarkus.qson.desserializer;
 
 public class LongParser implements JsonParser {
     @Override
-    public ParserState parser() {
+    public ParserState startState() {
         return ObjectParser.PARSER.startIntegerValue;
     }
 

@@ -6,7 +6,7 @@ public interface JsonParser {
      *
      * @return
      */
-    ParserState parser();
+    ParserState startState();
 
     /**
      * Get end target on successful parse

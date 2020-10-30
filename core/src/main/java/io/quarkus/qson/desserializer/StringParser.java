@@ -2,7 +2,7 @@ package io.quarkus.qson.desserializer;
 
 public class StringParser implements JsonParser {
     @Override
-    public ParserState parser() {
+    public ParserState startState() {
         return ObjectParser.PARSER.startStringValue;
     }
 

@@ -29,18 +29,14 @@ public class FunqyHttpBindingRecorder {
         for (FunctionInvoker invoker : FunctionRecorder.registry.invokers()) {
             try {
                 if (invoker.hasInput()) {
-                    JsonParser reader = QsonRegistry.READERS.get(invoker.getInputGenericType().getTypeName()).newInstance();
+                    JsonParser reader = QsonRegistry.READERS.get(invoker.getInputGenericType().getTypeName());
                     QueryReader queryReader = queryMapper.readerFor(invoker.getInputType(), invoker.getInputGenericType());
                     invoker.getBindingContext().put(JsonParser.class.getName(), reader);
                     invoker.getBindingContext().put(QueryReader.class.getName(), queryReader);
                 }
                 if (invoker.hasOutput()) {
                     String typeName = invoker.getOutputType().getTypeName();
-                    Class<ObjectWriter> objectWriterClass = QsonRegistry.WRITERS.get(typeName);
-                    if (objectWriterClass == null) {
-                        throw new RuntimeException("Failed to find writer for: " + invoker.getName());
-                    }
-                    ObjectWriter writer = objectWriterClass.newInstance();
+                    ObjectWriter writer =  QsonRegistry.WRITERS.get(typeName);
                     invoker.getBindingContext().put(ObjectWriter.class.getName(), writer);
                 }
             } catch (Exception e) {

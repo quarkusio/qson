@@ -158,12 +158,12 @@ public class FunqyHttpBuildStep {
             return;
         if (readers != null) {
             for (GeneratedReader reader : readers) {
-                registry.registerReader(reader.getName(), context.classProxy(reader.getClassName()));
+                registry.registerReader(reader.getName(), context.newInstance(reader.getClassName()));
             }
         }
         if (writers != null) {
             for (GeneratedWriter writer : writers) {
-                registry.registerWriter(writer.getName(), context.classProxy(writer.getClassName()));
+                registry.registerWriter(writer.getName(), context.newInstance(writer.getClassName()));
             }
         }
         // The context path + the resources path

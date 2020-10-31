@@ -12,6 +12,33 @@ import java.util.Set;
 
 public class Types {
     /**
+     * Generate a classname from a pure generic type.  For example List<Foo> to what
+     * a generated class would be for that  List_Foo
+     *
+     * @param type
+     * @return
+     */
+    public static String generatedClassName(Type type) {
+        return generatedClassName("io.quarkus.qson.generated", type);
+    }    /**
+     * Generate a classname from a pure generic type.  For example List<Foo> to what
+     * a generated class would be for that  List_Foo
+     *
+     * @param type
+     * @return
+     */
+    public static String generatedClassName(String packageName, Type type) {
+        String name = type.getTypeName()
+                .replace(" ", "")
+                .replace(',', '$')
+                .replace("<", "_")
+                .replace(">", "")
+                .replace("java.util.", "")
+                .replace("java.lang.", "")
+                .replace('.', '_');
+        return packageName + "." + name;
+    }
+    /**
      * Checks to see if clz is a user object or contains one (i.e. List<UserObject>)
      * If it does, it adds the class and generic type to the referenceMap
      *

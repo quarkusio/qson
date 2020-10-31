@@ -15,5 +15,8 @@ public interface JsonParser {
      * @param <T>
      * @return
      */
-    <T> T getTarget(ParserContext ctx);
+    default
+    <T> T getTarget(ParserContext ctx) {
+        return ctx.target();
+    }
 }

@@ -11,7 +11,14 @@ import io.quarkus.qson.serializer.ObjectWriter;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
 
+import java.lang.reflect.Field;
+import java.util.List;
+import java.util.Map;
+
 public class NioGeneratorTest {
+
+    private Map<String, List<Person2>> raw_map_list_person2;
+
 
     @Test
     public void testDeserializer() throws Exception {
@@ -20,6 +27,16 @@ public class NioGeneratorTest {
         Deserializer.create(Person2.class).output(new TestClassOutput()).generate();
         Serializer.create(Single.class).output(new TestClassOutput()).generate();
         Serializer.create(Person2.class).output(new TestClassOutput()).generate();
+    }
+
+    @Test
+    public void testRawCollection() throws Exception {
+        for (Field f : NioGeneratorTest.class.getDeclaredFields()) {
+            if (f.getName().equals("raw_map_list_person2")) {
+                Deserializer.create(f.getType(), f.getGenericType()).output(new TestClassOutput()).generate();
+                break;
+            }
+        }
     }
 
     static String simpleJson = "{\n" +

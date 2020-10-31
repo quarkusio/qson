@@ -17,6 +17,7 @@ import io.quarkus.qson.desserializer.ByteParser;
 import io.quarkus.qson.desserializer.DoubleParser;
 import io.quarkus.qson.desserializer.FloatParser;
 import io.quarkus.qson.desserializer.IntegerParser;
+import io.quarkus.qson.desserializer.JsonParser;
 import io.quarkus.qson.desserializer.LongParser;
 import io.quarkus.qson.desserializer.ParserContext;
 import io.quarkus.qson.desserializer.ContextValue;
@@ -42,6 +43,7 @@ import java.util.HashMap;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
+import java.util.Random;
 import java.util.Set;
 
 import static org.objectweb.asm.Opcodes.ACC_PUBLIC;
@@ -91,6 +93,18 @@ public class Deserializer {
 
         public String className() {
             return className;
+        }
+
+        /**
+         * If generating a collection class deserializer, use this name instead
+         * of the hardcoded name generated.
+         *
+         * @param name
+         * @return
+         */
+        public Builder collectionClassName(String name) {
+            this.className = name;
+            return this;
         }
 
         public String keyName() {
@@ -152,10 +166,21 @@ public class Deserializer {
                 className = StringParser.class.getName();
                 return this;
             }
-            if (Map.class.equals(targetType)) {
-                // todo handle complex maps where we need to generate a class, for now return generic
+            if (Map.class.equals(targetType)
+                || List.class.equals(targetType)
+                || Set.class.equals(targetType)) {
                 keyName = targetGenericType.getTypeName();
-                className = GenericParser.class.getName();
+                if (targetGenericType instanceof ParameterizedType) {
+                    if (className == null) {
+                        className = Types.generatedClassName(targetGenericType);
+                        className += "__Parser";
+                    }
+                    Deserializer deserializer = new Deserializer(output, className, targetType, targetGenericType);
+                    deserializer.generateCollection();
+                    referenced = deserializer.referenced;
+                } else {
+                    className = GenericParser.class.getName();
+                }
                 return this;
             }
             Deserializer deserializer = new Deserializer(output, targetType, targetGenericType);
@@ -169,10 +194,12 @@ public class Deserializer {
 
     ClassCreator creator;
 
-    Class targetType;
-    Type targetGenericType;
+    final Class targetType;
+    final Type targetGenericType;
     List<Setter> setters = new LinkedList<>();
     Map<Class, Type> referenced = new HashMap<>();
+    final ClassOutput classOutput;
+    final String className;
 
     public static String name(Class clz, Type genericType) {
         return clz.getSimpleName() + "__Parser";
@@ -189,12 +216,39 @@ public class Deserializer {
     Deserializer(ClassOutput classOutput, String className, Class targetType, Type targetGenericType) {
         this.targetType = targetType;
         this.targetGenericType = targetGenericType;
+        this.classOutput = classOutput;
+        this.className = className;
+    }
+
+    void generateCollection() {
         creator = ClassCreator.builder().classOutput(classOutput)
                 .className(className)
-                .superClass(ObjectParser.class).build();
+                .interfaces(JsonParser.class).build();
+        MethodCreator staticConstructor = creator.getMethodCreator(CLINIT, void.class);
+        staticConstructor.setModifiers(ACC_STATIC);
+        collectionField(staticConstructor, targetType, targetGenericType, "collection");
+        staticConstructor.returnValue(null);
+        MethodCreator startState = creator.getMethodCreator("startState", ParserState.class);
+        Class collectionParser;
+        if (Map.class.isAssignableFrom(targetType)) {
+            collectionParser = MapParser.class;
+        } else if (List.class.isAssignableFrom(targetType)) {
+            collectionParser = ListParser.class;
+        } else if (Set.class.isAssignableFrom(targetType)) {
+            collectionParser = SetParser.class;
+        } else {
+            throw new RuntimeException("Unsupported collection type: " + targetType.getName());
+        }
+        ResultHandle collection = startState.readStaticField(FieldDescriptor.of(className, "collection", collectionParser));
+        ResultHandle result = startState.invokeVirtualMethod(MethodDescriptor.ofMethod(collectionParser, "startState", ParserState.class), collection);
+        startState.returnValue(result);
+        creator.close();
     }
 
     void generate() {
+        creator = ClassCreator.builder().classOutput(classOutput)
+                .className(className)
+                .superClass(ObjectParser.class).build();
         findSetters(targetType);
 
         staticInitializer();
@@ -246,9 +300,9 @@ public class Deserializer {
                 Type valueType = pt.getActualTypeArguments()[1];
                 Class valueClass = Types.getRawType(valueType);
 
-                if (Map.class.isAssignableFrom(valueClass) && !valueClass.equals(Map.class)) throw new RuntimeException("Must use java.util.Map for property: " + property);
-                if (List.class.isAssignableFrom(valueClass) && !valueClass.equals(List.class)) throw new RuntimeException("Must use java.util.List for property: " + property);
-                if (Set.class.isAssignableFrom(valueClass) && !valueClass.equals(Set.class)) throw new RuntimeException("Must use java.util.Set for property: " + property);
+                if (Map.class.isAssignableFrom(valueClass) && !valueClass.equals(Map.class)) throw new RuntimeException("Must use java.util.Map for: " + property);
+                if (List.class.isAssignableFrom(valueClass) && !valueClass.equals(List.class)) throw new RuntimeException("Must use java.util.List for: " + property);
+                if (Set.class.isAssignableFrom(valueClass) && !valueClass.equals(Set.class)) throw new RuntimeException("Must use java.util.Set for: " + property);
 
                 if (valueClass.equals(Map.class) || valueClass.equals(List.class) || valueClass.equals(Set.class)) {
                     collectionField(staticConstructor, valueClass, valueType, property + "_n");
@@ -459,7 +513,6 @@ public class Deserializer {
                 return scope.readInstanceField(FieldDescriptor.of(GenericSetParser.class, "continueStartList", ParserState.class), PARSER);
             }
         } else {
-            // todo handle nested collections and maps
             FieldDescriptor parserField = FieldDescriptor.of(fqn(type, genericType), "PARSER", fqn(type, genericType));
             ResultHandle PARSER = scope.readStaticField(parserField);
             return scope.readInstanceField(FieldDescriptor.of(ObjectParser.class, "continueStart", ParserState.class), PARSER);
@@ -761,7 +814,7 @@ public class Deserializer {
     }
 
     private String fqn() {
-        return fqn(targetType, targetGenericType);
+        return className;
     }
 
     private void findSetters(Class clz) {

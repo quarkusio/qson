@@ -77,6 +77,18 @@ public class Serializer {
             this.output = output;
             return this;
         }
+        /**
+         * If generating a collection class deserializer, use this name instead
+         * of the hardcoded name generated.
+         *
+         * @param name
+         * @return
+         */
+        public Builder collectionClassName(String name) {
+            this.className = name;
+            return this;
+        }
+
         public String className() {
             return className;
         }
@@ -90,19 +102,39 @@ public class Serializer {
         }
 
         public Builder generate() {
+            if (Map.class.equals(targetType)
+                    || List.class.equals(targetType)
+                    || Set.class.equals(targetType)) {
+
+            }
+            if (targetGenericType == null) targetGenericType = targetType;
             if (isGeneric(targetType, targetGenericType)) {
+                // use the generic object writer
                 className = GenericObjectWriter.class.getName();
                 keyName = targetGenericType == null ? targetType.getTypeName() : targetGenericType.getTypeName();
                 return this;
-            }
-            if (targetGenericType == null) targetGenericType = targetType;
-            Serializer s = new Serializer(output, targetType, targetGenericType);
-            s.generate();
-            referenced = s.referenced;
+            } else if ((Map.class.isAssignableFrom(targetType)
+                    || List.class.isAssignableFrom(targetType)
+                    || Set.class.isAssignableFrom(targetType)) && hasCollectionWriter(targetType, targetGenericType)) {
+                // generate a writer for the collection
+                if (className == null) {
+                    className = Types.generatedClassName(targetGenericType);
+                    className += "__Serializer";
+                }
+                Serializer s = new Serializer(output, className, targetType, targetGenericType);
+                s.generateCollection();
+                referenced = s.referenced;
+                keyName = targetGenericType.getTypeName();
+                return this;
+            } else {
+                Serializer s = new Serializer(output, targetType, targetGenericType);
+                s.generate();
+                referenced = s.referenced;
 
-            className = fqn(targetType, targetGenericType);
-            keyName = targetGenericType.getTypeName();
-            return this;
+                className = fqn(targetType, targetGenericType);
+                keyName = targetGenericType.getTypeName();
+                return this;
+            }
         }
     }
 
@@ -112,6 +144,7 @@ public class Serializer {
     Type targetGenericType;
     List<Getter> getters = new LinkedList<>();
     Map<Class, Type> referenced = new HashMap<>();
+    String className;
 
     public static String name(Class clz, Type genericType) {
         return clz.getSimpleName() + "__Serializer";
@@ -128,6 +161,7 @@ public class Serializer {
     Serializer(ClassOutput classOutput, String className, Class targetType, Type targetGenericType) {
         this.targetType = targetType;
         this.targetGenericType = targetGenericType;
+        this.className = className;
         creator = ClassCreator.builder().classOutput(classOutput)
                 .className(className)
                 .interfaces(ObjectWriter.class).build();
@@ -137,6 +171,45 @@ public class Serializer {
         findGetters(targetType);
         singleton();
         writeMethod();
+        creator.close();
+    }
+
+    void generateCollection() {
+
+
+        MethodCreator staticConstructor = creator.getMethodCreator(CLINIT, void.class);
+        staticConstructor.setModifiers(ACC_STATIC);
+        collectionProperty(staticConstructor, targetType, targetGenericType, "collection");
+        staticConstructor.returnValue(null);
+
+        MethodCreator method = creator.getMethodCreator("write", void.class, JsonWriter.class, Object.class);
+        ResultHandle jsonWriter = method.getMethodParam(0);
+        AssignableResultHandle target = method.createVariable(targetType);
+        method.assign(target, method.getMethodParam(1));
+
+        if (Map.class.isAssignableFrom(targetType)) {
+            if (hasCollectionWriter(targetType, targetGenericType)) {
+                method.invokeInterfaceMethod(MethodDescriptor.ofMethod(JsonWriter.class, "write", void.class, Map.class, ObjectWriter.class), jsonWriter,
+                        target,
+                        method.readStaticField(FieldDescriptor.of(fqn(), "collection_n", ObjectWriter.class))
+                );
+            } else {
+                method.invokeInterfaceMethod(MethodDescriptor.ofMethod(JsonWriter.class, "write", void.class,Map.class), jsonWriter,
+                        target);
+            }
+        } else {
+            if (hasCollectionWriter(targetType, targetGenericType)) {
+                method.invokeInterfaceMethod(MethodDescriptor.ofMethod(JsonWriter.class, "write", void.class, Collection.class, ObjectWriter.class), jsonWriter,
+                        target,
+                        method.readStaticField(FieldDescriptor.of(fqn(), "collection_n", ObjectWriter.class))
+                );
+            } else {
+                method.invokeInterfaceMethod(MethodDescriptor.ofMethod(JsonWriter.class, "write", void.class, Collection.class), jsonWriter,
+                        target);
+            }
+        }
+        method.returnValue(null);
+
         creator.close();
     }
 
@@ -159,6 +232,10 @@ public class Serializer {
         Type genericType = getter.genericType;
         Class type = getter.type;
         String property = getter.property;
+        collectionProperty(staticConstructor, type, genericType, property);
+    }
+
+    private void collectionProperty(MethodCreator staticConstructor, Class type, Type genericType, String property) {
         if (genericType instanceof ParameterizedType) {
             if (Map.class.isAssignableFrom(type)) {
                 ParameterizedType pt = (ParameterizedType) genericType;
@@ -179,6 +256,7 @@ public class Serializer {
             }
         }
     }
+
     private ResultHandle getNestedValueWriter(MethodCreator staticConstructor, Class type, Type genericType, String property) {
         if (!hasNestedWriter(type, genericType)) return null;
         if (isUserObject(type)) {
@@ -432,7 +510,7 @@ public class Serializer {
 
     }
 
-    private boolean isUserObject(Class type) {
+    private static boolean isUserObject(Class type) {
         if (type.isPrimitive()) return false;
         if (type.equals(String.class)
                 || type.equals(Integer.class)
@@ -468,9 +546,7 @@ public class Serializer {
         if (Map.class.isAssignableFrom(type)
                 || List.class.isAssignableFrom(type)
                 || Set.class.isAssignableFrom(type)) {
-            // todo for now, return true until we can support generating complex generics
-            //return generic == null || !(generic instanceof ParameterizedType);
-            return true;
+            return hasCollectionWriter(type, generic) == false;
         }
         return false;
     }
@@ -478,6 +554,10 @@ public class Serializer {
     private boolean hasCollectionWriter(Getter getter) {
         Class type = getter.type;
         Type genericType = getter.genericType;
+        return hasCollectionWriter(type, genericType);
+    }
+
+    private static boolean hasCollectionWriter(Class type, Type genericType) {
         if (!(genericType instanceof ParameterizedType)) return false;
         if (Map.class.isAssignableFrom(type)) {
             ParameterizedType pt = (ParameterizedType) genericType;
@@ -494,7 +574,7 @@ public class Serializer {
         }
     }
 
-    private boolean hasNestedWriter(Class type, Type genericType) {
+    private static boolean hasNestedWriter(Class type, Type genericType) {
         if (isUserObject(type)) return true;
         if (!Map.class.isAssignableFrom(type)
                 && !List.class.isAssignableFrom(type)
@@ -521,7 +601,7 @@ public class Serializer {
 
 
     private String fqn() {
-        return fqn(targetType, targetGenericType);
+        return className;
     }
 
     private void findGetters(Class clz) {

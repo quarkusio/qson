@@ -18,6 +18,7 @@ import java.util.Map;
 public class NioGeneratorTest {
 
     private Map<String, List<Person2>> raw_map_list_person2;
+    private Map<String, List<String>> raw_map_list_string;
 
 
     @Test
@@ -33,8 +34,17 @@ public class NioGeneratorTest {
     public void testRawCollection() throws Exception {
         for (Field f : NioGeneratorTest.class.getDeclaredFields()) {
             if (f.getName().equals("raw_map_list_person2")) {
-                Deserializer.create(f.getType(), f.getGenericType()).output(new TestClassOutput()).generate();
-                break;
+                Deserializer.Builder builder = Deserializer.create(f.getType(), f.getGenericType()).output(new TestClassOutput());
+                builder.generate();
+                Serializer.Builder sBuilder = Serializer.create(f.getType(), f.getGenericType()).output(new TestClassOutput());
+                sBuilder.generate();
+            } else if (f.getName().equals("raw_map_list_string")) {
+                Deserializer.Builder builder = Deserializer.create(f.getType(), f.getGenericType()).output(new TestClassOutput());
+                builder.generate();
+                System.out.println("raw_map_list_string deserializer: " + builder.className());
+                Serializer.Builder sBuilder = Serializer.create(f.getType(), f.getGenericType()).output(new TestClassOutput());
+                sBuilder.generate();
+                System.out.println("raw_map_list_string serializer: " + sBuilder.className());
             }
         }
     }

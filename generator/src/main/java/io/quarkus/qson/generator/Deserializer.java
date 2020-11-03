@@ -71,7 +71,7 @@ public class Deserializer {
         ClassOutput output;
         String className;
         String keyName;
-        Map<Class, Type> referenced;
+        Map<Class, Type> referenced = new HashMap<>();
 
         private Builder() {
         }

@@ -20,9 +20,9 @@
         </dependency>
         <dependency>
             <groupId>io.quarkus.qson</groupId>
-            <artifactId>qson-generator</artifactId>
+            <artifactId>quarkus-qson-deployment</artifactId>
         </dependency>
-        <dependency>
+         <dependency>
             <groupId>io.quarkus</groupId>
             <artifactId>quarkus-funqy-server-common-deployment</artifactId>
         </dependency>

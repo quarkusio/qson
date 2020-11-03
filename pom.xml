@@ -26,6 +26,7 @@
         <module>core</module>
         <module>generator</module>
         <module>benchmark</module>
+        <module>quarkus/extension</module>
         <module>quarkus/funqy-http</module>
     </modules>
 
@@ -39,6 +40,16 @@
             <dependency>
                 <groupId>io.quarkus.qson</groupId>
                 <artifactId>qson-generator</artifactId>
+                <version>${project.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>io.quarkus.qson</groupId>
+                <artifactId>quarkus-qson</artifactId>
+                <version>${project.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>io.quarkus.qson</groupId>
+                <artifactId>quarkus-qson-deployment</artifactId>
                 <version>${project.version}</version>
             </dependency>
             <dependency>

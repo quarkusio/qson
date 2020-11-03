@@ -1,6 +1,5 @@
-package io.quarkus.funqy.deployment.bindings.http;
+package io.quarkus.qson.deployment;
 
-import io.quarkus.arc.deployment.GeneratedBeanBuildItem;
 import io.quarkus.bootstrap.BootstrapDebug;
 import io.quarkus.deployment.annotations.BuildProducer;
 import io.quarkus.deployment.builditem.GeneratedClassBuildItem;

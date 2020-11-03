@@ -1,8 +1,10 @@
 package io.quarkus.qson.test;
 
 import io.quarkus.gizmo.TestClassLoader;
+import io.quarkus.qson.GenericType;
 import io.quarkus.qson.desserializer.ByteArrayParserContext;
 import io.quarkus.qson.desserializer.JsonParser;
+import io.quarkus.qson.generator.JsonMapper;
 import io.quarkus.qson.generator.Serializer;
 import io.quarkus.qson.generator.Deserializer;
 import io.quarkus.qson.serializer.ByteArrayByteWriter;
@@ -12,14 +14,12 @@ import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
 
 import java.lang.reflect.Field;
+import java.util.HashMap;
+import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 
 public class NioGeneratorTest {
-
-    private Map<String, List<Person2>> raw_map_list_person2;
-    private Map<String, List<String>> raw_map_list_string;
-
 
     @Test
     public void testDeserializer() throws Exception {
@@ -32,21 +32,89 @@ public class NioGeneratorTest {
 
     @Test
     public void testRawCollection() throws Exception {
-        for (Field f : NioGeneratorTest.class.getDeclaredFields()) {
-            if (f.getName().equals("raw_map_list_person2")) {
-                Deserializer.Builder builder = Deserializer.create(f.getType(), f.getGenericType()).output(new TestClassOutput());
-                builder.generate();
-                Serializer.Builder sBuilder = Serializer.create(f.getType(), f.getGenericType()).output(new TestClassOutput());
-                sBuilder.generate();
-            } else if (f.getName().equals("raw_map_list_string")) {
-                Deserializer.Builder builder = Deserializer.create(f.getType(), f.getGenericType()).output(new TestClassOutput());
-                builder.generate();
-                System.out.println("raw_map_list_string deserializer: " + builder.className());
-                Serializer.Builder sBuilder = Serializer.create(f.getType(), f.getGenericType()).output(new TestClassOutput());
-                sBuilder.generate();
-                System.out.println("raw_map_list_string serializer: " + sBuilder.className());
-            }
+        GenericType<List<Person2>> type = new GenericType<>() {
+        };
+        Deserializer.Builder builder = Deserializer.create(type.getRawType(), type.getType()).output(new TestClassOutput());
+        builder.generate();
+        Serializer.Builder sBuilder = Serializer.create(type.getRawType(), type.getType()).output(new TestClassOutput());
+        sBuilder.generate();
+    }
+
+    @Test
+    public void testRawCollectionParsing() throws Exception {
+        JsonMapper mapper = new JsonMapper();
+        {
+            Map<String, List<Person2>> map = new HashMap<>();
+            List<Person2> list = new LinkedList<>();
+            Person2 bb = new Person2();
+            bb.setName("bill");
+            list.add(bb);
+            map.put("bb", list);
+
+            ByteArrayByteWriter writer = new ByteArrayByteWriter();
+            JsonByteWriter jsonWriter = new JsonByteWriter(writer);
+            GenericType<Map<String, List<Person2>>> type = new GenericType<>() {
+            };
+            ObjectWriter objectWriter = mapper.writerFor(type);
+            objectWriter.write(jsonWriter, map);
+
+            byte[] bytes = writer.getBytes();
+            System.out.println(new String(bytes, JsonByteWriter.UTF8));
+
+
+            JsonParser parser = mapper.parserFor(type);
+            ByteArrayParserContext ctx = new ByteArrayParserContext(parser.startState());
+            ctx.parse(bytes);
+            map = ctx.target();
+            Assertions.assertEquals("bill", map.get("bb").get(0).getName());
         }
+
+        {
+            List<Person2> list = new LinkedList<>();
+            Person2 bb = new Person2();
+            bb.setName("bill");
+            list.add(bb);
+
+            ByteArrayByteWriter writer = new ByteArrayByteWriter();
+            JsonByteWriter jsonWriter = new JsonByteWriter(writer);
+            GenericType<List<Person2>> type = new GenericType<>() {
+            };
+            ObjectWriter objectWriter = mapper.writerFor(type);
+            objectWriter.write(jsonWriter, list);
+
+            byte[] bytes = writer.getBytes();
+            System.out.println(new String(bytes, JsonByteWriter.UTF8));
+
+
+            JsonParser parser = mapper.parserFor(type);
+            ByteArrayParserContext ctx = new ByteArrayParserContext(parser.startState());
+            ctx.parse(bytes);
+            list = ctx.target();
+            Assertions.assertEquals("bill", list.get(0).getName());
+        }
+
+        {
+            List<Long> list = new LinkedList<>();
+            list.add(42L);
+            ByteArrayByteWriter writer = new ByteArrayByteWriter();
+            JsonByteWriter jsonWriter = new JsonByteWriter(writer);
+            GenericType<List<Long>> type = new GenericType<>() {
+            };
+            ObjectWriter objectWriter = mapper.writerFor(type);
+            objectWriter.write(jsonWriter, list);
+
+            byte[] bytes = writer.getBytes();
+            System.out.println(new String(bytes, JsonByteWriter.UTF8));
+
+
+            JsonParser parser = mapper.parserFor(type);
+            ByteArrayParserContext ctx = new ByteArrayParserContext(parser.startState());
+            ctx.parse(bytes);
+            list = ctx.target();
+            Assertions.assertEquals(42L, ((Long)list.get(0)).longValue());
+        }
+
+
     }
 
     static String simpleJson = "{\n" +

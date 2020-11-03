@@ -1,9 +1,11 @@
 package io.quarkus.qson.generator;
 
+import io.quarkus.qson.GenericType;
 import io.quarkus.qson.desserializer.JsonParser;
 import io.quarkus.qson.serializer.ObjectWriter;
 
 import java.lang.reflect.Type;
+import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Map;
 import java.util.Set;
@@ -17,7 +19,9 @@ import java.util.concurrent.ConcurrentHashMap;
  */
 public class JsonMapper {
     private ConcurrentHashMap<String, JsonParser> deserializers = new ConcurrentHashMap<>();
+    private Map<String, String> generatedDeserializers = new HashMap<>();
     private ConcurrentHashMap<String, ObjectWriter> serializers = new ConcurrentHashMap<>();
+    private Map<String, String> generatedSerializers = new HashMap<>();
     private final GizmoClassLoader cl;
 
     /**
@@ -37,12 +41,21 @@ public class JsonMapper {
         cl = new GizmoClassLoader(parent);
     }
 
+    /**
+     * Generates parsers for passed in list of classes and caches them for future lookup
+     *
+     * @param classes
+     */
     public void parsersFor(Class... classes) {
         for (Class clz : classes) parserFor(clz);
     }
 
     public JsonParser parserFor(Class clz) {
        return parserFor(clz, clz);
+    }
+
+    public JsonParser parserFor(GenericType type) {
+        return parserFor(type.getRawType(), type.getType());
     }
 
     public JsonParser parserFor(Class clz, Type genericType) {
@@ -52,10 +65,9 @@ public class JsonMapper {
         synchronized(deserializers) {
             parser = deserializers.get(key);
             if (parser != null) return parser;
-            Set<String> generated = new HashSet<>();
-            generateDeserializers(clz, genericType, generated);
+            String className = generateDeserializers(clz, genericType);
             try {
-                Class deserializer = cl.loadClass(Deserializer.fqn(clz, genericType));
+                Class deserializer = cl.loadClass(className);
                 parser = (JsonParser) deserializer.newInstance();
                 deserializers.put(key, parser);
             } catch (Throwable e) {
@@ -65,36 +77,51 @@ public class JsonMapper {
         return parser;
     }
 
-    private void generateDeserializers(Class clz, Type genericType, Set<String> generated) {
+    private String generateDeserializers(Class clz, Type genericType) {
         String key = key(clz, genericType);
+        if (generatedDeserializers.containsKey(key)) return generatedDeserializers.get(key);
         Deserializer.Builder builder = Deserializer.create(clz, genericType).output(cl).generate();
-        generated.add(key);
+        generatedDeserializers.put(key, builder.className());
         for (Map.Entry<Class, Type> entry : builder.referenced().entrySet()) {
             String refKey = key(entry.getKey(), entry.getValue());
-            if (generated.contains(refKey) || deserializers.containsKey(refKey)) continue;
-            generateDeserializers(entry.getKey(), entry.getValue(), generated);
+            if (generatedDeserializers.containsKey(refKey)) continue;
+            generateDeserializers(entry.getKey(), entry.getValue());
         }
+        return builder.className();
     }
 
+    /**
+     * Generates writers for passed in classes and caches them for future lookup
+     *
+     * @param classes
+     */
     public void writersFor(Class... classes) {
         for (Class clz : classes) writerFor(clz);
+    }
+
+    public void writersFor(GenericType... types) {
+        for (GenericType type : types) writerFor(type);
+
     }
 
     public ObjectWriter writerFor(Class clz) {
         return writerFor(clz, clz);
     }
 
+    public ObjectWriter writerFor(GenericType type) {
+        return writerFor(type.getRawType(), type.getType());
+    }
+
     public ObjectWriter writerFor(Class clz, Type genericType) {
         String key = key(clz, genericType);
         ObjectWriter writer = serializers.get(key);
         if (writer != null) return writer;
-        synchronized(deserializers) {
+        synchronized(serializers) {
             writer = serializers.get(key);
             if (writer != null) return writer;
-            Set<String> generated = new HashSet<>();
-            generateSerializers(clz, genericType, generated);
+            String className = generateSerializers(clz, genericType);
             try {
-                Class serializer = cl.loadClass(Serializer.fqn(clz, genericType));
+                Class serializer = cl.loadClass(className);
                 writer = (ObjectWriter) serializer.newInstance();
                 serializers.put(key, writer);
             } catch (Throwable e) {
@@ -104,19 +131,20 @@ public class JsonMapper {
         return writer;
     }
 
-    private void generateSerializers(Class clz, Type genericType, Set<String> generated) {
+    private String generateSerializers(Class clz, Type genericType) {
         String key = key(clz, genericType);
+        if (generatedSerializers.containsKey(key)) return generatedSerializers.get(key);
         Serializer.Builder builder = Serializer.create(clz, genericType).output(cl).generate();
-        generated.add(key);
+        generatedSerializers.put(key, builder.className());
         for (Map.Entry<Class, Type> entry : builder.referenced().entrySet()) {
             String refKey = key(entry.getKey(), entry.getValue());
-            if (generated.contains(refKey) || serializers.containsKey(refKey)) continue;
-            generateSerializers(entry.getKey(), entry.getValue(), generated);
+            if (generatedSerializers.containsKey(refKey)) continue;
+            generateSerializers(entry.getKey(), entry.getValue());
         }
+        return builder.className();
     }
 
-
-    public String key(Class clz, Type genericType) {
+    private String key(Class clz, Type genericType) {
         return genericType == null ? clz.getTypeName() : genericType.getTypeName();
     }
 }

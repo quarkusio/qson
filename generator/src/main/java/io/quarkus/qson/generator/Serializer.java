@@ -58,7 +58,7 @@ public class Serializer {
         ClassOutput output;
         String className;
         String keyName;
-        Map<Class, Type> referenced;
+        Map<Class, Type> referenced = new HashMap<>();
 
         private Builder() {
         }
@@ -189,9 +189,10 @@ public class Serializer {
 
         if (Map.class.isAssignableFrom(targetType)) {
             if (hasCollectionWriter(targetType, targetGenericType)) {
+                ResultHandle writer = getMapWriter(method, "collection", targetGenericType);
                 method.invokeInterfaceMethod(MethodDescriptor.ofMethod(JsonWriter.class, "write", void.class, Map.class, ObjectWriter.class), jsonWriter,
                         target,
-                        method.readStaticField(FieldDescriptor.of(fqn(), "collection_n", ObjectWriter.class))
+                        writer
                 );
             } else {
                 method.invokeInterfaceMethod(MethodDescriptor.ofMethod(JsonWriter.class, "write", void.class,Map.class), jsonWriter,
@@ -199,9 +200,10 @@ public class Serializer {
             }
         } else {
             if (hasCollectionWriter(targetType, targetGenericType)) {
+                ResultHandle writer = getCollectionWriter(method, "collection", targetGenericType);
                 method.invokeInterfaceMethod(MethodDescriptor.ofMethod(JsonWriter.class, "write", void.class, Collection.class, ObjectWriter.class), jsonWriter,
                         target,
-                        method.readStaticField(FieldDescriptor.of(fqn(), "collection_n", ObjectWriter.class))
+                        writer
                 );
             } else {
                 method.invokeInterfaceMethod(MethodDescriptor.ofMethod(JsonWriter.class, "write", void.class, Collection.class), jsonWriter,
@@ -487,27 +489,37 @@ public class Serializer {
     }
 
     private ResultHandle getCollectionWriter(MethodCreator method, Getter getter) {
-        ParameterizedType pt = (ParameterizedType)getter.genericType;
-        Class valueClass = Types.getRawType(pt.getActualTypeArguments()[0]);
-        Type valueType = pt.getActualTypeArguments()[0];
-        return getWriter(method, getter, valueClass, valueType);
-
+        String property = getter.property;
+        Type genericType = getter.genericType;
+        return getCollectionWriter(method, property, (ParameterizedType) genericType);
     }
 
-    private ResultHandle getWriter(MethodCreator method, Getter getter, Class valueClass, Type valueType) {
+    private ResultHandle getCollectionWriter(MethodCreator method, String property, Type genericType) {
+        ParameterizedType pt = (ParameterizedType)genericType;
+        Class valueClass = Types.getRawType(pt.getActualTypeArguments()[0]);
+        Type valueType = pt.getActualTypeArguments()[0];
+        return getWriter(method, property, valueClass, valueType);
+    }
+
+    private ResultHandle getWriter(MethodCreator method, String property, Class valueClass, Type valueType) {
         if (isUserObject(valueClass)) {
             return method.readStaticField(FieldDescriptor.of(fqn(valueClass, valueType), "SERIALIZER", fqn(valueClass, valueType)));
         } else {
-            return method.readStaticField(FieldDescriptor.of(fqn(), getter.property + "_n", ObjectWriter.class));
+            return method.readStaticField(FieldDescriptor.of(fqn(), property + "_n", ObjectWriter.class));
         }
     }
 
     private ResultHandle getMapWriter(MethodCreator method, Getter getter) {
-        ParameterizedType pt = (ParameterizedType)getter.genericType;
+        String property = getter.property;
+        Type genericType = getter.genericType;
+        return getMapWriter(method, property, (ParameterizedType) genericType);
+    }
+
+    private ResultHandle getMapWriter(MethodCreator method, String property, Type genericType) {
+        ParameterizedType pt = (ParameterizedType)genericType;
         Class valueClass = Types.getRawType(pt.getActualTypeArguments()[1]);
         Type valueType = pt.getActualTypeArguments()[1];
-        return getWriter(method, getter, valueClass, valueType);
-
+        return getWriter(method, property, valueClass, valueType);
     }
 
     private static boolean isUserObject(Class type) {

@@ -70,7 +70,6 @@ public class Deserializer {
         Type targetGenericType;
         ClassOutput output;
         String className;
-        String keyName;
         Map<Class, Type> referenced = new HashMap<>();
 
         private Builder() {
@@ -107,10 +106,6 @@ public class Deserializer {
             return this;
         }
 
-        public String keyName() {
-            return keyName;
-        }
-
         public Map<Class, Type> referenced() {
             return referenced;
         }
@@ -118,58 +113,49 @@ public class Deserializer {
             if (targetGenericType == null) targetGenericType = targetType;
             if (int.class.equals(targetType)
                     || Integer.class.equals(targetType)) {
-                keyName = targetType.getName();
                 className = IntegerParser.class.getName();
                 return this;
             }
             if (short.class.equals(targetType)
                     || Short.class.equals(targetType)) {
-                keyName = targetType.getName();
                 className = ShortParser.class.getName();
                 return this;
             }
             if (long.class.equals(targetType)
                     || Long.class.equals(targetType)) {
-                keyName = targetType.getName();
                 className = LongParser.class.getName();
                 return this;
             }
             if (byte.class.equals(targetType)
                     || Byte.class.equals(targetType)) {
-                keyName = targetType.getName();
                 className = ByteParser.class.getName();
                 return this;
             }
             if (float.class.equals(targetType)
                     || Float.class.equals(targetType)
             ) {
-                keyName = targetType.getName();
                 className = FloatParser.class.getName();
                 return this;
             }
             if (double.class.equals(targetType)
                     || Double.class.equals(targetType)
             ) {
-                keyName = targetType.getName();
                 className = DoubleParser.class.getName();
                 return this;
             }
             if (boolean.class.equals(targetType)
                     || Boolean.class.equals(targetType)
             ) {
-                keyName = targetType.getName();
                 className = BooleanParser.class.getName();
                 return this;
             }
             if (String.class.equals(targetType)) {
-                keyName = targetType.getName();
                 className = StringParser.class.getName();
                 return this;
             }
             if (Map.class.equals(targetType)
                 || List.class.equals(targetType)
                 || Set.class.equals(targetType)) {
-                keyName = Types.typename(targetGenericType);
                 if (targetGenericType instanceof ParameterizedType) {
                     if (className == null) {
                         className = Util.generatedClassName(targetGenericType);
@@ -187,7 +173,6 @@ public class Deserializer {
             deserializer.generate();
             referenced = deserializer.referenced;
             className = fqn(targetType, targetGenericType);
-            keyName = Types.typename(targetGenericType);
             return this;
         }
     }

@@ -50,7 +50,6 @@ public class Serializer {
         Type targetGenericType;
         ClassOutput output;
         String className;
-        String keyName;
         Map<Class, Type> referenced = new HashMap<>();
 
         private Builder() {
@@ -86,10 +85,6 @@ public class Serializer {
             return className;
         }
 
-        public String keyName() {
-            return keyName;
-        }
-
         public Map<Class, Type> referenced() {
             return referenced;
         }
@@ -104,7 +99,6 @@ public class Serializer {
             if (isGeneric(targetType, targetGenericType)) {
                 // use the generic object writer
                 className = GenericObjectWriter.class.getName();
-                keyName = targetGenericType == null ? Types.typename(targetType) : Types.typename(targetGenericType);
                 return this;
             } else if ((Map.class.isAssignableFrom(targetType)
                     || List.class.isAssignableFrom(targetType)
@@ -117,7 +111,6 @@ public class Serializer {
                 Serializer s = new Serializer(output, className, targetType, targetGenericType);
                 s.generateCollection();
                 referenced = s.referenced;
-                keyName = Types.typename(targetGenericType);
                 return this;
             } else {
                 Serializer s = new Serializer(output, targetType, targetGenericType);
@@ -125,7 +118,6 @@ public class Serializer {
                 referenced = s.referenced;
 
                 className = fqn(targetType, targetGenericType);
-                keyName = Types.typename(targetGenericType);
                 return this;
             }
         }

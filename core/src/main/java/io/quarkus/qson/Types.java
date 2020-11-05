@@ -11,7 +11,7 @@ import java.util.Map;
 import java.util.Set;
 
 public class Types {
-    
+
     public static boolean containsTypeVariable(Type type) {
         if (type instanceof TypeVariable) return true;
         if (type instanceof ParameterizedType) {

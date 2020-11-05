@@ -19,4 +19,12 @@ public class RegistryRecorder {
     public void registerWriter(String key, RuntimeValue<ObjectWriter> writer) {
         writers.put(key, writer.getValue());
     }
+
+    public static JsonParser getParser(String key) {
+        return parsers.get(key);
+    }
+
+    public static ObjectWriter getWriter(String key) {
+        return writers.get(key);
+    }
 }

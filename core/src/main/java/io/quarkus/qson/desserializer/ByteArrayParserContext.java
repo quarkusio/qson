@@ -10,6 +10,7 @@ import static io.quarkus.qson.IntChar.*;
 public class ByteArrayParserContext extends AbstractParserContext {
     protected BufferBuilder tokenBuffer;
     protected byte[] buffer;
+    protected int len;
 
 
     public ByteArrayParserContext(ParserState initialState) {
@@ -18,12 +19,12 @@ public class ByteArrayParserContext extends AbstractParserContext {
 
     @Override
     public boolean isBufferEmpty() {
-        return ptr >= buffer.length;
+        return ptr >= len;
     }
 
     @Override
     public int consume() {
-        if (ptr >= buffer.length) {
+        if (ptr >= len) {
             if (buildingToken) {
                 if (tokenBuffer == null ) {
                     if (tokenStart >= 0) {
@@ -57,7 +58,7 @@ public class ByteArrayParserContext extends AbstractParserContext {
         escaped = false;
         buildingToken = true;
         // if current pointer points outside of buffer, set it to start of next buffer.
-        if (ptr >= buffer.length) tokenStart = -1;
+        if (ptr >= len) tokenStart = -1;
         else tokenStart = ptr;
     }
 
@@ -177,9 +178,9 @@ public class ByteArrayParserContext extends AbstractParserContext {
         return val;
     }
 
-    public boolean parse(byte[] buffer) {
-        if (buffer == null || buffer.length == 0) return false;
-
+    public boolean parse(byte[] buffer, int len) {
+        if (buffer == null || len == 0) return false;
+        this.len = len;
         this.buffer = buffer;
         this.ptr = 0;
 
@@ -187,12 +188,16 @@ public class ByteArrayParserContext extends AbstractParserContext {
             return initialState.parse(this);
         }
 
-        while (ptr < buffer.length || (state != null && !state.isEmpty())) {
+        while (ptr < len || (state != null && !state.isEmpty())) {
             if (!state.peek().parse(this)) {
                 return false;
             }
         }
         return state != null && state.isEmpty();
+    }
+
+    public boolean parse(byte[] buffer) {
+        return parse(buffer, buffer.length);
     }
 
     public boolean parse(String fullJson) {

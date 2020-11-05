@@ -5,5 +5,5 @@ metadata:
   - "json"
   guide: "https://quarkus.io/guides/qson"
   categories:
-  - "cloud"
+  - "serialization"
   status: "experimental"

@@ -8,14 +8,7 @@ import io.quarkus.gizmo.FieldDescriptor;
 import io.quarkus.gizmo.MethodCreator;
 import io.quarkus.gizmo.MethodDescriptor;
 import io.quarkus.gizmo.ResultHandle;
-import io.quarkus.qson.desserializer.BooleanParser;
-import io.quarkus.qson.desserializer.ByteParser;
-import io.quarkus.qson.desserializer.DoubleParser;
-import io.quarkus.qson.desserializer.FloatParser;
-import io.quarkus.qson.desserializer.IntegerParser;
-import io.quarkus.qson.desserializer.LongParser;
-import io.quarkus.qson.desserializer.ShortParser;
-import io.quarkus.qson.desserializer.StringParser;
+import io.quarkus.qson.Types;
 import io.quarkus.qson.serializer.CollectionWriter;
 import io.quarkus.qson.serializer.GenericObjectWriter;
 import io.quarkus.qson.serializer.JsonWriter;
@@ -111,20 +104,20 @@ public class Serializer {
             if (isGeneric(targetType, targetGenericType)) {
                 // use the generic object writer
                 className = GenericObjectWriter.class.getName();
-                keyName = targetGenericType == null ? targetType.getTypeName() : targetGenericType.getTypeName();
+                keyName = targetGenericType == null ? Types.typename(targetType) : Types.typename(targetGenericType);
                 return this;
             } else if ((Map.class.isAssignableFrom(targetType)
                     || List.class.isAssignableFrom(targetType)
                     || Set.class.isAssignableFrom(targetType)) && hasCollectionWriter(targetType, targetGenericType)) {
                 // generate a writer for the collection
                 if (className == null) {
-                    className = Types.generatedClassName(targetGenericType);
+                    className = Util.generatedClassName(targetGenericType);
                     className += "__Serializer";
                 }
                 Serializer s = new Serializer(output, className, targetType, targetGenericType);
                 s.generateCollection();
                 referenced = s.referenced;
-                keyName = targetGenericType.getTypeName();
+                keyName = Types.typename(targetGenericType);
                 return this;
             } else {
                 Serializer s = new Serializer(output, targetType, targetGenericType);
@@ -132,7 +125,7 @@ public class Serializer {
                 referenced = s.referenced;
 
                 className = fqn(targetType, targetGenericType);
-                keyName = targetGenericType.getTypeName();
+                keyName = Types.typename(targetGenericType);
                 return this;
             }
         }
@@ -638,7 +631,7 @@ public class Serializer {
                 }
             }
             getters.add(new Getter(name, name, m, paramType, paramGenericType));
-            Types.addReference(referenced, paramType, paramGenericType);
+            Util.addReference(referenced, paramType, paramGenericType);
         }
         Collections.sort(getters, (getter, t1) -> getter.name.compareTo(t1.name));
     }

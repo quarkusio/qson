@@ -1,16 +1,14 @@
 package io.quarkus.qson.generator;
 
-import java.lang.reflect.Array;
-import java.lang.reflect.GenericArrayType;
+import io.quarkus.qson.Types;
+
 import java.lang.reflect.ParameterizedType;
 import java.lang.reflect.Type;
-import java.lang.reflect.TypeVariable;
-import java.lang.reflect.WildcardType;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
-public class Types {
+public class Util {
     /**
      * Generate a classname from a pure generic type.  For example List<Foo> to what
      * a generated class would be for that  List_Foo
@@ -20,7 +18,9 @@ public class Types {
      */
     public static String generatedClassName(Type type) {
         return generatedClassName("io.quarkus.qson.generated", type);
-    }    /**
+    }
+
+    /**
      * Generate a classname from a pure generic type.  For example List<Foo> to what
      * a generated class would be for that  List_Foo
      *
@@ -38,6 +38,7 @@ public class Types {
                 .replace('.', '_');
         return packageName + "." + name;
     }
+
     /**
      * Checks to see if clz is a user object or contains one (i.e. List<UserObject>)
      * If it does, it adds the class and generic type to the referenceMap
@@ -65,9 +66,9 @@ public class Types {
             if (genericType != null && genericType instanceof ParameterizedType) {
                 ParameterizedType pt = (ParameterizedType)genericType;
                 if (Map.class.isAssignableFrom(clz)) {
-                    addReference(referenceMap, getRawType(pt.getActualTypeArguments()[1]), pt.getActualTypeArguments()[1]);
+                    addReference(referenceMap, Types.getRawType(pt.getActualTypeArguments()[1]), pt.getActualTypeArguments()[1]);
                 } else {
-                    addReference(referenceMap, getRawType(pt.getActualTypeArguments()[0]), pt.getActualTypeArguments()[0]);
+                    addReference(referenceMap, Types.getRawType(pt.getActualTypeArguments()[0]), pt.getActualTypeArguments()[0]);
                 }
 
             }
@@ -75,42 +76,4 @@ public class Types {
             referenceMap.put(clz, genericType);
         }
     }
-
-    public static <T> Class<T> getRawType(Type type) {
-        if (type instanceof Class<?>) {
-            return (Class<T>) type;
-        }
-        if (type instanceof ParameterizedType) {
-            if (((ParameterizedType) type).getRawType() instanceof Class<?>) {
-                return (Class<T>) ((ParameterizedType) type).getRawType();
-            }
-        }
-        if (type instanceof TypeVariable<?>) {
-            TypeVariable<?> variable = (TypeVariable<?>) type;
-            Type[] bounds = variable.getBounds();
-            return getBound(bounds);
-        }
-        if (type instanceof WildcardType) {
-            WildcardType wildcard = (WildcardType) type;
-            return getBound(wildcard.getUpperBounds());
-        }
-        if (type instanceof GenericArrayType) {
-            GenericArrayType genericArrayType = (GenericArrayType) type;
-            Class<?> rawType = getRawType(genericArrayType.getGenericComponentType());
-            if (rawType != null) {
-                return (Class<T>) Array.newInstance(rawType, 0).getClass();
-            }
-        }
-        return null;
-    }
-
-    @SuppressWarnings("unchecked")
-    private static <T> Class<T> getBound(Type[] bounds) {
-        if (bounds.length == 0) {
-            return (Class<T>) Object.class;
-        } else {
-            return getRawType(bounds[0]);
-        }
-    }
-
 }

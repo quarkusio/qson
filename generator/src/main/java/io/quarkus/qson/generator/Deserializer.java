@@ -11,6 +11,7 @@ import io.quarkus.gizmo.FunctionCreator;
 import io.quarkus.gizmo.MethodCreator;
 import io.quarkus.gizmo.MethodDescriptor;
 import io.quarkus.gizmo.ResultHandle;
+import io.quarkus.qson.Types;
 import io.quarkus.qson.desserializer.BaseParser;
 import io.quarkus.qson.desserializer.BooleanParser;
 import io.quarkus.qson.desserializer.ByteParser;
@@ -43,7 +44,6 @@ import java.util.HashMap;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
-import java.util.Random;
 import java.util.Set;
 
 import static org.objectweb.asm.Opcodes.ACC_PUBLIC;
@@ -169,10 +169,10 @@ public class Deserializer {
             if (Map.class.equals(targetType)
                 || List.class.equals(targetType)
                 || Set.class.equals(targetType)) {
-                keyName = targetGenericType.getTypeName();
+                keyName = Types.typename(targetGenericType);
                 if (targetGenericType instanceof ParameterizedType) {
                     if (className == null) {
-                        className = Types.generatedClassName(targetGenericType);
+                        className = Util.generatedClassName(targetGenericType);
                         className += "__Parser";
                     }
                     Deserializer deserializer = new Deserializer(output, className, targetType, targetGenericType);
@@ -187,7 +187,7 @@ public class Deserializer {
             deserializer.generate();
             referenced = deserializer.referenced;
             className = fqn(targetType, targetGenericType);
-            keyName = targetGenericType.getTypeName();
+            keyName = Types.typename(targetGenericType);
             return this;
         }
     }
@@ -830,7 +830,7 @@ public class Deserializer {
                 name = m.getName().substring(3).toLowerCase();
             }
             setters.add(new Setter(name, m, paramType, paramGenericType));
-            Types.addReference(referenced, paramType, paramGenericType);
+            Util.addReference(referenced, paramType, paramGenericType);
         }
         Collections.sort(setters, (setter, t1) -> setter.name.compareTo(t1.name));
     }

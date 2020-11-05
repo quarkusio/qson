@@ -1,14 +1,13 @@
 package io.quarkus.qson.generator;
 
 import io.quarkus.qson.GenericType;
+import io.quarkus.qson.Types;
 import io.quarkus.qson.desserializer.JsonParser;
 import io.quarkus.qson.serializer.ObjectWriter;
 
 import java.lang.reflect.Type;
 import java.util.HashMap;
-import java.util.HashSet;
 import java.util.Map;
-import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 
 /**
@@ -145,6 +144,6 @@ public class JsonMapper {
     }
 
     private String key(Class clz, Type genericType) {
-        return genericType == null ? clz.getTypeName() : genericType.getTypeName();
+        return genericType == null ? Types.typename(clz) : Types.typename(genericType);
     }
 }

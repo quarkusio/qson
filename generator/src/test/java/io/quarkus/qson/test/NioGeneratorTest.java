@@ -1,6 +1,5 @@
 package io.quarkus.qson.test;
 
-import io.quarkus.gizmo.TestClassLoader;
 import io.quarkus.qson.GenericType;
 import io.quarkus.qson.desserializer.ByteArrayParserContext;
 import io.quarkus.qson.desserializer.JsonParser;
@@ -128,11 +127,8 @@ public class NioGeneratorTest {
             "}\n";
     @Test
     public void testSingle() throws Exception {
-        TestClassLoader loader = new TestClassLoader(Single.class.getClassLoader());
-        Deserializer.create(Single.class).output(loader).generate();
-
-        Class deserializer = loader.loadClass(Deserializer.fqn(Single.class, Single.class));
-        JsonParser parser = (JsonParser)deserializer.newInstance();
+        JsonMapper mapper = new JsonMapper();
+        JsonParser parser = mapper.parserFor(Single.class);
         ByteArrayParserContext ctx = new ByteArrayParserContext(parser.startState());
         Assertions.assertTrue(ctx.parse(simpleJson));
         Single single = ctx.popTarget();
@@ -140,11 +136,8 @@ public class NioGeneratorTest {
     }
     @Test
     public void testSimple() throws Exception {
-        TestClassLoader loader = new TestClassLoader(Single.class.getClassLoader());
-        Deserializer.create(Simple.class).output(loader).generate();
-
-        Class deserializer = loader.loadClass(Deserializer.fqn(Simple.class, Simple.class));
-        JsonParser parser = (JsonParser)deserializer.newInstance();
+        JsonMapper mapper = new JsonMapper();
+        JsonParser parser = mapper.parserFor(Simple.class);
         ByteArrayParserContext ctx = new ByteArrayParserContext(parser.startState());
         Assertions.assertTrue(ctx.parse(simpleJson));
         Simple simple = ctx.popTarget();
@@ -229,12 +222,8 @@ public class NioGeneratorTest {
 
     @Test
     public void testPerson() throws Exception {
-        TestClassLoader loader = new TestClassLoader(Person2.class.getClassLoader());
-        Deserializer.create(Person2.class).output(loader).generate();
-        Serializer.create(Person2.class).output(loader).generate();
-
-        Class deserializer = loader.loadClass(Deserializer.fqn(Person2.class, Person2.class));
-        JsonParser parser = (JsonParser)deserializer.newInstance();
+        JsonMapper mapper = new JsonMapper();
+        JsonParser parser = mapper.parserFor(Person2.class);
         ByteArrayParserContext ctx = new ByteArrayParserContext(parser.startState());
         Assertions.assertTrue(ctx.parse(json));
         Person2 person = ctx.target();
@@ -244,8 +233,7 @@ public class NioGeneratorTest {
 
         ByteArrayByteWriter writer = new ByteArrayByteWriter();
         JsonByteWriter jsonWriter = new JsonByteWriter(writer);
-        Class serializer = loader.loadClass(Serializer.fqn(Person2.class, Person2.class));
-        ObjectWriter objectWriter = (ObjectWriter)serializer.newInstance();
+        ObjectWriter objectWriter = mapper.writerFor(Person2.class);
         objectWriter.write(jsonWriter, person);
 
         byte[] bytes = writer.getBytes();
@@ -290,13 +278,9 @@ public class NioGeneratorTest {
 
     @Test
     public void testEscapes() throws Exception {
-        TestClassLoader loader = new TestClassLoader(Person2.class.getClassLoader());
-        Deserializer.create(Person2.class).output(loader).generate();
-        Serializer.create(Person2.class).output(loader).generate();
-        Class serializer = loader.loadClass(Serializer.fqn(Person2.class, Person2.class));
-        Class deserializer = loader.loadClass(Deserializer.fqn(Person2.class, Person2.class));
-        JsonParser parser = (JsonParser)deserializer.newInstance();
-        ObjectWriter objectWriter = (ObjectWriter)serializer.newInstance();
+        JsonMapper mapper = new JsonMapper();
+        JsonParser parser = mapper.parserFor(Person2.class);
+        ObjectWriter objectWriter = mapper.writerFor(Person2.class);
 
         String json = "{ \"name\": \"The \\\"Dude\\\"\" }";
         String expected = "The \"Dude\"";

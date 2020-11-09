@@ -1,6 +1,7 @@
 package io.quarkus.qson.desserializer;
 
 import java.io.IOException;
+import java.io.InputStream;
 import java.io.UnsupportedEncodingException;
 import java.util.ArrayDeque;
 import java.util.LinkedList;
@@ -208,6 +209,21 @@ public class ByteArrayParserContext extends AbstractParserContext {
             throw new RuntimeException(e);
         }
         return parse(bytes);
+    }
+
+    public boolean parse(InputStream is, int bufferSize) throws IOException {
+        final byte[] bytes = new byte[bufferSize];
+        int read ;
+        boolean success;
+        do {
+            read = is.read(bytes);
+            success = parse(bytes, read);
+        } while (read >= 0);
+        return success;
+    }
+
+    public boolean parse(InputStream is) throws IOException {
+        return parse(is, 8192);
     }
 
 }

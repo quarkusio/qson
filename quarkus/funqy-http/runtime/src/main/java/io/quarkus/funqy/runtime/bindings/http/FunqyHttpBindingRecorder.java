@@ -8,7 +8,7 @@ import io.quarkus.funqy.runtime.query.QueryObjectMapper;
 import io.quarkus.funqy.runtime.query.QueryReader;
 import io.quarkus.qson.Types;
 import io.quarkus.qson.desserializer.JsonParser;
-import io.quarkus.qson.runtime.RegistryRecorder;
+import io.quarkus.qson.runtime.QsonRegistry;
 import io.quarkus.qson.serializer.ObjectWriter;
 import io.quarkus.runtime.ShutdownContext;
 import io.quarkus.runtime.annotations.Recorder;
@@ -34,7 +34,7 @@ public class FunqyHttpBindingRecorder {
         for (FunctionInvoker invoker : FunctionRecorder.registry.invokers()) {
             try {
                 if (invoker.hasInput()) {
-                    JsonParser reader = RegistryRecorder.parsers.get(Types.typename(invoker.getInputGenericType()));
+                    JsonParser reader = QsonRegistry.getParser(invoker.getInputGenericType());
                     if (reader == null) {
                         throw new RuntimeException("Unable to find JsonParser for invoker:" + invoker.getName());
                     }
@@ -48,8 +48,7 @@ public class FunqyHttpBindingRecorder {
                         ParameterizedType pt = (ParameterizedType)invoker.getMethod().getGenericReturnType();
                         genericType = pt.getActualTypeArguments()[0];
                     }
-                    String typeName = Types.typename(genericType);
-                    ObjectWriter writer = RegistryRecorder.writers.get(typeName);
+                    ObjectWriter writer = QsonRegistry.getWriter(genericType);
                     if (writer == null) {
                         throw new RuntimeException("Unable to find ObjectWriter for invoker:" + invoker.getName());
                     }

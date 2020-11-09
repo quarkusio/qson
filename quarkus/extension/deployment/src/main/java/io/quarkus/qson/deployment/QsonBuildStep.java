@@ -1,6 +1,5 @@
 package io.quarkus.qson.deployment;
 
-import io.quarkus.arc.deployment.AdditionalBeanBuildItem;
 import io.quarkus.arc.deployment.BeanContainerBuildItem;
 import io.quarkus.builder.BuildException;
 import io.quarkus.deployment.annotations.BuildProducer;
@@ -13,8 +12,7 @@ import io.quarkus.qson.Qson;
 import io.quarkus.qson.Types;
 import io.quarkus.qson.generator.Deserializer;
 import io.quarkus.qson.generator.Serializer;
-import io.quarkus.qson.runtime.QuarkusQsonRegistry;
-import io.quarkus.qson.runtime.RegistryRecorder;
+import io.quarkus.qson.runtime.QsonRegistry;
 import org.jboss.jandex.AnnotationInstance;
 import org.jboss.jandex.ClassInfo;
 import org.jboss.jandex.DotName;
@@ -38,7 +36,7 @@ public class QsonBuildStep {
         Collection<AnnotationInstance> annotations = combinedIndex.getIndex().getAnnotations(QSON);
         for (AnnotationInstance ai : annotations) {
             ClassInfo ci = ai.target().asClass();
-            if (!Modifier.isPublic(ci.flags())) {
+            if (!Modifier.isPublic(ci.flags()) || Modifier.isInterface(ci.flags())) {
                 throw new BuildException("@Qson annnotation can only be placed on public classes: " + ci.name().toString(), Collections.emptyList());
             }
             if (Modifier.isAbstract(ci.flags())) {
@@ -95,25 +93,21 @@ public class QsonBuildStep {
         }
     }
 
-    @BuildStep
-    AdditionalBeanBuildItem producer() {
-        return AdditionalBeanBuildItem.unremovableOf(QuarkusQsonRegistry.class);
-    }
-
-
     @BuildStep()
     @Record(STATIC_INIT)
-    public QsonCompletedBuildItem staticInit(RegistryRecorder binding,
+    public QsonCompletedBuildItem staticInit(QsonRegistry registry,
                                              RecorderContext context,
                                              BeanContainerBuildItem beanContainer, // dependency
-                           GeneratedQsonClassesBuildItem generated) {
+                                             GeneratedQsonClassesBuildItem generated) {
+        registry.clear();  // not sure if we need this for redeploy?
+
         if (generated == null) return new QsonCompletedBuildItem();
 
         for (Map.Entry<String, String> entry : generated.getGeneratedParsers().entrySet()) {
-            binding.registerParser(entry.getKey(), context.newInstance(entry.getValue()));
+            registry.registerParser(entry.getKey(), context.newInstance(entry.getValue()));
         }
         for (Map.Entry<String, String> entry : generated.getGeneratedWriters().entrySet()) {
-            binding.registerWriter(entry.getKey(), context.newInstance(entry.getValue()));
+            registry.registerWriter(entry.getKey(), context.newInstance(entry.getValue()));
         }
 
         return new QsonCompletedBuildItem();

@@ -3,7 +3,7 @@ package io.quarkus.qson.resteasy;
 import io.quarkus.qson.Types;
 import io.quarkus.qson.desserializer.ByteArrayParserContext;
 import io.quarkus.qson.desserializer.JsonParser;
-import io.quarkus.qson.runtime.RegistryRecorder;
+import io.quarkus.qson.runtime.QsonRegistry;
 import io.quarkus.qson.serializer.JsonByteWriter;
 import io.quarkus.qson.serializer.JsonWriter;
 import io.quarkus.qson.serializer.ObjectWriter;
@@ -29,34 +29,28 @@ import java.lang.reflect.Type;
 public class QsonProvider implements MessageBodyReader, MessageBodyWriter {
     @Override
     public boolean isReadable(Class type, Type genericType, Annotation[] annotations, MediaType mediaType) {
-        return RegistryRecorder.getParser(Types.typename(genericType)) != null;
+        return QsonRegistry.getParser(genericType) != null;
     }
 
     @Override
     public Object readFrom(Class type, Type genericType, Annotation[] annotations, MediaType mediaType, MultivaluedMap httpHeaders, InputStream entityStream) throws IOException, WebApplicationException {
-        JsonParser parser = RegistryRecorder.parsers.get(Types.typename(genericType));
+        JsonParser parser = QsonRegistry.getParser(genericType);
         if (parser == null) {
             throw new IOException("Failed to find QSON parser for: " + genericType.getTypeName());
         }
         ByteArrayParserContext ctx = new ByteArrayParserContext(parser.startState());
-        final byte[] bytes = new byte[8192];
-        int read ;
-        do {
-            read = entityStream.read(bytes);
-            ctx.parse(bytes, read);
-        } while (read >= 0);
-
+        ctx.parse(entityStream);
         return ctx.target();
     }
 
     @Override
     public boolean isWriteable(Class type, Type genericType, Annotation[] annotations, MediaType mediaType) {
-        return RegistryRecorder.getWriter(Types.typename(genericType)) != null;
+        return QsonRegistry.getWriter(genericType) != null;
     }
 
     @Override
     public void writeTo(Object o, Class type, Type genericType, Annotation[] annotations, MediaType mediaType, MultivaluedMap httpHeaders, OutputStream entityStream) throws IOException, WebApplicationException {
-        ObjectWriter objectWriter = RegistryRecorder.writers.get(Types.typename(genericType));
+        ObjectWriter objectWriter = QsonRegistry.getWriter(genericType);
         if (objectWriter == null) {
             throw new IOException("Failed to find QSON writer for: " + genericType.getTypeName());
         }

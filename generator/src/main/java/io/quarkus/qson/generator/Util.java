@@ -47,7 +47,7 @@ public class Util {
      * @param clz
      * @param genericType
      */
-    public static void addReference(Map<Class, Type> referenceMap, Class clz, Type genericType) {
+    public static void addReference(Map<Type, Class> referenceMap, Class clz, Type genericType) {
         if (clz.isPrimitive()) return;
         if (clz.equals(String.class)
                 || clz.equals(Integer.class)
@@ -73,7 +73,7 @@ public class Util {
 
             }
         } else {
-            referenceMap.put(clz, genericType);
+            referenceMap.put(genericType, clz);
         }
     }
 }

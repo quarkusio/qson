@@ -54,13 +54,13 @@ public class QsonBuildStep {
     public GeneratedQsonClassesBuildItem generate(BuildProducer<GeneratedClassBuildItem> toGenerate,
                          List<QsonBuildItem> classes) {
         if (classes == null || classes.isEmpty()) return null;
-        Map<Class, Type> parsers = new HashMap<>();
-        Map<Class, Type> writers = new HashMap<>();
+        Map<Type, Class> parsers = new HashMap<>();
+        Map<Type, Class> writers = new HashMap<>();
 
         // squeeze duplicate entries
         for (QsonBuildItem item : classes) {
-            if(item.isGenerateParser()) parsers.put(item.getType(), item.getGenericType());
-            if(item.isGenerateWriter()) writers.put(item.getType(), item.getGenericType());
+            if(item.isGenerateParser()) parsers.put(item.getGenericType(), item.getType());
+            if(item.isGenerateWriter()) writers.put(item.getGenericType(), item.getType());
         }
 
         Map<String, String> generatedParsers = new HashMap<>();
@@ -74,21 +74,21 @@ public class QsonBuildStep {
         return new GeneratedQsonClassesBuildItem(generatedParsers, generatedWriters);
     }
 
-    public void generateParsers(Map<Class, Type> parsers, Map<String, String> generatedParsers, GeneratedClassGizmoAdaptor adaptor) {
-        for (Map.Entry<Class, Type> entry : parsers.entrySet()) {
-            String key = entry.getValue() == null ? Types.typename(entry.getKey()) : Types.typename(entry.getValue());
+    public void generateParsers(Map<Type, Class> parsers, Map<String, String> generatedParsers, GeneratedClassGizmoAdaptor adaptor) {
+        for (Map.Entry<Type, Class> entry : parsers.entrySet()) {
+            String key = Types.typename(entry.getKey());
             if (generatedParsers.containsKey(key)) continue;
-            Deserializer.Builder builder = Deserializer.create(entry.getKey(), entry.getValue());
+            Deserializer.Builder builder = Deserializer.create(entry.getValue(), entry.getKey());
             builder.output(adaptor).generate();
             generatedParsers.put(key, builder.className());
             generateParsers(builder.referenced(), generatedParsers, adaptor);
         }
     }
-    public void generateWriters(Map<Class, Type> parsers, Map<String, String> generatedWriters, GeneratedClassGizmoAdaptor adaptor) {
-        for (Map.Entry<Class, Type> entry : parsers.entrySet()) {
-            String key = entry.getValue() == null ? Types.typename(entry.getKey()) : Types.typename(entry.getValue());
+    public void generateWriters(Map<Type, Class> parsers, Map<String, String> generatedWriters, GeneratedClassGizmoAdaptor adaptor) {
+        for (Map.Entry<Type, Class> entry : parsers.entrySet()) {
+            String key = Types.typename(entry.getKey());
             if (generatedWriters.containsKey(key)) continue;
-            Serializer.Builder builder = Serializer.create(entry.getKey(), entry.getValue());
+            Serializer.Builder builder = Serializer.create(entry.getValue(), entry.getKey());
             builder.output(adaptor).generate();
             generatedWriters.put(key, builder.className());
             generateWriters(builder.referenced(), generatedWriters, adaptor);

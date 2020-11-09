@@ -50,7 +50,7 @@ public class Serializer {
         Type targetGenericType;
         ClassOutput output;
         String className;
-        Map<Class, Type> referenced = new HashMap<>();
+        Map<Type, Class> referenced = new HashMap<>();
 
         private Builder() {
         }
@@ -85,7 +85,7 @@ public class Serializer {
             return className;
         }
 
-        public Map<Class, Type> referenced() {
+        public Map<Type, Class> referenced() {
             return referenced;
         }
 
@@ -128,7 +128,7 @@ public class Serializer {
     Class targetType;
     Type targetGenericType;
     List<Getter> getters = new LinkedList<>();
-    Map<Class, Type> referenced = new HashMap<>();
+    Map<Type, Class> referenced = new HashMap<>();
     String className;
 
     public static String name(Class clz, Type genericType) {

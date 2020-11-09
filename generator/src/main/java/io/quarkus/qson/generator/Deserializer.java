@@ -70,7 +70,7 @@ public class Deserializer {
         Type targetGenericType;
         ClassOutput output;
         String className;
-        Map<Class, Type> referenced = new HashMap<>();
+        Map<Type, Class> referenced = new HashMap<>();
 
         private Builder() {
         }
@@ -106,7 +106,7 @@ public class Deserializer {
             return this;
         }
 
-        public Map<Class, Type> referenced() {
+        public Map<Type, Class> referenced() {
             return referenced;
         }
         public Builder generate() {
@@ -182,7 +182,7 @@ public class Deserializer {
     final Class targetType;
     final Type targetGenericType;
     List<Setter> setters = new LinkedList<>();
-    Map<Class, Type> referenced = new HashMap<>();
+    Map<Type, Class> referenced = new HashMap<>();
     final ClassOutput classOutput;
     final String className;
 

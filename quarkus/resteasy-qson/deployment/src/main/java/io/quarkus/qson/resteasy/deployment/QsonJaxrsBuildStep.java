@@ -8,6 +8,7 @@ import io.quarkus.qson.deployment.QsonBuildItem;
 import io.quarkus.resteasy.common.spi.ResteasyDotNames;
 import org.jboss.jandex.AnnotationInstance;
 import org.jboss.jandex.AnnotationValue;
+import org.jboss.jandex.ClassInfo;
 import org.jboss.jandex.IndexView;
 import org.jboss.jandex.MethodInfo;
 import org.jboss.jandex.Type;
@@ -33,7 +34,7 @@ public class QsonJaxrsBuildStep {
         IndexView index = beanArchiveIndexBuildItem.getIndex();
         for (AnnotationInstance ai : index.getAnnotations(ResteasyDotNames.GET)) {
             MethodInfo method = ai.target().asMethod();
-            registerProducesJson(qson, method);
+            registerProducesJson(index, qson, method);
         }
 
         Set<AnnotationInstance> methods = new HashSet<>();
@@ -43,14 +44,14 @@ public class QsonJaxrsBuildStep {
         methods.addAll(index.getAnnotations(ResteasyDotNames.PATCH));
         for (AnnotationInstance ai : methods) {
             MethodInfo method = ai.target().asMethod();
-            registerProducesJson(qson, method);
-            registerConsumesJson(qson, method);
+            registerProducesJson(index, qson, method);
+            registerConsumesJson(index, qson, method);
         }
 
 
     }
 
-    private void registerProducesJson(BuildProducer<QsonBuildItem> qson, MethodInfo method) throws Exception {
+    private void registerProducesJson(IndexView index, BuildProducer<QsonBuildItem> qson, MethodInfo method) throws Exception {
         if (method.hasAnnotation(ResteasyDotNames.PRODUCES)) {
             AnnotationInstance produces = method.annotation(ResteasyDotNames.PRODUCES);
             if (isJsonMediaType(produces)) {
@@ -59,10 +60,8 @@ public class QsonJaxrsBuildStep {
                     throw new RuntimeException("Bad logic to turn MethodInfo to Method");
                 }
                 if (void.class.equals(m.getReturnType()) || Response.class.equals(m.getReturnType())) return;
-                if (Types.containsTypeVariable(m.getGenericReturnType())) {
-                    throw new RuntimeException("QSON + Resteasy cannot handle type variables: " + m.toString());
-                }
-                qson.produce(new QsonBuildItem(m.getReturnType(), m.getGenericReturnType(), false, true));
+                java.lang.reflect.Type genericType = m.getGenericReturnType();
+                register(index, qson, method, genericType, false, true);
             }
         } else {
             AnnotationInstance produces = method.declaringClass().classAnnotation(ResteasyDotNames.PRODUCES);
@@ -72,33 +71,30 @@ public class QsonJaxrsBuildStep {
                     throw new RuntimeException("Bad logic to turn MethodInfo to Method");
                 }
                 if (void.class.equals(m.getReturnType()) || Response.class.equals(m.getReturnType())) return;
-                if (Types.containsTypeVariable(m.getGenericReturnType())) {
-                    throw new RuntimeException("QSON + Resteasy cannot handle type variables: " + m.toString());
-                }
-                qson.produce(new QsonBuildItem(m.getReturnType(), m.getGenericReturnType(), false, true));
+                java.lang.reflect.Type genericType = m.getGenericReturnType();
+                register(index, qson, method, genericType, false, true);
             }
         }
     }
 
-    private void registerConsumesJson(BuildProducer<QsonBuildItem> qson, MethodInfo method) throws Exception {
-        if (method.hasAnnotation(ResteasyDotNames.CONSUMES)) {
-            AnnotationInstance produces = method.annotation(ResteasyDotNames.CONSUMES);
-            if (isJsonMediaType(produces)) {
-                Method m = findMethod(method);
-                if (m == null) {
-                    throw new RuntimeException("Bad logic to turn MethodInfo to Method");
+    private void register(IndexView index, BuildProducer<QsonBuildItem> qson, MethodInfo method, java.lang.reflect.Type genericType, boolean parser, boolean writer) throws ClassNotFoundException {
+        if (Types.containsTypeVariable(genericType)) {
+            for (ClassInfo ci : index.getAllKnownSubclasses(method.declaringClass().name())) {
+                Class sub = Thread.currentThread().getContextClassLoader().loadClass(ci.name().toString());
+                genericType = org.jboss.resteasy.spi.util.Types.resolveTypeVariables(sub, genericType);
+                if (!Types.containsTypeVariable(genericType)) {
+                    qson.produce(new QsonBuildItem(Types.getRawType(genericType), genericType, parser, writer));
                 }
-                int idx = findBodyParameter(m);
-                if (idx < 0) return;
-                java.lang.reflect.Type genericType = m.getGenericParameterTypes()[idx];
-                if (Types.containsTypeVariable(genericType)) {
-                    throw new RuntimeException("QSON + Resteasy cannot handle type variables: " + m.toString());
-                }
-                qson.produce(new QsonBuildItem(m.getParameterTypes()[idx], genericType, true, false));
             }
         } else {
-            AnnotationInstance produces = method.declaringClass().classAnnotation(ResteasyDotNames.CONSUMES);
-            if (isJsonMediaType(produces)) {
+            qson.produce(new QsonBuildItem(Types.getRawType(genericType), genericType, parser, writer));
+        }
+    }
+
+    private void registerConsumesJson(IndexView index, BuildProducer<QsonBuildItem> qson, MethodInfo method) throws Exception {
+        if (method.hasAnnotation(ResteasyDotNames.CONSUMES)) {
+            AnnotationInstance consumes = method.annotation(ResteasyDotNames.CONSUMES);
+            if (isJsonMediaType(consumes)) {
                 Method m = findMethod(method);
                 if (m == null) {
                     throw new RuntimeException("Bad logic to turn MethodInfo to Method");
@@ -106,10 +102,19 @@ public class QsonJaxrsBuildStep {
                 int idx = findBodyParameter(m);
                 if (idx < 0) return;
                 java.lang.reflect.Type genericType = m.getGenericParameterTypes()[idx];
-                if (Types.containsTypeVariable(genericType)) {
-                    throw new RuntimeException("QSON + Resteasy cannot handle type variables: " + m.toString());
+                register(index, qson, method, genericType, true, false);
+            }
+        } else {
+            AnnotationInstance consumes = method.declaringClass().classAnnotation(ResteasyDotNames.CONSUMES);
+            if (isJsonMediaType(consumes)) {
+                Method m = findMethod(method);
+                if (m == null) {
+                    throw new RuntimeException("Bad logic to turn MethodInfo to Method");
                 }
-                qson.produce(new QsonBuildItem(m.getParameterTypes()[idx], genericType, true, false));
+                int idx = findBodyParameter(m);
+                if (idx < 0) return;
+                java.lang.reflect.Type genericType = m.getGenericParameterTypes()[idx];
+                register(index, qson, method, genericType, true, false);
             }
         }
     }

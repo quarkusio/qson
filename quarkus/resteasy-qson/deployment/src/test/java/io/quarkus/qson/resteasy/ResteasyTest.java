@@ -25,6 +25,13 @@ public class ResteasyTest {
         given().get("/customers").then()
                 .statusCode(200)
                 .body("name[0]", equalTo("Bill"));
-
+        given().contentType("application/json")
+                .body("{ \"name\": \"Bill\"}")
+                .put("/customers/1")
+                .then().statusCode(204);
+        given().contentType("application/json")
+                .body("[{ \"name\": \"Bill\"}]")
+                .post("/customers")
+                .then().statusCode(204);
     }
 }

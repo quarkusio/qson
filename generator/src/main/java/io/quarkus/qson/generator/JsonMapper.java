@@ -81,10 +81,10 @@ public class JsonMapper {
         if (generatedDeserializers.containsKey(key)) return generatedDeserializers.get(key);
         Deserializer.Builder builder = Deserializer.create(clz, genericType).output(cl).generate();
         generatedDeserializers.put(key, builder.className());
-        for (Map.Entry<Class, Type> entry : builder.referenced().entrySet()) {
-            String refKey = key(entry.getKey(), entry.getValue());
+        for (Map.Entry<Type, Class> entry : builder.referenced().entrySet()) {
+            String refKey = key(entry.getValue(), entry.getKey());
             if (generatedDeserializers.containsKey(refKey)) continue;
-            generateDeserializers(entry.getKey(), entry.getValue());
+            generateDeserializers(entry.getValue(), entry.getKey());
         }
         return builder.className();
     }
@@ -135,10 +135,10 @@ public class JsonMapper {
         if (generatedSerializers.containsKey(key)) return generatedSerializers.get(key);
         Serializer.Builder builder = Serializer.create(clz, genericType).output(cl).generate();
         generatedSerializers.put(key, builder.className());
-        for (Map.Entry<Class, Type> entry : builder.referenced().entrySet()) {
-            String refKey = key(entry.getKey(), entry.getValue());
+        for (Map.Entry<Type, Class> entry : builder.referenced().entrySet()) {
+            String refKey = key(entry.getValue(), entry.getKey());
             if (generatedSerializers.containsKey(refKey)) continue;
-            generateSerializers(entry.getKey(), entry.getValue());
+            generateSerializers(entry.getValue(), entry.getKey());
         }
         return builder.className();
     }

@@ -1,1 +1,1 @@
-io.quarkus.qson.resteasy.QsonProvider
+io.quarkus.qson.resteasy.QuarkusQsonProvider

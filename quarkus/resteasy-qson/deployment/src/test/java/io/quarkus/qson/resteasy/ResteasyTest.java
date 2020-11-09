@@ -15,7 +15,9 @@ public class ResteasyTest {
     @RegisterExtension
     static QuarkusUnitTest runner = new QuarkusUnitTest()
             .setArchiveProducer(() -> ShrinkWrap.create(JavaArchive.class)
-                    .addClasses(CustomerResource.class, Customer.class));
+                    .addClasses(CustomerResource.class, Customer.class,
+                            AbstractResource.class, Address.class, AddressResource.class
+                    , OnClass.class, OnClassResource.class, QsonAnnotated.class));
 
     @Test
     public void testUserClass() throws Exception {
@@ -33,5 +35,30 @@ public class ResteasyTest {
                 .body("[{ \"name\": \"Bill\"}]")
                 .post("/customers")
                 .then().statusCode(204);
+    }
+
+    @Test
+    public void testTypeVariable() throws Exception {
+        given().contentType("application/json")
+                .body("{ \"city\": \"Boston\"}")
+                .post("/address")
+                .then().statusCode(200)
+                .body("city", equalTo("Boston"));
+
+    }
+    @Test
+    public void testOnClass() throws Exception {
+        given().contentType("application/json")
+                .body("{ \"name\": \"Bill\"}")
+                .post("/onclass")
+                .then().statusCode(200)
+                .body("name", equalTo("Bill"));
+
+        given().contentType("application/json")
+                .body("{ \"name\": \"Bill\"}")
+                .post("/onclass/annotated")
+                .then().statusCode(200)
+                .body("name", equalTo("Bill"));
+
     }
 }

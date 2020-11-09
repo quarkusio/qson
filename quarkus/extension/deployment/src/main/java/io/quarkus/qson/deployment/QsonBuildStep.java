@@ -14,6 +14,7 @@ import io.quarkus.qson.generator.Deserializer;
 import io.quarkus.qson.generator.Serializer;
 import io.quarkus.qson.runtime.QsonRegistry;
 import org.jboss.jandex.AnnotationInstance;
+import org.jboss.jandex.AnnotationValue;
 import org.jboss.jandex.ClassInfo;
 import org.jboss.jandex.DotName;
 
@@ -44,7 +45,11 @@ public class QsonBuildStep {
 
             }
             Class clz = Thread.currentThread().getContextClassLoader().loadClass(ci.name().toString());
-            qson.produce(new QsonBuildItem(clz, clz, ai.value("generateParser").asBoolean(), ai.value("generateWriter").asBoolean()));
+            AnnotationValue generateParser = ai.value("generateParser");
+            AnnotationValue generateWriter = ai.value("generateWriter");
+            boolean parser = generateParser == null || generateParser.asBoolean();
+            boolean writer = generateWriter == null || generateWriter.asBoolean();
+            qson.produce(new QsonBuildItem(clz, clz, parser, writer));
         }
     }
 

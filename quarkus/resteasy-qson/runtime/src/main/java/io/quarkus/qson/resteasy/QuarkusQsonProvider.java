@@ -26,7 +26,7 @@ import java.lang.reflect.Type;
 @Provider
 @Consumes({"application/json", "application/*+json", "text/json"})
 @Produces({"application/json", "application/*+json", "text/json"})
-public class QsonProvider implements MessageBodyReader, MessageBodyWriter {
+public class QuarkusQsonProvider implements MessageBodyReader, MessageBodyWriter {
     @Override
     public boolean isReadable(Class type, Type genericType, Annotation[] annotations, MediaType mediaType) {
         return QsonRegistry.getParser(genericType) != null;

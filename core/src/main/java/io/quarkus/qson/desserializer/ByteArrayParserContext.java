@@ -14,8 +14,12 @@ public class ByteArrayParserContext extends AbstractParserContext {
     protected int len;
 
 
-    public ByteArrayParserContext(ParserState initialState) {
-        super(initialState);
+    public ByteArrayParserContext(JsonParser parser, ParserState initialState) {
+        super(parser, initialState);
+    }
+
+    public ByteArrayParserContext(JsonParser parser) {
+        super(parser, parser.startState());
     }
 
     @Override
@@ -25,6 +29,7 @@ public class ByteArrayParserContext extends AbstractParserContext {
 
     @Override
     public int consume() {
+        if (eof) return -1;
         if (ptr >= len) {
             if (buildingToken) {
                 if (tokenBuffer == null ) {
@@ -67,7 +72,7 @@ public class ByteArrayParserContext extends AbstractParserContext {
     public void endToken() {
         buildingToken = false;
         if (tokenBuffer != null) {
-            if (ptr - 1 > 0) tokenBuffer.write(buffer, 0, ptr - 1);
+            if (!eof && ptr - 1 > 0) tokenBuffer.write(buffer, 0, ptr - 1);
         } else {
             if (tokenStart < 0) tokenStart = 0;  // when asked to start token at next buffer tokenStart will be -1
             tokenEnd = ptr - 1;
@@ -180,7 +185,8 @@ public class ByteArrayParserContext extends AbstractParserContext {
     }
 
     public boolean parse(byte[] buffer, int len) {
-        if (buffer == null || len == 0) return false;
+        if (parserComplete) throw new RuntimeException("Parser is complete, extra bytes invalid");
+        if (buffer == null || len == 0) return parserComplete;
         this.len = len;
         this.buffer = buffer;
         this.ptr = 0;
@@ -194,7 +200,8 @@ public class ByteArrayParserContext extends AbstractParserContext {
                 return false;
             }
         }
-        return state != null && state.isEmpty();
+        parserComplete = state == null || state.isEmpty();
+        return parserComplete;
     }
 
     public boolean parse(byte[] buffer) {
@@ -218,12 +225,27 @@ public class ByteArrayParserContext extends AbstractParserContext {
         do {
             read = is.read(bytes);
             success = parse(bytes, read);
-        } while (read >= 0);
+        } while (read >= 0 && !success);
         return success;
     }
 
     public boolean parse(InputStream is) throws IOException {
         return parse(is, 8192);
+    }
+
+    public <T> T finish(InputStream is) throws IOException {
+        parse(is);
+        return finish();
+    }
+
+    public <T> T finish(String str) {
+        parse(str);
+        return finish();
+    }
+
+    public <T> T finish(byte[] bytes) {
+        parse(bytes);
+        return finish();
     }
 
 }

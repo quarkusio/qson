@@ -1,6 +1,7 @@
 package io.quarkus.qson;
 
 public class IntChar {
+    public final static int INT_EOF = -1;
     public final static int INT_TAB = '\t';
     public final static int INT_LF = '\n';
     public final static int INT_CR = '\r';

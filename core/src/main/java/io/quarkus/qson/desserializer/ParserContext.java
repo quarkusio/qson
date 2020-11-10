@@ -58,4 +58,6 @@ public interface ParserContext {
     void pushTarget(Object obj);
 
     <T> T popTarget();
+
+    <T> T finish();
 }

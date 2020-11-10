@@ -61,9 +61,8 @@ public class NioGeneratorTest {
 
 
             JsonParser parser = mapper.parserFor(type);
-            ByteArrayParserContext ctx = new ByteArrayParserContext(parser.startState());
-            ctx.parse(bytes);
-            map = ctx.target();
+            ByteArrayParserContext ctx = new ByteArrayParserContext(parser);
+            map = ctx.finish(bytes);
             Assertions.assertEquals("bill", map.get("bb").get(0).getName());
         }
 
@@ -85,9 +84,8 @@ public class NioGeneratorTest {
 
 
             JsonParser parser = mapper.parserFor(type);
-            ByteArrayParserContext ctx = new ByteArrayParserContext(parser.startState());
-            ctx.parse(bytes);
-            list = ctx.target();
+            ByteArrayParserContext ctx = new ByteArrayParserContext(parser);
+            list = ctx.finish(bytes);
             Assertions.assertEquals("bill", list.get(0).getName());
         }
 
@@ -106,9 +104,8 @@ public class NioGeneratorTest {
 
 
             JsonParser parser = mapper.parserFor(type);
-            ByteArrayParserContext ctx = new ByteArrayParserContext(parser.startState());
-            ctx.parse(bytes);
-            list = ctx.target();
+            ByteArrayParserContext ctx = new ByteArrayParserContext(parser);
+            list = ctx.finish(bytes);
             Assertions.assertEquals(42L, ((Long)list.get(0)).longValue());
         }
 
@@ -128,7 +125,7 @@ public class NioGeneratorTest {
     public void testSingle() throws Exception {
         JsonMapper mapper = new JsonMapper();
         JsonParser parser = mapper.parserFor(Single.class);
-        ByteArrayParserContext ctx = new ByteArrayParserContext(parser.startState());
+        ByteArrayParserContext ctx = new ByteArrayParserContext(parser);
         Assertions.assertTrue(ctx.parse(simpleJson));
         Single single = ctx.popTarget();
         Assertions.assertEquals(1, single.getName());
@@ -137,7 +134,7 @@ public class NioGeneratorTest {
     public void testSimple() throws Exception {
         JsonMapper mapper = new JsonMapper();
         JsonParser parser = mapper.parserFor(Simple.class);
-        ByteArrayParserContext ctx = new ByteArrayParserContext(parser.startState());
+        ByteArrayParserContext ctx = new ByteArrayParserContext(parser);
         Assertions.assertTrue(ctx.parse(simpleJson));
         Simple simple = ctx.popTarget();
         Assertions.assertEquals(1, simple.getName());
@@ -223,9 +220,8 @@ public class NioGeneratorTest {
     public void testPerson() throws Exception {
         JsonMapper mapper = new JsonMapper();
         JsonParser parser = mapper.parserFor(Person2.class);
-        ByteArrayParserContext ctx = new ByteArrayParserContext(parser.startState());
-        Assertions.assertTrue(ctx.parse(json));
-        Person2 person = ctx.target();
+        ByteArrayParserContext ctx = new ByteArrayParserContext(parser);
+        Person2 person = ctx.finish(json);
         validatePerson(person);
 
         // serializer
@@ -240,9 +236,8 @@ public class NioGeneratorTest {
 
         // validate serializer
 
-        ctx = new ByteArrayParserContext(parser.startState());
-        Assertions.assertTrue(ctx.parse(bytes));
-        person = ctx.target();
+        ctx = new ByteArrayParserContext(parser);
+        person = ctx.finish(bytes);
         validatePerson(person);
 
 
@@ -288,9 +283,8 @@ public class NioGeneratorTest {
     }
 
     private void testEscapes(JsonParser parser, ObjectWriter objectWriter, String json, String expected) {
-        ByteArrayParserContext ctx = new ByteArrayParserContext(parser.startState());
-        Assertions.assertTrue(ctx.parse(json));
-        Person2 person = ctx.target();
+        ByteArrayParserContext ctx = new ByteArrayParserContext(parser);
+        Person2 person = ctx.finish(json);
         Assertions.assertEquals(expected, person.getName());
 
         // serializer
@@ -304,9 +298,8 @@ public class NioGeneratorTest {
 
         // validate serializer
 
-        ctx = new ByteArrayParserContext(parser.startState());
-        Assertions.assertTrue(ctx.parse(bytes));
-        person = ctx.target();
+        ctx = new ByteArrayParserContext(parser);
+        person = ctx.finish(bytes);
         Assertions.assertEquals(expected, person.getName());
     }
 }

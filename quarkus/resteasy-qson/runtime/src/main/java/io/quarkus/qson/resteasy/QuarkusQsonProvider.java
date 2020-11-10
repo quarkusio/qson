@@ -38,9 +38,8 @@ public class QuarkusQsonProvider implements MessageBodyReader, MessageBodyWriter
         if (parser == null) {
             throw new IOException("Failed to find QSON parser for: " + genericType.getTypeName());
         }
-        ByteArrayParserContext ctx = new ByteArrayParserContext(parser.startState());
-        ctx.parse(entityStream);
-        return ctx.target();
+        ByteArrayParserContext ctx = new ByteArrayParserContext(parser);
+        return ctx.finish(entityStream);
     }
 
     @Override

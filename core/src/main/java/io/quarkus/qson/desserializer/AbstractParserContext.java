@@ -10,11 +10,16 @@ public abstract class AbstractParserContext implements ParserContext {
     protected ArrayDeque<Object> target = new ArrayDeque<>();
     protected int ptr;
     protected ParserState initialState;
+    protected JsonParser parser;
     protected boolean buildingToken;
     protected int tokenStart = -1;
     protected int tokenEnd = -1;
+    protected boolean eof;
+    protected boolean parserComplete;
+    protected Object result;
 
-    public AbstractParserContext(ParserState initialState) {
+    public AbstractParserContext(JsonParser parser, ParserState initialState) {
+        this.parser = parser;
         this.initialState = initialState;
     }
 
@@ -48,7 +53,6 @@ public abstract class AbstractParserContext implements ParserContext {
 
     @Override
     public void pushTarget(Object obj) {
-
         target.push(obj);
     }
 
@@ -59,7 +63,7 @@ public abstract class AbstractParserContext implements ParserContext {
 
     @Override
     public void rewind() {
-        ptr--;
+        if (!eof) ptr--;
     }
 
     @Override
@@ -76,8 +80,8 @@ public abstract class AbstractParserContext implements ParserContext {
             ch = consume();
             if (isWhitespace(ch)) continue;
             return ch;
-        } while (ch != 0);
-         return 0;
+        } while (ch > 0);
+        return 0;
     }
 
     protected boolean escaped = false;
@@ -87,24 +91,25 @@ public abstract class AbstractParserContext implements ParserContext {
         int ch = 0;
         do {
             ch = consume();
+            if (ch <= 0) return ch;
             // make sure that last character wasn't escape character
             if (ch != INT_QUOTE || (escaped && ch == INT_QUOTE)) {
-                if (ch != 0) escaped = escaped ? false : ch == INT_BACKSLASH;
+                escaped = escaped ? false : ch == INT_BACKSLASH;
                 continue;
             }
             return ch;
-        } while (ch != 0);
+        } while (ch > 0);
         return 0;
     }
 
     @Override
     public int skipDigits() {
-        int ch = 0;
+        int ch ;
         do {
             ch = consume();
             if (isDigit(ch)) continue;
             return ch;
-        } while (ch != 0);
+        } while (ch > 0);
         return 0;
     }
 
@@ -115,7 +120,28 @@ public abstract class AbstractParserContext implements ParserContext {
             ch = consume();
             if (Character.isAlphabetic(ch)) continue;
             return ch;
-        } while (ch != 0);
+        } while (ch > 0);
         return 0;
     }
+
+    @Override
+    public <T> T finish() {
+        if (result != null) return (T)result;
+        parserComplete = state == null || state.isEmpty();
+        if (parserComplete) {
+            result = parser.getTarget(this);
+            return (T)result;
+        }
+        eof = true;
+        while (state != null && !state.isEmpty()) {
+            if (!state.peek().parse(this)) {
+                throw new RuntimeException("Parser incomplete.  EOF reached.");
+            }
+        }
+        parserComplete = state == null || state.isEmpty();
+        if (!parserComplete) throw new RuntimeException("Parser incomplete.  EOF reached.");
+        result = parser.getTarget(this);
+        return (T)result;
+    }
+
 }

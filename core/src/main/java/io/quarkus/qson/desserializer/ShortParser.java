@@ -8,6 +8,6 @@ public class ShortParser implements JsonParser {
 
     @Override
     public <T> T getTarget(ParserContext ctx) {
-        return (T)Integer.valueOf(ctx.popIntToken());
+        return (T)Short.valueOf(ctx.popShortToken());
     }
 }

@@ -86,6 +86,193 @@ public class MapperTest {
             "  }\n" +
             "}";
 
+    @Test
+    public void testInteger() throws Exception {
+        JsonMapper mapper = new JsonMapper();
+        {
+            JsonParser parser = mapper.parserFor(int.class);
+            ByteArrayParserContext ctx = new ByteArrayParserContext(parser);
+            Integer i = ctx.finish("1234");
+            Assertions.assertEquals(1234, i.intValue());
+        }
+        {
+            JsonParser parser = mapper.parserFor(Integer.class);
+            ByteArrayParserContext ctx = new ByteArrayParserContext(parser);
+            Integer i = ctx.finish("1234");
+            Assertions.assertEquals(1234, i.intValue());
+        }
+    }
+
+    @Test
+    public void testBadInteger() throws Exception {
+        JsonMapper mapper = new JsonMapper();
+        JsonParser parser = mapper.parserFor(int.class);
+        ByteArrayParserContext ctx = new ByteArrayParserContext(parser);
+        try {
+            Integer i = ctx.finish("ABCDE");
+            Assertions.fail();
+        } catch (Exception e) {
+
+        }
+    }
+    @Test
+    public void testShort() throws Exception {
+        JsonMapper mapper = new JsonMapper();
+        {
+            JsonParser parser = mapper.parserFor(short.class);
+            ByteArrayParserContext ctx = new ByteArrayParserContext(parser);
+            Short i = ctx.finish("1234");
+            Assertions.assertEquals(1234, i.shortValue());
+        }
+        {
+            JsonParser parser = mapper.parserFor(Short.class);
+            ByteArrayParserContext ctx = new ByteArrayParserContext(parser);
+            Short i = ctx.finish("1234");
+            Assertions.assertEquals(1234, i.shortValue());
+        }
+    }
+
+    @Test
+    public void testLong() throws Exception {
+        JsonMapper mapper = new JsonMapper();
+        {
+            JsonParser parser = mapper.parserFor(long.class);
+            ByteArrayParserContext ctx = new ByteArrayParserContext(parser);
+            Long i = ctx.finish("1234");
+            Assertions.assertEquals(1234L, i.longValue());
+        }
+        {
+            JsonParser parser = mapper.parserFor(Long.class);
+            ByteArrayParserContext ctx = new ByteArrayParserContext(parser);
+            Long i = ctx.finish("1234");
+            Assertions.assertEquals(1234L, i.longValue());
+        }
+    }
+
+    @Test
+    public void testByte() throws Exception {
+        JsonMapper mapper = new JsonMapper();
+        {
+            JsonParser parser = mapper.parserFor(byte.class);
+            ByteArrayParserContext ctx = new ByteArrayParserContext(parser);
+            Byte i = ctx.finish("123");
+            Assertions.assertEquals(123, i.byteValue());
+        }
+        {
+            JsonParser parser = mapper.parserFor(Byte.class);
+            ByteArrayParserContext ctx = new ByteArrayParserContext(parser);
+            Byte i = ctx.finish("123");
+            Assertions.assertEquals(123, i.byteValue());
+        }
+    }
+
+    @Test
+    public void testFloat() throws Exception {
+        JsonMapper mapper = new JsonMapper();
+        {
+            JsonParser parser = mapper.parserFor(float.class);
+            ByteArrayParserContext ctx = new ByteArrayParserContext(parser);
+            Float i = ctx.finish("123");
+            Assertions.assertEquals(123.0f, i.floatValue());
+        }
+        {
+            JsonParser parser = mapper.parserFor(Float.class);
+            ByteArrayParserContext ctx = new ByteArrayParserContext(parser);
+            Float i = ctx.finish("123");
+            Assertions.assertEquals(123.0f, i.floatValue());
+        }
+        {
+            JsonParser parser = mapper.parserFor(float.class);
+            ByteArrayParserContext ctx = new ByteArrayParserContext(parser);
+            Float i = ctx.finish("123.1");
+            Assertions.assertEquals(123.1f, i.floatValue());
+        }
+        {
+            JsonParser parser = mapper.parserFor(Float.class);
+            ByteArrayParserContext ctx = new ByteArrayParserContext(parser);
+            Float i = ctx.finish("123.1");
+            Assertions.assertEquals(123.1f, i.floatValue());
+        }
+    }
+
+    @Test
+    public void testDouble() throws Exception {
+        JsonMapper mapper = new JsonMapper();
+        {
+            JsonParser parser = mapper.parserFor(double.class);
+            ByteArrayParserContext ctx = new ByteArrayParserContext(parser);
+            Double i = ctx.finish("123");
+            Assertions.assertEquals(123.0, i.doubleValue());
+        }
+        {
+            JsonParser parser = mapper.parserFor(Double.class);
+            ByteArrayParserContext ctx = new ByteArrayParserContext(parser);
+            Double i = ctx.finish("123");
+            Assertions.assertEquals(123.0, i.doubleValue());
+        }
+        {
+            JsonParser parser = mapper.parserFor(double.class);
+            ByteArrayParserContext ctx = new ByteArrayParserContext(parser);
+            Double i = ctx.finish("123.1");
+            Assertions.assertEquals(123.1, i.doubleValue());
+        }
+        {
+            JsonParser parser = mapper.parserFor(Double.class);
+            ByteArrayParserContext ctx = new ByteArrayParserContext(parser);
+            Double i = ctx.finish("123.1");
+            Assertions.assertEquals(123.1, i.doubleValue());
+        }
+    }
+
+    @Test
+    public void testBoolean() throws Exception {
+        JsonMapper mapper = new JsonMapper();
+        {
+            JsonParser parser = mapper.parserFor(boolean.class);
+            ByteArrayParserContext ctx = new ByteArrayParserContext(parser);
+            Boolean i = ctx.finish("true");
+            Assertions.assertEquals(true, i.booleanValue());
+        }
+        {
+            JsonParser parser = mapper.parserFor(Boolean.class);
+            ByteArrayParserContext ctx = new ByteArrayParserContext(parser);
+            Boolean i = ctx.finish("true");
+            Assertions.assertEquals(true, i.booleanValue());
+        }
+        {
+            JsonParser parser = mapper.parserFor(boolean.class);
+            ByteArrayParserContext ctx = new ByteArrayParserContext(parser);
+            Boolean i = ctx.finish("false");
+            Assertions.assertEquals(false, i.booleanValue());
+        }
+        {
+            JsonParser parser = mapper.parserFor(Boolean.class);
+            ByteArrayParserContext ctx = new ByteArrayParserContext(parser);
+            Boolean i = ctx.finish("false");
+            Assertions.assertEquals(false, i.booleanValue());
+        }
+    }
+
+    @Test
+    public void testString() throws Exception {
+        JsonMapper mapper = new JsonMapper();
+        JsonParser parser = mapper.parserFor(String.class);
+        ByteArrayParserContext ctx = new ByteArrayParserContext(parser);
+        String str = ctx.finish("\"ABCDE\"");
+        Assertions.assertEquals("ABCDE", str);
+    }
+
+    @Test
+    public void testIncompleteString() throws Exception {
+        JsonMapper mapper = new JsonMapper();
+        JsonParser parser = mapper.parserFor(String.class);
+        ByteArrayParserContext ctx = new ByteArrayParserContext(parser);
+        try {
+            String str = ctx.finish("\"ABCDE");
+            Assertions.fail();
+        } catch (Exception e) {
+        }
+    }
 
     @Test
     public void testPerson() throws Exception {
@@ -99,9 +286,8 @@ public class MapperTest {
         Assertions.assertTrue(parser == parser2);
         Assertions.assertTrue(objectWriter == objectWriter2);
 
-        ByteArrayParserContext ctx = new ByteArrayParserContext(parser.startState());
-        Assertions.assertTrue(ctx.parse(json));
-        Person2 person = ctx.target();
+        ByteArrayParserContext ctx = new ByteArrayParserContext(parser);
+        Person2 person = ctx.finish(json);
         validatePerson(person);
 
         // serializer
@@ -115,9 +301,8 @@ public class MapperTest {
 
         // validate serializer
 
-        ctx = new ByteArrayParserContext(parser.startState());
-        Assertions.assertTrue(ctx.parse(bytes));
-        person = ctx.target();
+        ctx = new ByteArrayParserContext(parser);
+        person = ctx.finish(bytes);
         validatePerson(person);
 
 
@@ -180,9 +365,8 @@ public class MapperTest {
         JsonByteWriter jsonWriter = new JsonByteWriter(writer);
         objectWriter.write(jsonWriter, pats);
         byte[] bytes = writer.getBytes();
-        ByteArrayParserContext ctx = new ByteArrayParserContext(parser.startState());
-        Assertions.assertTrue(ctx.parse(bytes));
-        Team team = ctx.target();
+        ByteArrayParserContext ctx = new ByteArrayParserContext(parser);
+        Team team = ctx.finish(bytes);
         Assertions.assertEquals("Patriots 2018", team.getName());
         Assertions.assertEquals("Tom", team.getQuarterback().getName());
         Assertions.assertEquals("Gronk", team.getReceivers().get(0).getName());

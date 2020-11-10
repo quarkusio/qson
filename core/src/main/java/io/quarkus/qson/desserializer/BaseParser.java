@@ -253,6 +253,9 @@ public class BaseParser implements JsonParser {
             ctx.pushState(continueStringValue);
             return false;
         }
+        if (c == INT_EOF) {
+            throw new RuntimeException("String does not have end quote");
+        }
         endToken(ctx);
         endStringValue(ctx);
         return true;

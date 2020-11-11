@@ -2,9 +2,17 @@ package io.quarkus.qson.generator;
 
 import io.quarkus.qson.GenericType;
 import io.quarkus.qson.Types;
+import io.quarkus.qson.desserializer.ByteArrayParserContext;
 import io.quarkus.qson.desserializer.JsonParser;
+import io.quarkus.qson.serializer.ByteArrayByteWriter;
+import io.quarkus.qson.serializer.JsonByteWriter;
+import io.quarkus.qson.serializer.JsonWriter;
 import io.quarkus.qson.serializer.ObjectWriter;
+import io.quarkus.qson.serializer.OutputStreamByteWriter;
 
+import java.io.IOException;
+import java.io.InputStream;
+import java.io.OutputStream;
 import java.lang.reflect.Type;
 import java.util.HashMap;
 import java.util.Map;
@@ -76,6 +84,45 @@ public class JsonMapper {
         return parser;
     }
 
+    public <T> T read(byte[] fullBuffer, Class<T> type, Type genericType) {
+        JsonParser parser = parserFor(type, genericType);
+        ByteArrayParserContext ctx = new ByteArrayParserContext(parser);
+        return ctx.finish(fullBuffer);
+    }
+
+    public <T> T read(byte[] fullBuffer, Class<T> type) {
+        return read(fullBuffer, type, type);
+    }
+
+    public <T> T read(byte[] fullBuffer, GenericType<T> type) {
+        return (T)read(fullBuffer, type.getRawType(), type.getType());
+    }
+
+    public <T> T read(String json, Class<T> type, Type genericType) {
+        return read(json.getBytes(JsonByteWriter.UTF8), type, genericType);
+    }
+
+    public <T> T read(String json, Class<T> type) {
+        return read(json, type, type);
+    }
+
+    public <T> T read(String json, GenericType<T> type) {
+        return (T)read(json, type.getRawType(), type.getType());
+    }
+
+    public <T> T read(InputStream is, Class<T> type, Type genericType) throws IOException {
+        JsonParser parser = parserFor(type, genericType);
+        ByteArrayParserContext ctx = new ByteArrayParserContext(parser);
+        return ctx.finish(is);
+    }
+
+    public <T> T read(InputStream is, Class<T> type) throws IOException {
+        return read(is, type, type);
+    }
+    public <T> T read(InputStream is, GenericType<T> type) throws IOException {
+        return (T)read(is, type.getRawType(), type.getType());
+    }
+
     private String generateDeserializers(Class clz, Type genericType) {
         String key = key(clz, genericType);
         if (generatedDeserializers.containsKey(key)) return generatedDeserializers.get(key);
@@ -129,6 +176,55 @@ public class JsonMapper {
         }
         return writer;
     }
+
+    public void writeStream(Class type, Type genericType, Object target, OutputStream stream) {
+        ObjectWriter objectWriter = writerFor(type, genericType);
+        OutputStreamByteWriter writer = new OutputStreamByteWriter(stream);
+        JsonWriter jsonWriter = new JsonByteWriter(writer);
+        objectWriter.write(jsonWriter, target);
+    }
+
+    public void writeStream(Class type, Object target, OutputStream stream) {
+        writeStream(type, type, target, stream);
+    }
+
+    public void writeStream(GenericType type, Object target, OutputStream stream) {
+        writeStream(type.getRawType(), type.getType(), target, stream);
+    }
+
+    public byte[] writeBytes(Class type, Type genericType, Object target) {
+        ObjectWriter objectWriter = writerFor(type, genericType);
+        ByteArrayByteWriter writer = new ByteArrayByteWriter();
+        JsonByteWriter jsonWriter = new JsonByteWriter(writer);
+        objectWriter.write(jsonWriter, target);
+        return writer.getBytes();
+    }
+
+    public byte[] writeBytes(Class type, Object target) {
+        return writeBytes(type, type, target);
+    }
+
+    public byte[] writeBytes(GenericType type, Object target) {
+        return writeBytes(type.getRawType(), type.getType(), target);
+    }
+
+    public String writeString(Class type, Type genericType, Object target) {
+        try {
+            return new String(writeBytes(type, genericType, target), JsonByteWriter.UTF8);
+        } catch (Exception e) {
+            throw new RuntimeException(e);
+        }
+    }
+
+    public String writeString(Class type, Object target) {
+        return writeString(type, type, target);
+    }
+
+    public String writeString(GenericType type, Object target) {
+        return writeString(type.getRawType(), type.getType(), target);
+    }
+
+
 
     private String generateSerializers(Class clz, Type genericType) {
         String key = key(clz, genericType);

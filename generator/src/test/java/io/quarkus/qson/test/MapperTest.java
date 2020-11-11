@@ -1,5 +1,6 @@
 package io.quarkus.qson.test;
 
+import io.quarkus.qson.GenericType;
 import io.quarkus.qson.desserializer.ByteArrayParserContext;
 import io.quarkus.qson.desserializer.JsonParser;
 import io.quarkus.qson.generator.JsonMapper;
@@ -14,6 +15,7 @@ import java.util.HashMap;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
+import java.util.function.Consumer;
 
 public class MapperTest {
 
@@ -375,6 +377,269 @@ public class MapperTest {
         Assertions.assertEquals("Gronk", team.getPlayers().get("Gronk").getName());
         Assertions.assertEquals("Julien", team.getPlayers().get("Julien").getName());
 
+    }
+
+    List<String> breakup(String str, int size) {
+        List<String> breakup = new LinkedList<>();
+        int i = 0;
+        int len = str.length();
+        while (true) {
+            if (size > len - i) {
+                breakup.add(str.substring(i));
+                return breakup;
+            }
+            breakup.add(str.substring(i, i + size));
+            i += size;
+        }
+    }
+    @Test
+    public void testMapByteString() throws Exception {
+        test("{ \"1\": \"one\", \"2\": \"two\"}",
+                new GenericType<Map<Byte, String>>() {},
+                (obj) -> {
+                    Map<Byte, String> target = (Map<Byte, String>)obj;
+                    Assertions.assertEquals("one", target.get((byte)1));
+                    Assertions.assertEquals("two", target.get((byte)2));
+                });
+    }
+
+    @Test
+    public void testMapShortString() throws Exception {
+        test("{ \"1\": \"one\", \"2\": \"two\"}",
+                new GenericType<Map<Short, String>>() {},
+                (obj) -> {
+                    Map<Short, String> target = (Map<Short, String>)obj;
+                    Assertions.assertEquals("one", target.get((short)1));
+                    Assertions.assertEquals("two", target.get((short)2));
+                });
+    }
+
+    @Test
+    public void testMapIntegerString() throws Exception {
+        test("{ \"1\": \"one\", \"2\": \"two\"}",
+                new GenericType<Map<Integer, String>>() {},
+                (obj) -> {
+                    Map<Integer, String> target = (Map<Integer, String>)obj;
+                    Assertions.assertEquals("one", target.get((int)1));
+                    Assertions.assertEquals("two", target.get((int)2));
+                });
+    }
+
+    @Test
+    public void testMapLongString() throws Exception {
+        test("{ \"1\": \"one\", \"2\": \"two\"}",
+                new GenericType<Map<Long, String>>() {},
+                (obj) -> {
+                    Map<Long, String> target = (Map<Long, String>)obj;
+                    Assertions.assertEquals("one", target.get((long)1));
+                    Assertions.assertEquals("two", target.get((long)2));
+                });
+    }
+
+    @Test
+    public void testMapStringString() throws Exception {
+        test("{ \"one\": \"1\", \"two\": \"2\"}",
+                new GenericType<Map<String, String>>() {},
+                (obj) -> {
+                    Map<String, String> target = (Map<String, String>)obj;
+                    Assertions.assertEquals("1", target.get("one"));
+                    Assertions.assertEquals("2", target.get("two"));
+                });
+    }
+
+    @Test
+    public void testMapStringByte() throws Exception {
+        test("{ \"one\": 1, \"two\": 2}",
+                new GenericType<Map<String, Byte>>() {},
+                (obj) -> {
+                    Map<String, Byte> target = (Map<String, Byte>)obj;
+                    Assertions.assertEquals(1, target.get("one").byteValue());
+                    Assertions.assertEquals(2, target.get("two").byteValue());
+                });
+    }
+
+    @Test
+    public void testMapStringShort() throws Exception {
+        test("{ \"one\": 1, \"two\": 2}",
+                new GenericType<Map<String, Short>>() {},
+                (obj) -> {
+                    Map<String, Short> target = (Map<String, Short>)obj;
+                    Assertions.assertEquals(1, target.get("one").shortValue());
+                    Assertions.assertEquals(2, target.get("two").shortValue());
+                });
+    }
+
+    @Test
+    public void testMapStringInteger() throws Exception {
+        test("{ \"one\": 1, \"two\": 2}",
+                new GenericType<Map<String, Integer>>() {},
+                (obj) -> {
+                    Map<String, Integer> target = (Map<String, Integer>)obj;
+                    Assertions.assertEquals(1, target.get("one").intValue());
+                    Assertions.assertEquals(2, target.get("two").intValue());
+                });
+    }
+
+    @Test
+    public void testMapStringLong() throws Exception {
+        test("{ \"one\": 1, \"two\": 2}",
+                new GenericType<Map<String, Long>>() {},
+                (obj) -> {
+                    Map<String, Long> target = (Map<String, Long>)obj;
+                    Assertions.assertEquals(1, target.get("one").longValue());
+                    Assertions.assertEquals(2, target.get("two").longValue());
+                });
+    }
+
+    @Test
+    public void testMapStringFloat() throws Exception {
+        test("{ \"one\": 1.1, \"two\": 2.2}",
+                new GenericType<Map<String, Float>>() {},
+                (obj) -> {
+                    Map<String, Float> target = (Map<String, Float>)obj;
+                    Assertions.assertEquals(1.1f, target.get("one").floatValue());
+                    Assertions.assertEquals(2.2f, target.get("two").floatValue());
+                });
+    }
+
+    @Test
+    public void testMapStringDouble() throws Exception {
+        test("{ \"one\": 1.1, \"two\": 2.2}",
+                new GenericType<Map<String, Double>>() {},
+                (obj) -> {
+                    Map<String, Double> target = (Map<String, Double>)obj;
+                    Assertions.assertEquals(1.1, target.get("one").doubleValue());
+                    Assertions.assertEquals(2.2, target.get("two").doubleValue());
+                });
+    }
+
+    @Test
+    public void testListString() throws Exception {
+        test("[ \"1\", \"2\"]",
+                new GenericType<List<String>>() {},
+                (obj) -> {
+                    List<String> target = (List<String>)obj;
+                    Assertions.assertEquals("1", target.get(0));
+                    Assertions.assertEquals("2", target.get(1));
+                });
+    }
+
+    @Test
+    public void testListByte() throws Exception {
+        test("[ 1, 2]",
+                new GenericType<List<Byte>>() {},
+                (obj) -> {
+                    List<Byte> target = (List<Byte>)obj;
+                    Assertions.assertEquals(1, target.get(0).byteValue());
+                    Assertions.assertEquals(2, target.get(1).byteValue());
+                });
+    }
+
+    @Test
+    public void testListShort() throws Exception {
+        test("[ 1, 2]",
+                new GenericType<List<Short>>() {},
+                (obj) -> {
+                    List<Short> target = (List<Short>)obj;
+                    Assertions.assertEquals(1, target.get(0).shortValue());
+                    Assertions.assertEquals(2, target.get(1).shortValue());
+                });
+    }
+
+    @Test
+    public void testListInteger() throws Exception {
+        test("[ 1, 2]",
+                new GenericType<List<Integer>>() {},
+                (obj) -> {
+                    List<Integer> target = (List<Integer>)obj;
+                    Assertions.assertEquals(1, target.get(0).intValue());
+                    Assertions.assertEquals(2, target.get(1).intValue());
+                });
+    }
+
+    @Test
+    public void testListLong() throws Exception {
+        test("[ 1, 2]",
+                new GenericType<List<Long>>() {},
+                (obj) -> {
+                    List<Long> target = (List<Long>)obj;
+                    Assertions.assertEquals(1, target.get(0).longValue());
+                    Assertions.assertEquals(2, target.get(1).longValue());
+                });
+    }
+
+    @Test
+    public void testListFloat() throws Exception {
+        test("[ 1.1, 2.2]",
+                new GenericType<List<Float>>() {},
+                (obj) -> {
+                    List<Float> target = (List<Float>)obj;
+                    Assertions.assertEquals(1.1f, target.get(0).floatValue());
+                    Assertions.assertEquals(2.2f, target.get(1).floatValue());
+                });
+    }
+
+    @Test
+    public void testListDouble() throws Exception {
+        test("[ 1.1, 2.2]",
+                new GenericType<List<Double>>() {},
+                (obj) -> {
+                    List<Double> target = (List<Double>)obj;
+                    Assertions.assertEquals(1.1, target.get(0).doubleValue());
+                    Assertions.assertEquals(2.2, target.get(1).doubleValue());
+                });
+    }
+
+    @Test
+    public void testListBoolean() throws Exception {
+        test("[ true, false]",
+                new GenericType<List<Boolean>>() {},
+                (obj) -> {
+                    List<Boolean> target = (List<Boolean>)obj;
+                    Assertions.assertEquals(true, target.get(0).booleanValue());
+                    Assertions.assertEquals(false, target.get(1).booleanValue());
+                });
+    }
+
+    @Test
+    public void testEmpty() throws Exception {
+        test("{}", new GenericType<Person2>() {},
+                (obj) -> {
+                    Person2 target = (Person2)obj;
+                    Assertions.assertNotNull(target);
+                });
+        test("{}", new GenericType<Map<String, String>>() {},
+                (obj) -> {
+                    Map<String, String> target = (Map<String, String>)obj;
+                    Assertions.assertTrue(target.isEmpty());
+                });
+        test("[]", new GenericType<List<String>>() {},
+                (obj) -> {
+                    List<String> target = (List<String>)obj;
+                    Assertions.assertTrue(target.isEmpty());
+                });
+    }
+
+
+    private void test(String json, GenericType type, Consumer assertions) {
+        JsonMapper mapper = new JsonMapper();
+        JsonParser parser = mapper.parserFor(type);
+        Object target = mapper.read(json, type);
+        assertions.accept(target);
+
+        for (int i = 1; i <= json.length(); i++) {
+            List<String> breakup = breakup(json, i);
+            ByteArrayParserContext ctx = new ByteArrayParserContext(parser);
+            for (String str : breakup) {
+                if (ctx.parse(str)) break;
+            }
+            target = ctx.finish();
+            assertions.accept(target);
+        }
+
+        byte[] bytes = mapper.writeBytes(type, target);
+        target = mapper.read(bytes, type);
+        assertions.accept(target);
     }
 
 }

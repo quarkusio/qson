@@ -263,7 +263,7 @@ public class MyBenchmark {
         }
     }
 
-    //@Benchmark
+    @Benchmark
     public Object testQsonWriter(QsonWriter q) {
         ByteArrayByteWriter writer = new ByteArrayByteWriter();
         JsonByteWriter jsonWriter = new JsonByteWriter(writer);
@@ -271,7 +271,7 @@ public class MyBenchmark {
         return writer.getBytes();
     }
 
-    //@Benchmark
+    @Benchmark
     public Object testJacksonWriter(JacksonWriter q) {
         try {
             ByteArrayOutputStream out = new ByteArrayOutputStream();
@@ -281,7 +281,7 @@ public class MyBenchmark {
             throw new RuntimeException(e);
         }
     }
-    //@Benchmark
+    @Benchmark
     public Object testAfterburnerWriter(AfterburnerWriter q) {
         try {
             ByteArrayOutputStream out = new ByteArrayOutputStream();

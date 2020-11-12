@@ -41,6 +41,9 @@ import io.quarkus.qson.desserializer.JsonParser;
 import io.quarkus.qson.generator.Deserializer;
 import io.quarkus.qson.generator.JsonMapper;
 import io.quarkus.qson.generator.Serializer;
+import io.quarkus.qson.serializer.ByteArrayByteWriter;
+import io.quarkus.qson.serializer.JsonByteWriter;
+import io.quarkus.qson.serializer.ObjectWriter;
 import org.openjdk.jmh.annotations.Benchmark;
 import org.openjdk.jmh.annotations.Fork;
 import org.openjdk.jmh.annotations.Level;
@@ -50,7 +53,9 @@ import org.openjdk.jmh.annotations.Setup;
 import org.openjdk.jmh.annotations.State;
 import org.openjdk.jmh.annotations.Warmup;
 
+import java.io.ByteArrayOutputStream;
 import java.io.IOException;
+import java.io.StringReader;
 
 @Fork(2)
 @Warmup(iterations = 2)
@@ -126,6 +131,55 @@ public class MyBenchmark {
             "  }\n" +
             "}";
 
+    @State(Scope.Benchmark)
+    public static class QsonWriter {
+        public ObjectWriter objectWriter;
+        public Person2 person;
+
+        @Setup(Level.Trial)
+        public void setup() {
+            JsonMapper mapper = new JsonMapper();
+            person = mapper.read(json, Person2.class);
+            objectWriter = mapper.writerFor(Person2.class);
+        }
+    }
+
+    @State(Scope.Benchmark)
+    public static class JacksonWriter {
+        public com.fasterxml.jackson.databind.ObjectWriter objectWriter;
+        public Person2 person;
+
+        @Setup(Level.Trial)
+        public void setup() {
+            ObjectMapper mapper = new ObjectMapper().configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false)
+                    .configure(MapperFeature.ACCEPT_CASE_INSENSITIVE_PROPERTIES, false);
+            objectWriter = mapper.writerFor(Person2.class);
+            try {
+                person = mapper.readerFor(Person2.class).readValue(new StringReader(json));
+            } catch (IOException e) {
+                throw new RuntimeException(e);
+            }
+        }
+    }
+
+    @State(Scope.Benchmark)
+    public static class AfterburnerWriter {
+        public com.fasterxml.jackson.databind.ObjectWriter objectWriter;
+        public Person2 person;
+
+        @Setup(Level.Trial)
+        public void setup() {
+            ObjectMapper mapper = new ObjectMapper().configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false)
+                    .configure(MapperFeature.ACCEPT_CASE_INSENSITIVE_PROPERTIES, false);
+            mapper.registerModule(new AfterburnerModule());
+            objectWriter = mapper.writerFor(Person2.class);
+            try {
+                person = mapper.readerFor(Person2.class).readValue(new StringReader(json));
+            } catch (IOException e) {
+                throw new RuntimeException(e);
+            }
+        }
+    }
 
     @State(Scope.Benchmark)
     public static class QsonParser {
@@ -209,4 +263,32 @@ public class MyBenchmark {
         }
     }
 
+    //@Benchmark
+    public Object testQsonWriter(QsonWriter q) {
+        ByteArrayByteWriter writer = new ByteArrayByteWriter();
+        JsonByteWriter jsonWriter = new JsonByteWriter(writer);
+        q.objectWriter.write(jsonWriter, q.person);
+        return writer.getBytes();
+    }
+
+    //@Benchmark
+    public Object testJacksonWriter(JacksonWriter q) {
+        try {
+            ByteArrayOutputStream out = new ByteArrayOutputStream();
+            q.objectWriter.writeValue(out, q.person);
+            return out.toByteArray();
+        } catch (IOException e) {
+            throw new RuntimeException(e);
+        }
+    }
+    //@Benchmark
+    public Object testAfterburnerWriter(AfterburnerWriter q) {
+        try {
+            ByteArrayOutputStream out = new ByteArrayOutputStream();
+            q.objectWriter.writeValue(out, q.person);
+            return out.toByteArray();
+        } catch (IOException e) {
+            throw new RuntimeException(e);
+        }
+    }
 }

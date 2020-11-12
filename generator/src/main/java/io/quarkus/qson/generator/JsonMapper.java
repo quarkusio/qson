@@ -57,14 +57,39 @@ public class JsonMapper {
         for (Class clz : classes) parserFor(clz);
     }
 
+    /**
+     * Generate a parser for specific class and caches it for future lookup.
+     *
+     * @param clz
+     * @return
+     */
     public JsonParser parserFor(Class clz) {
        return parserFor(clz, clz);
     }
 
+    /**
+     * Generate a parser for the specified GenericType.  Useful to bypass type erasure.
+     *
+     * For example:
+     * <pre>
+     *  GenericType&lt;List&lt;Foo&gt;&gt; fooListType = new GenericType&lt;List&lt;Foo&gt;&gt;() {};
+     *  JsonParser parser = mapper.parserFor(fooListType);
+     * </pre>
+     *
+     * @param type
+     * @return
+     */
     public JsonParser parserFor(GenericType type) {
         return parserFor(type.getRawType(), type.getType());
     }
 
+    /**
+     * Generate parser based on class and generic type parameters.
+     *
+     * @param clz
+     * @param genericType
+     * @return
+     */
     public JsonParser parserFor(Class clz, Type genericType) {
         String key = key(clz, genericType);
         JsonParser parser = deserializers.get(key);
@@ -84,41 +109,120 @@ public class JsonMapper {
         return parser;
     }
 
+    /**
+     * Deserialize a complete byte buffer into the specified type.
+     *
+     * @param fullBuffer
+     * @param type
+     * @param genericType
+     * @param <T>
+     * @return
+     */
     public <T> T read(byte[] fullBuffer, Class<T> type, Type genericType) {
         JsonParser parser = parserFor(type, genericType);
         ByteArrayParserContext ctx = new ByteArrayParserContext(parser);
         return ctx.finish(fullBuffer);
     }
 
+    /**
+     * Deserialize a complete byte buffer into the specified type.
+     *
+     * @param fullBuffer
+     * @param type
+     * @param <T>
+     * @return
+     */
     public <T> T read(byte[] fullBuffer, Class<T> type) {
         return read(fullBuffer, type, type);
     }
 
+    /**
+     * Deserialize a complete byte buffer into the specified type.
+     *
+     * @param fullBuffer
+     * @param type
+     * @param <T>
+     * @return
+     */
     public <T> T read(byte[] fullBuffer, GenericType<T> type) {
         return (T)read(fullBuffer, type.getRawType(), type.getType());
     }
 
+    /**
+     * Deserialize a complete json string into the specified type
+     *
+     * @param json
+     * @param type
+     * @param genericType
+     * @param <T>
+     * @return
+     */
     public <T> T read(String json, Class<T> type, Type genericType) {
         return read(json.getBytes(JsonByteWriter.UTF8), type, genericType);
     }
 
+    /**
+     * Deserialize a complete json string into the specified type
+     *
+     * @param json
+     * @param type
+     * @param <T>
+     * @return
+     */
     public <T> T read(String json, Class<T> type) {
         return read(json, type, type);
     }
 
+    /**
+     * Deserialize a complete json string into the specified type
+     *
+     * @param json
+     * @param type
+     * @param <T>
+     * @return
+     */
     public <T> T read(String json, GenericType<T> type) {
         return (T)read(json, type.getRawType(), type.getType());
     }
 
+    /**
+     * Deserialize the specified type from an InputStream
+     *
+     * @param is
+     * @param type
+     * @param genericType
+     * @param <T>
+     * @return
+     * @throws IOException
+     */
     public <T> T read(InputStream is, Class<T> type, Type genericType) throws IOException {
         JsonParser parser = parserFor(type, genericType);
         ByteArrayParserContext ctx = new ByteArrayParserContext(parser);
         return ctx.finish(is);
     }
 
+    /**
+     * Deserialize the specified type from an InputStream
+     *
+     * @param is
+     * @param type
+     * @param <T>
+     * @return
+     * @throws IOException
+     */
     public <T> T read(InputStream is, Class<T> type) throws IOException {
         return read(is, type, type);
     }
+
+    /**
+     * Deserialize the specified type from an InputStream
+     *
+     * @param is
+     * @param type
+     * @param <T>
+     * @return
+     * @throws IOException
+     */
     public <T> T read(InputStream is, GenericType<T> type) throws IOException {
         return (T)read(is, type.getRawType(), type.getType());
     }
@@ -145,19 +249,44 @@ public class JsonMapper {
         for (Class clz : classes) writerFor(clz);
     }
 
+    /**
+     * Generates writers for passed in GenericTypes and cacahes them for future lookup
+     *
+     * @param types
+     */
     public void writersFor(GenericType... types) {
         for (GenericType type : types) writerFor(type);
 
     }
 
+    /**
+     * Create ObjectWriter for specified type
+     *
+     *
+     * @param clz
+     * @return
+     */
     public ObjectWriter writerFor(Class clz) {
         return writerFor(clz, clz);
     }
 
+    /**
+     * Create ObjectWriter for specified type
+     *
+     * @param type
+     * @return
+     */
     public ObjectWriter writerFor(GenericType type) {
         return writerFor(type.getRawType(), type.getType());
     }
 
+    /**
+     * Create ObjectWriter for specified type
+     *
+     * @param clz
+     * @param genericType
+     * @return
+     */
     public ObjectWriter writerFor(Class clz, Type genericType) {
         String key = key(clz, genericType);
         ObjectWriter writer = serializers.get(key);
@@ -177,6 +306,14 @@ public class JsonMapper {
         return writer;
     }
 
+    /**
+     * Write target object to OutputStream.  Uses UTF-8 encoding.
+     *
+     * @param type
+     * @param genericType
+     * @param target
+     * @param stream
+     */
     public void writeStream(Class type, Type genericType, Object target, OutputStream stream) {
         ObjectWriter objectWriter = writerFor(type, genericType);
         OutputStreamByteWriter writer = new OutputStreamByteWriter(stream);
@@ -184,14 +321,48 @@ public class JsonMapper {
         objectWriter.write(jsonWriter, target);
     }
 
+    /**
+     * Write target object to OutputStream.  Uses UTF-8 encoding.
+     *
+     * @param type
+     * @param target
+     * @param stream
+     */
     public void writeStream(Class type, Object target, OutputStream stream) {
         writeStream(type, type, target, stream);
     }
 
+    /**
+     * Write target object to OutputStream.  Uses UTF-8 encoding.
+     *
+     * @param type
+     * @param target
+     * @param stream
+     */
     public void writeStream(GenericType type, Object target, OutputStream stream) {
         writeStream(type.getRawType(), type.getType(), target, stream);
     }
 
+    /**
+     * Write target object to OutputStream.  Uses UTF-8 encoding.
+     * Note, because of type erasure, any generic type information will not be used to generate
+     * a parser for target object.
+     *
+     * @param target
+     * @param stream
+     */
+    public void writeStream(Object target, OutputStream stream) {
+        writeStream(target.getClass(), target.getClass(), stream);
+    }
+
+    /**
+     * Serialize target object to a byte array. Uses UTF-8 encoding.
+     *
+     * @param type
+     * @param genericType
+     * @param target
+     * @return
+     */
     public byte[] writeBytes(Class type, Type genericType, Object target) {
         ObjectWriter objectWriter = writerFor(type, genericType);
         ByteArrayByteWriter writer = new ByteArrayByteWriter();
@@ -200,14 +371,49 @@ public class JsonMapper {
         return writer.getBytes();
     }
 
+    /**
+     * Serialize target object to a byte array. Uses UTF-8 encoding.
+     *
+     * @param type
+     * @param target
+     * @return
+     */
     public byte[] writeBytes(Class type, Object target) {
         return writeBytes(type, type, target);
     }
 
+    /**
+     * Serialize target object to a byte array. Uses UTF-8 encoding.
+     *
+     * @param type
+     * @param target
+     * @return
+     */
     public byte[] writeBytes(GenericType type, Object target) {
         return writeBytes(type.getRawType(), type.getType(), target);
     }
 
+    /**
+     * Serialize target object to a byte array. Uses UTF-8 encoding.
+     *
+     * Note, because of type erasure, any generic type information will not be used to generate
+     * a parser for target object.
+     *
+     * @param target
+     * @return
+     */
+    public byte[] writeBytes(Object target) {
+        return writeBytes(target.getClass(), target);
+    }
+
+    /**
+     * Serialize target to a json string. Uses UTF-8 encoding.
+     *
+     * @param type
+     * @param genericType
+     * @param target
+     * @return
+     */
     public String writeString(Class type, Type genericType, Object target) {
         try {
             return new String(writeBytes(type, genericType, target), JsonByteWriter.UTF8);
@@ -216,15 +422,37 @@ public class JsonMapper {
         }
     }
 
+    /**
+     * Serialize target to a json string. Uses UTF-8 encoding.
+     *
+     * @param type
+     * @param target
+     * @return
+     */
     public String writeString(Class type, Object target) {
         return writeString(type, type, target);
     }
 
+    /**
+     * Serialize target to a json string. Uses UTF-8 encoding.
+     *
+     * @param type
+     * @param target
+     * @return
+     */
     public String writeString(GenericType type, Object target) {
         return writeString(type.getRawType(), type.getType(), target);
     }
 
-
+    /**
+     * Serialize target to a json string. Uses UTF-8 encoding.
+     *
+     * @param target
+     * @return
+     */
+    public String writeString(Object target) {
+        return writeString(target.getClass(), target);
+    }
 
     private String generateSerializers(Class clz, Type genericType) {
         String key = key(clz, genericType);

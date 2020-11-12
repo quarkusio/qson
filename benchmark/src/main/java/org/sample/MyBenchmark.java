@@ -39,6 +39,7 @@ import com.fasterxml.jackson.module.afterburner.AfterburnerModule;
 import io.quarkus.qson.desserializer.ByteArrayParserContext;
 import io.quarkus.qson.desserializer.JsonParser;
 import io.quarkus.qson.generator.Deserializer;
+import io.quarkus.qson.generator.JsonMapper;
 import io.quarkus.qson.generator.Serializer;
 import org.openjdk.jmh.annotations.Benchmark;
 import org.openjdk.jmh.annotations.Fork;
@@ -134,13 +135,10 @@ public class MyBenchmark {
 
         @Setup(Level.Trial)
         public void setup() {
-            TestClassLoader loader = new TestClassLoader(Person2.class.getClassLoader());
-            Deserializer.create(Person2.class).output(loader).generate();
-            Serializer.create(Person2.class).output(loader).generate();
+            JsonMapper mapper = new JsonMapper();
+            parser = mapper.parserFor(Person2.class);
 
             try {
-                Class deserializer = loader.loadClass(Deserializer.fqn(Person2.class, Person2.class));
-                parser = (JsonParser)deserializer.newInstance();
                 jsonBytes = json.getBytes("UTF-8");
             } catch (Exception e) {
                 throw new RuntimeException();

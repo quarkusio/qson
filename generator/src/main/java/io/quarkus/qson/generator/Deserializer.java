@@ -51,6 +51,10 @@ import static org.objectweb.asm.Opcodes.ACC_PRIVATE;
 import static org.objectweb.asm.Opcodes.ACC_FINAL;
 import static org.objectweb.asm.Opcodes.ACC_STATIC;
 
+/**
+ * Generates a parser class based on passed in type using Gizmo.
+ *
+ */
 public class Deserializer {
 
     // constructor
@@ -90,6 +94,11 @@ public class Deserializer {
             return this;
         }
 
+        /**
+         * Name of the generated parser class
+         *
+         * @return
+         */
         public String className() {
             return className;
         }
@@ -106,6 +115,11 @@ public class Deserializer {
             return this;
         }
 
+        /**
+         * Nested types that will need a parser generated for.
+         *
+         * @return
+         */
         public Map<Type, Class> referenced() {
             return referenced;
         }
@@ -186,11 +200,7 @@ public class Deserializer {
     final ClassOutput classOutput;
     final String className;
 
-    public static String name(Class clz, Type genericType) {
-        return clz.getSimpleName() + "__Parser";
-    }
-
-    public static String fqn(Class clz, Type genericType) {
+    private static String fqn(Class clz, Type genericType) {
         return clz.getName() + "__Parser";
     }
 

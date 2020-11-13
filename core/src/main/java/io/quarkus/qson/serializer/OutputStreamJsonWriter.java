@@ -4,6 +4,10 @@ package io.quarkus.qson.serializer;
 import java.io.IOException;
 import java.io.OutputStream;
 
+/**
+ * Writer for an OutputStream
+ *
+ */
 public class OutputStreamJsonWriter extends JsonByteWriter {
     private final OutputStream stream;
 

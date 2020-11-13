@@ -503,16 +503,6 @@ public abstract class JsonByteWriter implements JsonWriter {
             write((String)obj);
             return;
         }
-        if (obj instanceof Character) {
-            write((Character)obj);
-            return;
-        }
-        if (obj instanceof Short) {
-            writeByte(IntChar.INT_QUOTE);
-            write((Short)obj);
-            writeByte(IntChar.INT_QUOTE);
-            return;
-        }
         if (obj instanceof Integer) {
             writeByte(IntChar.INT_QUOTE);
             write((Integer)obj);
@@ -522,6 +512,16 @@ public abstract class JsonByteWriter implements JsonWriter {
         if (obj instanceof Long) {
             writeByte(IntChar.INT_QUOTE);
             write((Long)obj);
+            writeByte(IntChar.INT_QUOTE);
+            return;
+        }
+        if (obj instanceof Character) {
+            write((Character)obj);
+            return;
+        }
+        if (obj instanceof Short) {
+            writeByte(IntChar.INT_QUOTE);
+            write((Short)obj);
             writeByte(IntChar.INT_QUOTE);
             return;
         }

@@ -40,7 +40,6 @@ import io.quarkus.qson.desserializer.ByteArrayParserContext;
 import io.quarkus.qson.desserializer.JsonParser;
 import io.quarkus.qson.generator.JsonMapper;
 import io.quarkus.qson.serializer.ByteArrayJsonWriter;
-import io.quarkus.qson.serializer.JsonByteWriter;
 import io.quarkus.qson.serializer.JsonWriter;
 import io.quarkus.qson.serializer.ObjectWriter;
 import org.openjdk.jmh.annotations.Benchmark;
@@ -56,7 +55,7 @@ import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.StringReader;
 
-@Fork(2)
+@Fork(1)
 @Warmup(iterations = 2)
 @Measurement(iterations = 2)
 public class MyBenchmark {
@@ -223,35 +222,12 @@ public class MyBenchmark {
         }
     }
 
-    public static class SimpleObjectWriter implements ObjectWriter {
-        @Override
-        public void write(JsonWriter writer, Object target) {
-            Simple simple = (Simple)target;
-            writer.writeLCurley();
-            boolean comma = writer.writeProperty("name", simple.getName(), false);
-            writer.writeProperty("married", simple.isMarried(), comma);
-            writer.writeRCurley();
-        }
-    }
-
-    @State(Scope.Benchmark)
-    public static class SimpleManualQsonWriter {
-        public ObjectWriter objectWriter;
-        public Simple simple;
-
-        @Setup(Level.Trial)
-        public void setup() {
-            simple = createSimple();
-            objectWriter = new SimpleObjectWriter();
-        }
-    }
-
     static Simple createSimple() {
         Simple simple = new Simple();
         simple.setName("Bill Belichick");
-        //simple.setAge(67);
+        simple.setAge(67);
         simple.setMarried(false);
-        //simple.setMoney(1234567.21f);
+        simple.setMoney(1234567.21f);
         return simple;
     }
 
@@ -313,14 +289,14 @@ public class MyBenchmark {
         }
     }
 
-    //@Benchmark
-    public Object testQsonParser(QsonParser q) {
+    @Benchmark
+    public Object testParserQson(QsonParser q) {
         ByteArrayParserContext ctx = new ByteArrayParserContext(q.parser);
         return ctx.finish(q.jsonBytes);
     }
 
-    //@Benchmark
-    public Object testJacksonParser(JacksonParser j) {
+    @Benchmark
+    public Object testParserJackson(JacksonParser j) {
         try {
             return j.reader.readValue(j.jsonBytes);
         } catch (IOException e) {
@@ -328,8 +304,8 @@ public class MyBenchmark {
         }
     }
 
-    //@Benchmark
-    public Object testAfterburnerParser(AfterburnerParser a) {
+    @Benchmark
+    public Object testParserAfterburner(AfterburnerParser a) {
         try {
             return a.reader.readValue(a.jsonBytes);
         } catch (IOException e) {
@@ -337,27 +313,27 @@ public class MyBenchmark {
         }
     }
 
-    //@Benchmark
-    public Object testQsonWriter(QsonWriter q) {
-        ByteArrayJsonWriter jsonWriter = new ByteArrayJsonWriter();
+    @Benchmark
+    public Object testWriterQson(QsonWriter q) {
+        ByteArrayJsonWriter jsonWriter = new ByteArrayJsonWriter(1024);
         q.objectWriter.write(jsonWriter, q.person);
         return jsonWriter.getBytes();
     }
 
-    //@Benchmark
-    public Object testJacksonWriter(JacksonWriter q) {
+    @Benchmark
+    public Object testWriterJackson(JacksonWriter q) {
         try {
-            ByteArrayOutputStream out = new ByteArrayOutputStream();
+            ByteArrayOutputStream out = new ByteArrayOutputStream(1024);
             q.objectWriter.writeValue(out, q.person);
             return out.toByteArray();
         } catch (IOException e) {
             throw new RuntimeException(e);
         }
     }
-    //@Benchmark
-    public Object testAfterburnerWriter(AfterburnerWriter q) {
+    @Benchmark
+    public Object testWriterAfterburner(AfterburnerWriter q) {
         try {
-            ByteArrayOutputStream out = new ByteArrayOutputStream();
+            ByteArrayOutputStream out = new ByteArrayOutputStream(1024);
             q.objectWriter.writeValue(out, q.person);
             return out.toByteArray();
         } catch (IOException e) {
@@ -365,21 +341,14 @@ public class MyBenchmark {
         }
     }
 
-    @Benchmark
+    //@Benchmark
     public Object testSimpleQsonWriter(SimpleQsonWriter q) {
         ByteArrayJsonWriter jsonWriter = new ByteArrayJsonWriter();
         q.objectWriter.write(jsonWriter, q.simple);
         return jsonWriter.getBytes();
     }
 
-    @Benchmark
-    public Object testSimpleManualWriter(SimpleManualQsonWriter q) {
-        ByteArrayJsonWriter jsonWriter = new ByteArrayJsonWriter();
-        q.objectWriter.write(jsonWriter, q.simple);
-        return jsonWriter.getBytes();
-    }
-
-    @Benchmark
+    //@Benchmark
     public Object testSimpleJacksonWriter(SimpleJacksonWriter q) {
         try {
             ByteArrayOutputStream out = new ByteArrayOutputStream();
@@ -389,7 +358,7 @@ public class MyBenchmark {
             throw new RuntimeException(e);
         }
     }
-    @Benchmark
+    //@Benchmark
     public Object testSimpleAfterburnerWriter(SimpleAfterburnerWriter q) {
         try {
             ByteArrayOutputStream out = new ByteArrayOutputStream();

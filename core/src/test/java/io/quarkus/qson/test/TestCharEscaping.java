@@ -5,7 +5,7 @@ import com.fasterxml.jackson.databind.MapperFeature;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import io.quarkus.qson.desserializer.ByteArrayParserContext;
 import io.quarkus.qson.desserializer.GenericParser;
-import io.quarkus.qson.serializer.ByteArrayByteWriter;
+import io.quarkus.qson.serializer.ByteArrayJsonWriter;
 import io.quarkus.qson.serializer.GenericObjectWriter;
 import io.quarkus.qson.serializer.JsonByteWriter;
 import org.junit.jupiter.api.Assertions;
@@ -84,10 +84,9 @@ public class TestCharEscaping
     @Test
     public void testEscapeNonLatin() throws Exception {
         GenericObjectWriter objectWriter = new GenericObjectWriter();
-        ByteArrayByteWriter writer = new ByteArrayByteWriter();
-        JsonByteWriter jsonWriter = new JsonByteWriter(writer);
+        ByteArrayJsonWriter writer = new ByteArrayJsonWriter();
         String target = "Line\u2028feed, \u00D6l!";
-        objectWriter.write(jsonWriter, target);
+        objectWriter.write(writer, target);
         String json = new String(writer.getBytes(), UTF8);
         Assertions.assertEquals("\"" + target + "\"", json);
     }
@@ -119,8 +118,7 @@ public class TestCharEscaping
     @Test
     public void testRandom() throws Exception {
         GenericObjectWriter objectWriter = new GenericObjectWriter();
-        ByteArrayByteWriter writer = new ByteArrayByteWriter();
-        JsonByteWriter jsonWriter = new JsonByteWriter(writer);
+        ByteArrayJsonWriter jsonWriter = new ByteArrayJsonWriter();
 
         String target = generateRandom(1000);
         objectWriter.write(jsonWriter, target);
@@ -128,12 +126,12 @@ public class TestCharEscaping
                 .configure(MapperFeature.ACCEPT_CASE_INSENSITIVE_PROPERTIES, false);
 
         // We assume Jackson is correct.  This tests our writer against Jackson
-        String jackson = mapper.readValue(writer.getBytes(), String.class);
+        String jackson = mapper.readValue(jsonWriter.getBytes(), String.class);
         Assertions.assertEquals(target, jackson);
 
         // now test our parser
         ByteArrayParserContext ctx = new ByteArrayParserContext(GenericParser.PARSER, GenericParser.PARSER.startState());
-        String value = ctx.finish(writer.getBytes());
+        String value = ctx.finish(jsonWriter.getBytes());
         Assertions.assertEquals(target, value);
     }
 
@@ -152,11 +150,10 @@ public class TestCharEscaping
     }
 
     private void testOneChar(char c) {
-        ByteArrayByteWriter writer = new ByteArrayByteWriter();
-        JsonByteWriter jsonWriter = new JsonByteWriter(writer);
+        ByteArrayJsonWriter jsonWriter = new ByteArrayJsonWriter();
         jsonWriter.write(c);
         ByteArrayParserContext ctx = new ByteArrayParserContext(GenericParser.PARSER, GenericParser.PARSER.startState());
-        String value = ctx.finish(writer.getBytes());
+        String value = ctx.finish(jsonWriter.getBytes());
         Assertions.assertEquals(Character.toString(c), value);
     }
 

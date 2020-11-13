@@ -8,7 +8,7 @@ import io.quarkus.funqy.runtime.RequestContextImpl;
 import io.quarkus.funqy.runtime.query.QueryReader;
 import io.quarkus.qson.desserializer.ByteArrayParserContext;
 import io.quarkus.qson.desserializer.JsonParser;
-import io.quarkus.qson.serializer.ByteArrayByteWriter;
+import io.quarkus.qson.serializer.ByteArrayJsonWriter;
 import io.quarkus.qson.serializer.JsonByteWriter;
 import io.quarkus.qson.serializer.ObjectWriter;
 import io.quarkus.security.identity.CurrentIdentityAssociation;
@@ -147,11 +147,10 @@ public class VertxRequestHandler implements Handler<RoutingContext> {
                             routingContext.response().putHeader("Content-Type", "application/json");
                             ObjectWriter writer = (ObjectWriter) invoker.getBindingContext().get(ObjectWriter.class.getName());
                             try {
-                                ByteArrayByteWriter byteWriter = new ByteArrayByteWriter();
-                                JsonByteWriter jsonWriter = new JsonByteWriter(byteWriter);
+                                ByteArrayJsonWriter jsonWriter = new ByteArrayJsonWriter();
                                 writer.write(jsonWriter, o);
 
-                                routingContext.response().end(Buffer.buffer(byteWriter.getBytes()));
+                                routingContext.response().end(Buffer.buffer(jsonWriter.getBytes()));
                             } catch (Exception e) {
                                 log.error("Failed to marshal", e);
                                 routingContext.fail(400);

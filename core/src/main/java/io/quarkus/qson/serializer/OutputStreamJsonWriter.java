@@ -4,15 +4,15 @@ package io.quarkus.qson.serializer;
 import java.io.IOException;
 import java.io.OutputStream;
 
-public class OutputStreamByteWriter implements ByteWriter {
+public class OutputStreamJsonWriter extends JsonByteWriter {
     private final OutputStream stream;
 
-    public OutputStreamByteWriter(OutputStream stream) {
+    public OutputStreamJsonWriter(OutputStream stream) {
         this.stream = stream;
     }
 
     @Override
-    public void write(int b) {
+    public void writeByte(int b) {
         try {
             stream.write(b);
         } catch (IOException e) {
@@ -21,7 +21,7 @@ public class OutputStreamByteWriter implements ByteWriter {
     }
 
     @Override
-    public void write(byte[] bytes) {
+    public void writeBytes(byte[] bytes) {
         try {
             stream.write(bytes);
         } catch (IOException e) {

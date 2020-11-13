@@ -4,10 +4,9 @@ import io.quarkus.qson.GenericType;
 import io.quarkus.qson.desserializer.ByteArrayParserContext;
 import io.quarkus.qson.desserializer.JsonParser;
 import io.quarkus.qson.generator.JsonMapper;
-import io.quarkus.qson.serializer.ByteArrayByteWriter;
+import io.quarkus.qson.serializer.ByteArrayJsonWriter;
 import io.quarkus.qson.serializer.JsonByteWriter;
 import io.quarkus.qson.serializer.ObjectWriter;
-import io.quarkus.runtime.QuarkusApplication;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
 
@@ -294,11 +293,10 @@ public class MapperTest {
 
         // serializer
 
-        ByteArrayByteWriter writer = new ByteArrayByteWriter();
-        JsonByteWriter jsonWriter = new JsonByteWriter(writer);
+        ByteArrayJsonWriter jsonWriter = new ByteArrayJsonWriter();
         objectWriter.write(jsonWriter, person);
 
-        byte[] bytes = writer.getBytes();
+        byte[] bytes = jsonWriter.getBytes();
         System.out.println(new String(bytes, JsonByteWriter.UTF8));
 
         // validate serializer
@@ -363,10 +361,9 @@ public class MapperTest {
         pats.setPlayers(players);
 
 
-        ByteArrayByteWriter writer = new ByteArrayByteWriter();
-        JsonByteWriter jsonWriter = new JsonByteWriter(writer);
+        ByteArrayJsonWriter jsonWriter = new ByteArrayJsonWriter();
         objectWriter.write(jsonWriter, pats);
-        byte[] bytes = writer.getBytes();
+        byte[] bytes = jsonWriter.getBytes();
         ByteArrayParserContext ctx = new ByteArrayParserContext(parser);
         Team team = ctx.finish(bytes);
         Assertions.assertEquals("Patriots 2018", team.getName());

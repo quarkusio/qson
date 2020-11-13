@@ -4,11 +4,11 @@ import io.quarkus.qson.GenericType;
 import io.quarkus.qson.Types;
 import io.quarkus.qson.desserializer.ByteArrayParserContext;
 import io.quarkus.qson.desserializer.JsonParser;
-import io.quarkus.qson.serializer.ByteArrayByteWriter;
+import io.quarkus.qson.serializer.ByteArrayJsonWriter;
 import io.quarkus.qson.serializer.JsonByteWriter;
 import io.quarkus.qson.serializer.JsonWriter;
 import io.quarkus.qson.serializer.ObjectWriter;
-import io.quarkus.qson.serializer.OutputStreamByteWriter;
+import io.quarkus.qson.serializer.OutputStreamJsonWriter;
 
 import java.io.IOException;
 import java.io.InputStream;
@@ -316,8 +316,7 @@ public class JsonMapper {
      */
     public void writeStream(Class type, Type genericType, Object target, OutputStream stream) {
         ObjectWriter objectWriter = writerFor(type, genericType);
-        OutputStreamByteWriter writer = new OutputStreamByteWriter(stream);
-        JsonWriter jsonWriter = new JsonByteWriter(writer);
+        OutputStreamJsonWriter jsonWriter = new OutputStreamJsonWriter(stream);
         objectWriter.write(jsonWriter, target);
     }
 
@@ -365,10 +364,9 @@ public class JsonMapper {
      */
     public byte[] writeBytes(Class type, Type genericType, Object target) {
         ObjectWriter objectWriter = writerFor(type, genericType);
-        ByteArrayByteWriter writer = new ByteArrayByteWriter();
-        JsonByteWriter jsonWriter = new JsonByteWriter(writer);
+        ByteArrayJsonWriter jsonWriter = new ByteArrayJsonWriter();
         objectWriter.write(jsonWriter, target);
-        return writer.getBytes();
+        return jsonWriter.getBytes();
     }
 
     /**

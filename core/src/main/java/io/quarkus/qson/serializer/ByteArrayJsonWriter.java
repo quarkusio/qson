@@ -3,16 +3,16 @@ package io.quarkus.qson.serializer;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 
-public class ByteArrayByteWriter implements ByteWriter {
+public class ByteArrayJsonWriter extends JsonByteWriter {
     ByteArrayOutputStream baos = new ByteArrayOutputStream();
 
     @Override
-    public void write(int b) {
+    public void writeByte(int b) {
         baos.write(b);
     }
 
     @Override
-    public void write(byte[] bytes) {
+    public void writeBytes(byte[] bytes) {
         try {
             baos.write(bytes);
         } catch (IOException e) {

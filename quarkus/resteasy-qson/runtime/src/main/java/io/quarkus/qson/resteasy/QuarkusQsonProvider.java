@@ -1,13 +1,12 @@
 package io.quarkus.qson.resteasy;
 
-import io.quarkus.qson.Types;
 import io.quarkus.qson.desserializer.ByteArrayParserContext;
 import io.quarkus.qson.desserializer.JsonParser;
 import io.quarkus.qson.runtime.QsonRegistry;
 import io.quarkus.qson.serializer.JsonByteWriter;
 import io.quarkus.qson.serializer.JsonWriter;
 import io.quarkus.qson.serializer.ObjectWriter;
-import io.quarkus.qson.serializer.OutputStreamByteWriter;
+import io.quarkus.qson.serializer.OutputStreamJsonWriter;
 
 import javax.ws.rs.Consumes;
 import javax.ws.rs.Produces;
@@ -53,8 +52,7 @@ public class QuarkusQsonProvider implements MessageBodyReader, MessageBodyWriter
         if (objectWriter == null) {
             throw new IOException("Failed to find QSON writer for: " + genericType.getTypeName());
         }
-        OutputStreamByteWriter writer = new OutputStreamByteWriter(entityStream);
-        JsonWriter jsonWriter = new JsonByteWriter(writer);
+        OutputStreamJsonWriter jsonWriter = new OutputStreamJsonWriter(entityStream);
         objectWriter.write(jsonWriter, o);
     }
 }

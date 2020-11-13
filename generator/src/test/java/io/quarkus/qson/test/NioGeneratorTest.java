@@ -6,7 +6,7 @@ import io.quarkus.qson.desserializer.JsonParser;
 import io.quarkus.qson.generator.JsonMapper;
 import io.quarkus.qson.generator.Serializer;
 import io.quarkus.qson.generator.Deserializer;
-import io.quarkus.qson.serializer.ByteArrayByteWriter;
+import io.quarkus.qson.serializer.ByteArrayJsonWriter;
 import io.quarkus.qson.serializer.JsonByteWriter;
 import io.quarkus.qson.serializer.ObjectWriter;
 import org.junit.jupiter.api.Assertions;
@@ -49,14 +49,13 @@ public class NioGeneratorTest {
             list.add(bb);
             map.put("bb", list);
 
-            ByteArrayByteWriter writer = new ByteArrayByteWriter();
-            JsonByteWriter jsonWriter = new JsonByteWriter(writer);
+            ByteArrayJsonWriter jsonWriter = new ByteArrayJsonWriter();
             GenericType<Map<String, List<Person2>>> type = new GenericType<>() {
             };
             ObjectWriter objectWriter = mapper.writerFor(type);
             objectWriter.write(jsonWriter, map);
 
-            byte[] bytes = writer.getBytes();
+            byte[] bytes = jsonWriter.getBytes();
             System.out.println(new String(bytes, JsonByteWriter.UTF8));
 
 
@@ -72,14 +71,13 @@ public class NioGeneratorTest {
             bb.setName("bill");
             list.add(bb);
 
-            ByteArrayByteWriter writer = new ByteArrayByteWriter();
-            JsonByteWriter jsonWriter = new JsonByteWriter(writer);
+            ByteArrayJsonWriter jsonWriter = new ByteArrayJsonWriter();
             GenericType<List<Person2>> type = new GenericType<>() {
             };
             ObjectWriter objectWriter = mapper.writerFor(type);
             objectWriter.write(jsonWriter, list);
 
-            byte[] bytes = writer.getBytes();
+            byte[] bytes = jsonWriter.getBytes();
             System.out.println(new String(bytes, JsonByteWriter.UTF8));
 
 
@@ -92,14 +90,13 @@ public class NioGeneratorTest {
         {
             List<Long> list = new LinkedList<>();
             list.add(42L);
-            ByteArrayByteWriter writer = new ByteArrayByteWriter();
-            JsonByteWriter jsonWriter = new JsonByteWriter(writer);
+            ByteArrayJsonWriter jsonWriter = new ByteArrayJsonWriter();
             GenericType<List<Long>> type = new GenericType<>() {
             };
             ObjectWriter objectWriter = mapper.writerFor(type);
             objectWriter.write(jsonWriter, list);
 
-            byte[] bytes = writer.getBytes();
+            byte[] bytes = jsonWriter.getBytes();
             System.out.println(new String(bytes, JsonByteWriter.UTF8));
 
 
@@ -226,12 +223,11 @@ public class NioGeneratorTest {
 
         // serializer
 
-        ByteArrayByteWriter writer = new ByteArrayByteWriter();
-        JsonByteWriter jsonWriter = new JsonByteWriter(writer);
+        ByteArrayJsonWriter jsonWriter = new ByteArrayJsonWriter();
         ObjectWriter objectWriter = mapper.writerFor(Person2.class);
         objectWriter.write(jsonWriter, person);
 
-        byte[] bytes = writer.getBytes();
+        byte[] bytes = jsonWriter.getBytes();
         System.out.println(new String(bytes, JsonByteWriter.UTF8));
 
         // validate serializer
@@ -289,11 +285,10 @@ public class NioGeneratorTest {
 
         // serializer
 
-        ByteArrayByteWriter writer = new ByteArrayByteWriter();
-        JsonByteWriter jsonWriter = new JsonByteWriter(writer);
+        ByteArrayJsonWriter jsonWriter = new ByteArrayJsonWriter();
         objectWriter.write(jsonWriter, person);
 
-        byte[] bytes = writer.getBytes();
+        byte[] bytes = jsonWriter.getBytes();
         System.out.println(new String(bytes, JsonByteWriter.UTF8));
 
         // validate serializer

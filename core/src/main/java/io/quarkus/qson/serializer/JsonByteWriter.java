@@ -4,6 +4,7 @@ import io.quarkus.qson.IntChar;
 
 import java.nio.charset.Charset;
 import java.util.Collection;
+import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -271,14 +272,19 @@ public abstract class JsonByteWriter implements JsonWriter {
     @Override
     public void write(Map val) {
         writeByte(IntChar.INT_LCURLY);
-        Set<Map.Entry<Object, Object>> set = val.entrySet();
-        boolean first = true;
-        for (Map.Entry<Object, Object> entry : set) {
-            if (first) first = false;
-            else writeByte(IntChar.INT_COMMA);
+        if (!val.isEmpty()) {
+            Iterator<Map.Entry<Object, Object>> it = val.entrySet().iterator();
+            Map.Entry<Object, Object> entry = it.next();
             writePropertyName(entry.getKey());
             writeByte(IntChar.INT_COLON);
             writeObject(entry.getValue());
+            while (it.hasNext()) {
+                entry = it.next();
+                writeByte(IntChar.INT_COMMA);
+                writePropertyName(entry.getKey());
+                writeByte(IntChar.INT_COLON);
+                writeObject(entry.getValue());
+            }
         }
         writeByte(IntChar.INT_RCURLY);
     }
@@ -286,14 +292,20 @@ public abstract class JsonByteWriter implements JsonWriter {
     @Override
     public void write(Map val, ObjectWriter valueWriter) {
         writeByte(IntChar.INT_LCURLY);
-        Set<Map.Entry<Object, Object>> set = val.entrySet();
-        boolean first = true;
-        for (Map.Entry<Object, Object> entry : set) {
-            if (first) first = false;
-            else writeByte(IntChar.INT_COMMA);
+        if (!val.isEmpty()) {
+            Set<Map.Entry<Object, Object>> set = val.entrySet();
+            Iterator<Map.Entry<Object, Object>> it = set.iterator();
+            Map.Entry<Object, Object> entry = it.next();
             writePropertyName(entry.getKey());
             writeByte(IntChar.INT_COLON);
             valueWriter.write(this, entry.getValue());
+            while (it.hasNext()) {
+                entry = it.next();
+                writeByte(IntChar.INT_COMMA);
+                writePropertyName(entry.getKey());
+                writeByte(IntChar.INT_COLON);
+                valueWriter.write(this, entry.getValue());
+            }
         }
         writeByte(IntChar.INT_RCURLY);
     }
@@ -301,23 +313,28 @@ public abstract class JsonByteWriter implements JsonWriter {
     @Override
     public void write(Collection val) {
         writeByte(IntChar.INT_LBRACKET);
-        boolean first = true;
-        for (Object item : val) {
-            if (first) first = false;
-            else writeByte(IntChar.INT_COMMA);
-            writeObject(item);
-        }
-        writeByte(IntChar.INT_RBRACKET);
+        if (!val.isEmpty()) {
+            Iterator it = val.iterator();
+            writeObject(it.next());
+            while (it.hasNext()) {
+                writeByte(IntChar.INT_COMMA);
+                writeObject(it.next());
+            }
+         }
+         writeByte(IntChar.INT_RBRACKET);
     }
 
     @Override
     public void write(Collection val, ObjectWriter elementWriter) {
         writeByte(IntChar.INT_LBRACKET);
-        boolean first = true;
-        for (Object item : val) {
-            if (first) first = false;
-            else writeByte(IntChar.INT_COMMA);
-            elementWriter.write(this, item);
+        if (!val.isEmpty()) {
+            Iterator it = val.iterator();
+            elementWriter.write(this, it.next());
+            while (it.hasNext()) {
+                writeByte(IntChar.INT_COMMA);
+                elementWriter.write(this, it.next());
+            }
+
         }
         writeByte(IntChar.INT_RBRACKET);
     }
@@ -576,42 +593,47 @@ public abstract class JsonByteWriter implements JsonWriter {
         return true;
     }
 
+    static final byte[] COLON_LCURLY = {':', '{'};
+
     @Override
     public boolean writeProperty(String name, Map val, ObjectWriter objectWriter, boolean comma) {
         if (val == null) return comma;
         if (comma) writeByte(IntChar.INT_COMMA);
         write(name);
-        writeByte(IntChar.INT_COLON);
-        writeByte(IntChar.INT_LCURLY);
-        Set<Map.Entry<Object, Object>> set = val.entrySet();
-        boolean first = true;
-        for (Map.Entry<Object, Object> entry : set) {
-            if (first) first = false;
-            else writeByte(IntChar.INT_COMMA);
+        writeBytes(COLON_LCURLY);
+        if (!val.isEmpty()) {
+            Iterator<Map.Entry<Object, Object>> it = val.entrySet().iterator();
+            Map.Entry<Object, Object> entry = it.next();
             writePropertyName(entry.getKey());
             writeByte(IntChar.INT_COLON);
-            try {
+            objectWriter.write(this, entry.getValue());
+            while (it.hasNext()) {
+                entry = it.next();
+                writeByte(IntChar.INT_COMMA);
+                writePropertyName(entry.getKey());
+                writeByte(IntChar.INT_COLON);
                 objectWriter.write(this, entry.getValue());
-            } catch (RuntimeException e) {
-                throw new RuntimeException("Failed to write map property: " + name, e);
             }
         }
         writeByte(IntChar.INT_RCURLY);
         return true;
     }
 
+    static final byte[] COLON_LBRACKET = {':', '['};
+
     @Override
     public boolean writeProperty(String name, Collection val, ObjectWriter objectWriter, boolean comma) {
         if (val == null) return comma;
         if (comma) writeByte(IntChar.INT_COMMA);
         write(name);
-        writeByte(IntChar.INT_COLON);
-        writeByte(IntChar.INT_LBRACKET);
-        boolean first = true;
-        for (Object item : val) {
-            if (first) first = false;
-            else writeByte(IntChar.INT_COMMA);
-            objectWriter.write(this, item);
+        writeBytes(COLON_LBRACKET);
+        if (!val.isEmpty()) {
+            Iterator it = val.iterator();
+            objectWriter.write(this, it.next());
+            while (it.hasNext()) {
+                writeByte(IntChar.INT_COMMA);
+                objectWriter.write(this, it.next());
+            }
         }
         writeByte(IntChar.INT_RBRACKET);
         return true;

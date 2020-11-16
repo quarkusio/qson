@@ -1,10 +1,8 @@
 package io.quarkus.qson.resteasy;
 
-import io.quarkus.qson.desserializer.ByteArrayParserContext;
-import io.quarkus.qson.desserializer.JsonParser;
+import io.quarkus.qson.deserializer.ByteArrayParserContext;
+import io.quarkus.qson.deserializer.JsonParser;
 import io.quarkus.qson.runtime.QsonRegistry;
-import io.quarkus.qson.serializer.JsonByteWriter;
-import io.quarkus.qson.serializer.JsonWriter;
 import io.quarkus.qson.serializer.ObjectWriter;
 import io.quarkus.qson.serializer.OutputStreamJsonWriter;
 

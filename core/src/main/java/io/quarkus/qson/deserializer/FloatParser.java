@@ -1,6 +1,6 @@
-package io.quarkus.qson.desserializer;
+package io.quarkus.qson.deserializer;
 
-public class DoubleParser implements JsonParser {
+public class FloatParser implements JsonParser {
     @Override
     public ParserState startState() {
         return ObjectParser.PARSER.startNumberValue;
@@ -8,6 +8,6 @@ public class DoubleParser implements JsonParser {
 
     @Override
     public <T> T getTarget(ParserContext ctx) {
-        return (T)Double.valueOf(ctx.popDoubleToken());
+        return (T)Float.valueOf(ctx.popFloatToken());
     }
 }

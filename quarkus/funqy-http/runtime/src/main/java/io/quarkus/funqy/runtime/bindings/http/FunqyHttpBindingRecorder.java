@@ -6,7 +6,7 @@ import io.quarkus.funqy.runtime.FunctionInvoker;
 import io.quarkus.funqy.runtime.FunctionRecorder;
 import io.quarkus.funqy.runtime.query.QueryObjectMapper;
 import io.quarkus.funqy.runtime.query.QueryReader;
-import io.quarkus.qson.desserializer.JsonParser;
+import io.quarkus.qson.deserializer.JsonParser;
 import io.quarkus.qson.runtime.QsonRegistry;
 import io.quarkus.qson.serializer.ObjectWriter;
 import io.quarkus.runtime.ShutdownContext;

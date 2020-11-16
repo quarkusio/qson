@@ -3,11 +3,10 @@ package io.quarkus.qson.test;
 import com.fasterxml.jackson.databind.DeserializationFeature;
 import com.fasterxml.jackson.databind.MapperFeature;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import io.quarkus.qson.desserializer.ByteArrayParserContext;
-import io.quarkus.qson.desserializer.GenericParser;
+import io.quarkus.qson.deserializer.ByteArrayParserContext;
+import io.quarkus.qson.deserializer.GenericParser;
 import io.quarkus.qson.serializer.ByteArrayJsonWriter;
 import io.quarkus.qson.serializer.GenericObjectWriter;
-import io.quarkus.qson.serializer.JsonByteWriter;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
 

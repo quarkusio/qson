@@ -1,4 +1,4 @@
-package io.quarkus.qson.desserializer;
+package io.quarkus.qson.deserializer;
 
 import static io.quarkus.qson.util.IntChar.*;
 

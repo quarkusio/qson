@@ -1,6 +1,6 @@
-package io.quarkus.qson.desserializer;
+package io.quarkus.qson.deserializer;
 
-public class ByteParser implements JsonParser {
+public class IntegerParser implements JsonParser {
     @Override
     public ParserState startState() {
         return ObjectParser.PARSER.startIntegerValue;
@@ -8,6 +8,6 @@ public class ByteParser implements JsonParser {
 
     @Override
     public <T> T getTarget(ParserContext ctx) {
-        return (T)Byte.valueOf(ctx.popByteToken());
+        return (T)Integer.valueOf(ctx.popIntToken());
     }
 }

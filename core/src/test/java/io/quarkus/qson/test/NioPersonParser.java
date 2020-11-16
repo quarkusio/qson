@@ -1,13 +1,13 @@
 package io.quarkus.qson.test;
 
-import io.quarkus.qson.desserializer.ContextValue;
-import io.quarkus.qson.desserializer.GenericParser;
-import io.quarkus.qson.desserializer.ListParser;
-import io.quarkus.qson.desserializer.MapParser;
-import io.quarkus.qson.desserializer.ObjectParser;
-import io.quarkus.qson.desserializer.ParserContext;
-import io.quarkus.qson.desserializer.ParserState;
-import io.quarkus.qson.desserializer.BaseParser;
+import io.quarkus.qson.deserializer.ContextValue;
+import io.quarkus.qson.deserializer.GenericParser;
+import io.quarkus.qson.deserializer.ListParser;
+import io.quarkus.qson.deserializer.MapParser;
+import io.quarkus.qson.deserializer.ObjectParser;
+import io.quarkus.qson.deserializer.ParserContext;
+import io.quarkus.qson.deserializer.ParserState;
+import io.quarkus.qson.deserializer.BaseParser;
 
 import java.util.List;
 import java.util.Map;

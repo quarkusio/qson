@@ -1,4 +1,4 @@
-package io.quarkus.qson.desserializer;
+package io.quarkus.qson.deserializer;
 
 public class ObjectParser extends BaseParser {
     public static final ObjectParser PARSER = new ObjectParser();

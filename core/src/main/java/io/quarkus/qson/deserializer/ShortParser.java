@@ -1,6 +1,6 @@
-package io.quarkus.qson.desserializer;
+package io.quarkus.qson.deserializer;
 
-public class LongParser implements JsonParser {
+public class ShortParser implements JsonParser {
     @Override
     public ParserState startState() {
         return ObjectParser.PARSER.startIntegerValue;
@@ -8,6 +8,6 @@ public class LongParser implements JsonParser {
 
     @Override
     public <T> T getTarget(ParserContext ctx) {
-        return (T)Long.valueOf(ctx.popLongToken());
+        return (T)Short.valueOf(ctx.popShortToken());
     }
 }

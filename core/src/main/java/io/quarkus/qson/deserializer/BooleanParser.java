@@ -1,4 +1,4 @@
-package io.quarkus.qson.desserializer;
+package io.quarkus.qson.deserializer;
 
 public class BooleanParser implements JsonParser {
     @Override

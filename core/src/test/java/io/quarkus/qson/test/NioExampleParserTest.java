@@ -1,9 +1,9 @@
 package io.quarkus.qson.test;
 
-import io.quarkus.qson.desserializer.ByteArrayParserContext;
-import io.quarkus.qson.desserializer.GenericParser;
-import io.quarkus.qson.desserializer.JsonParser;
-import io.quarkus.qson.desserializer.StringParser;
+import io.quarkus.qson.deserializer.ByteArrayParserContext;
+import io.quarkus.qson.deserializer.GenericParser;
+import io.quarkus.qson.deserializer.JsonParser;
+import io.quarkus.qson.deserializer.StringParser;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
 

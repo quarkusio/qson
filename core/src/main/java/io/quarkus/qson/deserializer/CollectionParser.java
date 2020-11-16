@@ -1,4 +1,4 @@
-package io.quarkus.qson.desserializer;
+package io.quarkus.qson.deserializer;
 
 import java.util.Collection;
 

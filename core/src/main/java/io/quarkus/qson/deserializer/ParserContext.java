@@ -1,4 +1,4 @@
-package io.quarkus.qson.desserializer;
+package io.quarkus.qson.deserializer;
 
 public interface ParserContext {
     void pushState(ParserState ps);

@@ -3,7 +3,7 @@ package io.quarkus.qson.desserializer;
 import java.util.ArrayDeque;
 import java.util.LinkedList;
 
-import static io.quarkus.qson.IntChar.*;
+import static io.quarkus.qson.util.IntChar.*;
 
 public abstract class AbstractParserContext implements ParserContext {
     protected LinkedList<ParserState> state;

@@ -3,7 +3,7 @@ package io.quarkus.qson.test;
 import io.quarkus.qson.GenericType;
 import io.quarkus.qson.desserializer.ByteArrayParserContext;
 import io.quarkus.qson.desserializer.JsonParser;
-import io.quarkus.qson.generator.JsonMapper;
+import io.quarkus.qson.generator.QsonMapper;
 import io.quarkus.qson.serializer.ByteArrayJsonWriter;
 import io.quarkus.qson.serializer.JsonByteWriter;
 import io.quarkus.qson.serializer.ObjectWriter;
@@ -89,7 +89,7 @@ public class MapperTest {
 
     @Test
     public void testInteger() throws Exception {
-        JsonMapper mapper = new JsonMapper();
+        QsonMapper mapper = new QsonMapper();
         {
             JsonParser parser = mapper.parserFor(int.class);
             ByteArrayParserContext ctx = new ByteArrayParserContext(parser);
@@ -106,7 +106,7 @@ public class MapperTest {
 
     @Test
     public void testBadInteger() throws Exception {
-        JsonMapper mapper = new JsonMapper();
+        QsonMapper mapper = new QsonMapper();
         JsonParser parser = mapper.parserFor(int.class);
         ByteArrayParserContext ctx = new ByteArrayParserContext(parser);
         try {
@@ -118,7 +118,7 @@ public class MapperTest {
     }
     @Test
     public void testShort() throws Exception {
-        JsonMapper mapper = new JsonMapper();
+        QsonMapper mapper = new QsonMapper();
         {
             JsonParser parser = mapper.parserFor(short.class);
             ByteArrayParserContext ctx = new ByteArrayParserContext(parser);
@@ -135,7 +135,7 @@ public class MapperTest {
 
     @Test
     public void testLong() throws Exception {
-        JsonMapper mapper = new JsonMapper();
+        QsonMapper mapper = new QsonMapper();
         {
             JsonParser parser = mapper.parserFor(long.class);
             ByteArrayParserContext ctx = new ByteArrayParserContext(parser);
@@ -152,7 +152,7 @@ public class MapperTest {
 
     @Test
     public void testByte() throws Exception {
-        JsonMapper mapper = new JsonMapper();
+        QsonMapper mapper = new QsonMapper();
         {
             JsonParser parser = mapper.parserFor(byte.class);
             ByteArrayParserContext ctx = new ByteArrayParserContext(parser);
@@ -169,7 +169,7 @@ public class MapperTest {
 
     @Test
     public void testFloat() throws Exception {
-        JsonMapper mapper = new JsonMapper();
+        QsonMapper mapper = new QsonMapper();
         {
             JsonParser parser = mapper.parserFor(float.class);
             ByteArrayParserContext ctx = new ByteArrayParserContext(parser);
@@ -198,7 +198,7 @@ public class MapperTest {
 
     @Test
     public void testDouble() throws Exception {
-        JsonMapper mapper = new JsonMapper();
+        QsonMapper mapper = new QsonMapper();
         {
             JsonParser parser = mapper.parserFor(double.class);
             ByteArrayParserContext ctx = new ByteArrayParserContext(parser);
@@ -227,7 +227,7 @@ public class MapperTest {
 
     @Test
     public void testBoolean() throws Exception {
-        JsonMapper mapper = new JsonMapper();
+        QsonMapper mapper = new QsonMapper();
         {
             JsonParser parser = mapper.parserFor(boolean.class);
             ByteArrayParserContext ctx = new ByteArrayParserContext(parser);
@@ -256,7 +256,7 @@ public class MapperTest {
 
     @Test
     public void testString() throws Exception {
-        JsonMapper mapper = new JsonMapper();
+        QsonMapper mapper = new QsonMapper();
         JsonParser parser = mapper.parserFor(String.class);
         ByteArrayParserContext ctx = new ByteArrayParserContext(parser);
         String str = ctx.finish("\"ABCDE\"");
@@ -265,7 +265,7 @@ public class MapperTest {
 
     @Test
     public void testIncompleteString() throws Exception {
-        JsonMapper mapper = new JsonMapper();
+        QsonMapper mapper = new QsonMapper();
         JsonParser parser = mapper.parserFor(String.class);
         ByteArrayParserContext ctx = new ByteArrayParserContext(parser);
         try {
@@ -277,7 +277,7 @@ public class MapperTest {
 
     @Test
     public void testPerson() throws Exception {
-        JsonMapper mapper = new JsonMapper();
+        QsonMapper mapper = new QsonMapper();
         JsonParser parser = mapper.parserFor(Person2.class);
         ObjectWriter objectWriter = mapper.writerFor(Person2.class);
         JsonParser parser2 = mapper.parserFor(Person2.class);
@@ -337,7 +337,7 @@ public class MapperTest {
 
     @Test
     public void testNested() throws Exception {
-        JsonMapper mapper = new JsonMapper();
+        QsonMapper mapper = new QsonMapper();
         JsonParser parser = mapper.parserFor(Team.class);
         ObjectWriter objectWriter = mapper.writerFor(Team.class);
 
@@ -619,7 +619,7 @@ public class MapperTest {
 
 
     private void test(String json, GenericType type, Consumer assertions) {
-        JsonMapper mapper = new JsonMapper();
+        QsonMapper mapper = new QsonMapper();
         JsonParser parser = mapper.parserFor(type);
         Object target = mapper.read(json, type);
         assertions.accept(target);

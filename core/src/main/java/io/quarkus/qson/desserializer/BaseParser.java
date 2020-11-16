@@ -1,6 +1,6 @@
 package io.quarkus.qson.desserializer;
 
-import static io.quarkus.qson.IntChar.*;
+import static io.quarkus.qson.util.IntChar.*;
 
 public class BaseParser implements JsonParser {
     public static final BaseParser PARSER = new BaseParser();

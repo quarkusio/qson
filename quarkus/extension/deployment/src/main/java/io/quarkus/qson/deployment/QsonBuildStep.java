@@ -9,7 +9,7 @@ import io.quarkus.deployment.builditem.CombinedIndexBuildItem;
 import io.quarkus.deployment.builditem.GeneratedClassBuildItem;
 import io.quarkus.deployment.recording.RecorderContext;
 import io.quarkus.qson.Qson;
-import io.quarkus.qson.Types;
+import io.quarkus.qson.util.Types;
 import io.quarkus.qson.generator.Deserializer;
 import io.quarkus.qson.generator.Serializer;
 import io.quarkus.qson.runtime.QsonRegistry;

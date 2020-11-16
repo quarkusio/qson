@@ -1,8 +1,6 @@
 package io.quarkus.qson.desserializer;
 
-import java.util.Arrays;
-
-import static io.quarkus.qson.IntChar.*;
+import static io.quarkus.qson.util.IntChar.*;
 
 public class ParsePrimitives {
 
@@ -62,7 +60,7 @@ public class ParsePrimitives {
                     charbuf[count++] = (char) value;
                 }
             } else {
-                if (c < 128) { // do this test first.  Assuming 1 byte chars are most common.
+                if (c < 128) { // Assume 1 byte chars are most common.
                     charbuf[count++] = (char) c;
                 } else {
                     int tmp = c & 0xF0; // mask out top 4 bits to test for multibyte
@@ -115,26 +113,24 @@ public class ParsePrimitives {
     }
 
     public static boolean readBoolean(byte[] buffer, int tokenStart, int tokenEnd) {
-        if (tokenStart < 0) throw new RuntimeException("Token not started.");
-        if (tokenEnd < 0) throw new RuntimeException("Token not ended.");
         int len = tokenEnd - tokenStart;
         if (len == 4) {
             for (int i = 0; i < 4; i++) {
                 if (CharArrays.TRUE_VALUE[i] != ((int) buffer[tokenStart + i] & 0xFF)) {
-                    break;
+                    throw new RuntimeException("Illegal boolean syntax");
                 }
             }
             return true;
         } else if (len == 5) {
             for (int i = 0; i < 5; i++) {
                 if (CharArrays.FALSE_VALUE[i] != ((int) buffer[tokenStart + i] & 0xFF)) {
-                    break;
+                    throw new RuntimeException("Illegal boolean syntax");
                 }
             }
             return false;
 
         }
-        throw new RuntimeException("Illegal boolean true value syntax");
+        throw new RuntimeException("Illegal boolean syntax");
     }
 
     public static long readLong(byte[] buffer, int tokenStart, int tokenEnd) {

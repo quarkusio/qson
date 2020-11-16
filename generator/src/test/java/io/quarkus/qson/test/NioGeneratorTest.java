@@ -3,7 +3,7 @@ package io.quarkus.qson.test;
 import io.quarkus.qson.GenericType;
 import io.quarkus.qson.desserializer.ByteArrayParserContext;
 import io.quarkus.qson.desserializer.JsonParser;
-import io.quarkus.qson.generator.JsonMapper;
+import io.quarkus.qson.generator.QsonMapper;
 import io.quarkus.qson.generator.Serializer;
 import io.quarkus.qson.generator.Deserializer;
 import io.quarkus.qson.serializer.ByteArrayJsonWriter;
@@ -40,7 +40,7 @@ public class NioGeneratorTest {
 
     @Test
     public void testRawCollectionParsing() throws Exception {
-        JsonMapper mapper = new JsonMapper();
+        QsonMapper mapper = new QsonMapper();
         {
             Map<String, List<Person2>> map = new HashMap<>();
             List<Person2> list = new LinkedList<>();
@@ -120,7 +120,7 @@ public class NioGeneratorTest {
             "}\n";
     @Test
     public void testSingle() throws Exception {
-        JsonMapper mapper = new JsonMapper();
+        QsonMapper mapper = new QsonMapper();
         JsonParser parser = mapper.parserFor(Single.class);
         ByteArrayParserContext ctx = new ByteArrayParserContext(parser);
         Assertions.assertTrue(ctx.parse(simpleJson));
@@ -129,7 +129,7 @@ public class NioGeneratorTest {
     }
     @Test
     public void testSimple() throws Exception {
-        JsonMapper mapper = new JsonMapper();
+        QsonMapper mapper = new QsonMapper();
         JsonParser parser = mapper.parserFor(Simple.class);
         ByteArrayParserContext ctx = new ByteArrayParserContext(parser);
         Assertions.assertTrue(ctx.parse(simpleJson));
@@ -215,7 +215,7 @@ public class NioGeneratorTest {
 
     @Test
     public void testPerson() throws Exception {
-        JsonMapper mapper = new JsonMapper();
+        QsonMapper mapper = new QsonMapper();
         JsonParser parser = mapper.parserFor(Person2.class);
         ByteArrayParserContext ctx = new ByteArrayParserContext(parser);
         Person2 person = ctx.finish(json);
@@ -268,7 +268,7 @@ public class NioGeneratorTest {
 
     @Test
     public void testEscapes() throws Exception {
-        JsonMapper mapper = new JsonMapper();
+        QsonMapper mapper = new QsonMapper();
         JsonParser parser = mapper.parserFor(Person2.class);
         ObjectWriter objectWriter = mapper.writerFor(Person2.class);
 

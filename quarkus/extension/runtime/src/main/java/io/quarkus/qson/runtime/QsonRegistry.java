@@ -1,6 +1,6 @@
 package io.quarkus.qson.runtime;
 
-import io.quarkus.qson.Types;
+import io.quarkus.qson.util.Types;
 import io.quarkus.qson.desserializer.JsonParser;
 import io.quarkus.qson.serializer.ObjectWriter;
 import io.quarkus.runtime.RuntimeValue;

@@ -2,7 +2,7 @@ package io.quarkus.qson.desserializer;
 
 import java.util.Arrays;
 
-import static io.quarkus.qson.IntChar.*;
+import static io.quarkus.qson.util.IntChar.*;
 
 class CharArrays {
     final static int[] sHexValues = new int[256];

@@ -1,4 +1,4 @@
-package io.quarkus.qson;
+package io.quarkus.qson.util;
 
 public class IntChar {
     public final static int INT_EOF = -1;

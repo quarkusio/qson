@@ -1,12 +1,11 @@
 package io.quarkus.qson.generator;
 
 import io.quarkus.qson.GenericType;
-import io.quarkus.qson.Types;
+import io.quarkus.qson.util.Types;
 import io.quarkus.qson.desserializer.ByteArrayParserContext;
 import io.quarkus.qson.desserializer.JsonParser;
 import io.quarkus.qson.serializer.ByteArrayJsonWriter;
 import io.quarkus.qson.serializer.JsonByteWriter;
-import io.quarkus.qson.serializer.JsonWriter;
 import io.quarkus.qson.serializer.ObjectWriter;
 import io.quarkus.qson.serializer.OutputStreamJsonWriter;
 
@@ -24,7 +23,7 @@ import java.util.concurrent.ConcurrentHashMap;
  * This will generate bytecode for serializers and deserializers and load them through a custom class loader
  *
  */
-public class JsonMapper {
+public class QsonMapper {
     private ConcurrentHashMap<String, JsonParser> deserializers = new ConcurrentHashMap<>();
     private Map<String, String> generatedDeserializers = new HashMap<>();
     private ConcurrentHashMap<String, ObjectWriter> serializers = new ConcurrentHashMap<>();
@@ -35,7 +34,7 @@ public class JsonMapper {
      * Uses Thread.currentThread().getContextClassLoader() as parent classloader for bytecode generation
      *
      */
-    public JsonMapper() {
+    public QsonMapper() {
         this(Thread.currentThread().getContextClassLoader());
     }
 
@@ -44,7 +43,7 @@ public class JsonMapper {
      *
      * @param parent
      */
-    public JsonMapper(ClassLoader parent) {
+    public QsonMapper(ClassLoader parent) {
         cl = new GizmoClassLoader(parent);
     }
 

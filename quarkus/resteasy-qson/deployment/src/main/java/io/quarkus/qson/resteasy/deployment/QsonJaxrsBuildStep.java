@@ -3,7 +3,7 @@ package io.quarkus.qson.resteasy.deployment;
 import io.quarkus.arc.deployment.BeanArchiveIndexBuildItem;
 import io.quarkus.deployment.annotations.BuildProducer;
 import io.quarkus.deployment.annotations.BuildStep;
-import io.quarkus.qson.Types;
+import io.quarkus.qson.util.Types;
 import io.quarkus.qson.deployment.QsonBuildItem;
 import io.quarkus.resteasy.common.spi.ResteasyDotNames;
 import org.jboss.jandex.AnnotationInstance;

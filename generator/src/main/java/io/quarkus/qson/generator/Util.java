@@ -1,6 +1,6 @@
 package io.quarkus.qson.generator;
 
-import io.quarkus.qson.Types;
+import io.quarkus.qson.util.Types;
 
 import java.lang.reflect.ParameterizedType;
 import java.lang.reflect.Type;

@@ -38,9 +38,8 @@ import com.fasterxml.jackson.databind.ObjectReader;
 import com.fasterxml.jackson.module.afterburner.AfterburnerModule;
 import io.quarkus.qson.desserializer.ByteArrayParserContext;
 import io.quarkus.qson.desserializer.JsonParser;
-import io.quarkus.qson.generator.JsonMapper;
+import io.quarkus.qson.generator.QsonMapper;
 import io.quarkus.qson.serializer.ByteArrayJsonWriter;
-import io.quarkus.qson.serializer.JsonWriter;
 import io.quarkus.qson.serializer.ObjectWriter;
 import org.openjdk.jmh.annotations.Benchmark;
 import org.openjdk.jmh.annotations.Fork;
@@ -136,7 +135,7 @@ public class MyBenchmark {
 
         @Setup(Level.Trial)
         public void setup() {
-            JsonMapper mapper = new JsonMapper();
+            QsonMapper mapper = new QsonMapper();
             person = mapper.read(json, Person2.class);
             objectWriter = mapper.writerFor(Person2.class);
         }
@@ -188,7 +187,7 @@ public class MyBenchmark {
         @Setup(Level.Trial)
         public void setup() {
             simple = createSimple();
-            JsonMapper mapper = new JsonMapper();
+            QsonMapper mapper = new QsonMapper();
             objectWriter = mapper.writerFor(Simple.class);
         }
     }
@@ -239,7 +238,7 @@ public class MyBenchmark {
 
         @Setup(Level.Trial)
         public void setup() {
-            JsonMapper mapper = new JsonMapper();
+            QsonMapper mapper = new QsonMapper();
             parser = mapper.parserFor(Person2.class);
 
             try {

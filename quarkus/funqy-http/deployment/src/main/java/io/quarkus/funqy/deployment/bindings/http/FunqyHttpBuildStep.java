@@ -13,7 +13,7 @@ import java.util.Optional;
 import io.quarkus.funqy.Context;
 import io.quarkus.qson.deployment.QsonBuildItem;
 import io.quarkus.qson.deployment.QsonCompletedBuildItem;
-import io.quarkus.qson.Types;
+import io.quarkus.qson.util.Types;
 import io.smallrye.mutiny.Uni;
 import org.jboss.logging.Logger;
 

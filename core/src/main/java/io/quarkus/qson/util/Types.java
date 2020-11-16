@@ -1,4 +1,4 @@
-package io.quarkus.qson;
+package io.quarkus.qson.util;
 
 import java.lang.reflect.Array;
 import java.lang.reflect.GenericArrayType;

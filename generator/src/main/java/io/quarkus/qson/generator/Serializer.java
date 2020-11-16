@@ -8,7 +8,7 @@ import io.quarkus.gizmo.FieldDescriptor;
 import io.quarkus.gizmo.MethodCreator;
 import io.quarkus.gizmo.MethodDescriptor;
 import io.quarkus.gizmo.ResultHandle;
-import io.quarkus.qson.Types;
+import io.quarkus.qson.util.Types;
 import io.quarkus.qson.serializer.CollectionWriter;
 import io.quarkus.qson.serializer.GenericObjectWriter;
 import io.quarkus.qson.serializer.JsonWriter;
@@ -19,6 +19,7 @@ import java.lang.reflect.Method;
 import java.lang.reflect.Modifier;
 import java.lang.reflect.ParameterizedType;
 import java.lang.reflect.Type;
+import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.HashMap;
@@ -51,6 +52,7 @@ public class Serializer {
         ClassOutput output;
         String className;
         Map<Type, Class> referenced = new HashMap<>();
+        List<PropertyReference> properties;
 
         private Builder() {
         }
@@ -89,6 +91,15 @@ public class Serializer {
             return referenced;
         }
 
+        public Builder properties(List<PropertyReference> properties) {
+            this.properties = properties;
+            return this;
+        }
+
+        public List<PropertyReference> properties() {
+            return properties;
+        }
+
         public Builder generate() {
             if (Map.class.equals(targetType)
                     || List.class.equals(targetType)
@@ -110,13 +121,25 @@ public class Serializer {
                 }
                 Serializer s = new Serializer(output, className, targetType, targetGenericType);
                 s.generateCollection();
-                referenced = s.referenced;
+                Util.addReference(referenced, targetType, targetGenericType);
                 return this;
             } else {
                 Serializer s = new Serializer(output, targetType, targetGenericType);
-                s.generate();
-                referenced = s.referenced;
+                if (properties == null) {
+                    properties = PropertyReference.getProperties(targetType);
+                }
+                // NOTE: keep full property list around just in case we're doing serialization
+                // and somebody wants to reuse.
+                List<PropertyReference> tmp = new ArrayList<>();
 
+                for (PropertyReference ref : properties) {
+                    if (ref.getter != null) {
+                        tmp.add(ref);
+                        Util.addReference(referenced, ref.type, ref.genericType);
+                    }
+                }
+                s.properties = tmp;
+                s.generate();
                 className = fqn(targetType, targetGenericType);
                 return this;
             }
@@ -127,8 +150,7 @@ public class Serializer {
 
     Class targetType;
     Type targetGenericType;
-    List<Getter> getters = new LinkedList<>();
-    Map<Type, Class> referenced = new HashMap<>();
+    List<PropertyReference> properties;
     String className;
 
     public static String name(Class clz, Type genericType) {
@@ -153,7 +175,6 @@ public class Serializer {
     }
 
     void generate() {
-        findGetters(targetType);
         singleton();
         writeMethod();
         creator.close();
@@ -208,17 +229,17 @@ public class Serializer {
         staticConstructor.setModifiers(ACC_STATIC);
         ResultHandle instance = staticConstructor.newInstance(MethodDescriptor.ofConstructor(fqn()));
         staticConstructor.writeStaticField(SERIALIZER.getFieldDescriptor(), instance);
-        for (Getter getter : getters) {
+        for (PropertyReference getter : properties) {
             collectionField(staticConstructor, getter);
         }
 
         staticConstructor.returnValue(null);
     }
 
-    private void collectionField(MethodCreator staticConstructor, Getter getter) {
+    private void collectionField(MethodCreator staticConstructor, PropertyReference getter) {
         Type genericType = getter.genericType;
         Class type = getter.type;
-        String property = getter.property;
+        String property = getter.javaName;
         collectionProperty(staticConstructor, type, genericType, property);
     }
 
@@ -294,11 +315,11 @@ public class Serializer {
         boolean forceComma = false;
         method.invokeInterfaceMethod(MethodDescriptor.ofMethod(JsonWriter.class, "writeLCurley", void.class), jsonWriter);
         // todo support an interface as type
-        for (Getter getter : getters) {
+        for (PropertyReference getter : properties) {
             if (getter.type.equals(int.class)) {
                 method.invokeInterfaceMethod(MethodDescriptor.ofMethod(JsonWriter.class, "writeProperty", void.class, String.class, int.class, boolean.class), jsonWriter,
-                        method.load(getter.name),
-                        method.invokeVirtualMethod(MethodDescriptor.ofMethod(targetType, getter.method.getName(), getter.type), target),
+                        method.load(getter.jsonName),
+                        method.invokeVirtualMethod(MethodDescriptor.ofMethod(targetType, getter.getter.getName(), getter.type), target),
                         comma);
                 if (!forceComma) {
                     method.assign(comma, method.load(true));
@@ -306,14 +327,14 @@ public class Serializer {
                 }
             } else if (getter.type.equals(Integer.class)) {
                 ResultHandle result = method.invokeInterfaceMethod(MethodDescriptor.ofMethod(JsonWriter.class, "writeProperty", boolean.class, String.class, Integer.class, boolean.class), jsonWriter,
-                        method.load(getter.name),
-                        method.invokeVirtualMethod(MethodDescriptor.ofMethod(targetType, getter.method.getName(), getter.type), target),
+                        method.load(getter.jsonName),
+                        method.invokeVirtualMethod(MethodDescriptor.ofMethod(targetType, getter.getter.getName(), getter.type), target),
                         comma);
                 if (!forceComma) method.assign(comma, result);
             } else if (getter.type.equals(short.class)) {
                 method.invokeInterfaceMethod(MethodDescriptor.ofMethod(JsonWriter.class, "writeProperty", void.class, String.class, short.class, boolean.class), jsonWriter,
-                        method.load(getter.name),
-                        method.invokeVirtualMethod(MethodDescriptor.ofMethod(targetType, getter.method.getName(), getter.type), target),
+                        method.load(getter.jsonName),
+                        method.invokeVirtualMethod(MethodDescriptor.ofMethod(targetType, getter.getter.getName(), getter.type), target),
                         comma);
                 if (!forceComma) {
                     method.assign(comma, method.load(true));
@@ -321,14 +342,14 @@ public class Serializer {
                 }
             } else if (getter.type.equals(Short.class)) {
                 ResultHandle result = method.invokeInterfaceMethod(MethodDescriptor.ofMethod(JsonWriter.class, "writeProperty", boolean.class, String.class, Short.class, boolean.class), jsonWriter,
-                        method.load(getter.name),
-                        method.invokeVirtualMethod(MethodDescriptor.ofMethod(targetType, getter.method.getName(), getter.type), target),
+                        method.load(getter.jsonName),
+                        method.invokeVirtualMethod(MethodDescriptor.ofMethod(targetType, getter.getter.getName(), getter.type), target),
                         comma);
                 if (!forceComma) method.assign(comma, result);
             } else if (getter.type.equals(long.class)) {
                 method.invokeInterfaceMethod(MethodDescriptor.ofMethod(JsonWriter.class, "writeProperty", void.class, String.class, long.class, boolean.class), jsonWriter,
-                        method.load(getter.name),
-                        method.invokeVirtualMethod(MethodDescriptor.ofMethod(targetType, getter.method.getName(), getter.type), target),
+                        method.load(getter.jsonName),
+                        method.invokeVirtualMethod(MethodDescriptor.ofMethod(targetType, getter.getter.getName(), getter.type), target),
                         comma);
                 if (!forceComma) {
                     method.assign(comma, method.load(true));
@@ -336,14 +357,14 @@ public class Serializer {
                 }
             } else if (getter.type.equals(Long.class)) {
                 ResultHandle result = method.invokeInterfaceMethod(MethodDescriptor.ofMethod(JsonWriter.class, "writeProperty", boolean.class, String.class, Long.class, boolean.class), jsonWriter,
-                        method.load(getter.name),
-                        method.invokeVirtualMethod(MethodDescriptor.ofMethod(targetType, getter.method.getName(), getter.type), target),
+                        method.load(getter.jsonName),
+                        method.invokeVirtualMethod(MethodDescriptor.ofMethod(targetType, getter.getter.getName(), getter.type), target),
                         comma);
                 if (!forceComma) method.assign(comma, result);
             } else if (getter.type.equals(byte.class)) {
                 method.invokeInterfaceMethod(MethodDescriptor.ofMethod(JsonWriter.class, "writeProperty", void.class, String.class, byte.class, boolean.class), jsonWriter,
-                        method.load(getter.name),
-                        method.invokeVirtualMethod(MethodDescriptor.ofMethod(targetType, getter.method.getName(), getter.type), target),
+                        method.load(getter.jsonName),
+                        method.invokeVirtualMethod(MethodDescriptor.ofMethod(targetType, getter.getter.getName(), getter.type), target),
                         comma);
                 if (!forceComma) {
                     method.assign(comma, method.load(true));
@@ -351,14 +372,14 @@ public class Serializer {
                 }
             } else if (getter.type.equals(Byte.class)) {
                 ResultHandle result = method.invokeInterfaceMethod(MethodDescriptor.ofMethod(JsonWriter.class, "writeProperty", boolean.class, String.class, Byte.class, boolean.class), jsonWriter,
-                        method.load(getter.name),
-                        method.invokeVirtualMethod(MethodDescriptor.ofMethod(targetType, getter.method.getName(), getter.type), target),
+                        method.load(getter.jsonName),
+                        method.invokeVirtualMethod(MethodDescriptor.ofMethod(targetType, getter.getter.getName(), getter.type), target),
                         comma);
                 if (!forceComma) method.assign(comma, result);
             } else if (getter.type.equals(boolean.class)) {
                 method.invokeInterfaceMethod(MethodDescriptor.ofMethod(JsonWriter.class, "writeProperty", void.class, String.class, boolean.class, boolean.class), jsonWriter,
-                        method.load(getter.name),
-                        method.invokeVirtualMethod(MethodDescriptor.ofMethod(targetType, getter.method.getName(), getter.type), target),
+                        method.load(getter.jsonName),
+                        method.invokeVirtualMethod(MethodDescriptor.ofMethod(targetType, getter.getter.getName(), getter.type), target),
                         comma);
                 if (!forceComma) {
                     method.assign(comma, method.load(true));
@@ -366,14 +387,14 @@ public class Serializer {
                 }
             } else if (getter.type.equals(Boolean.class)) {
                 ResultHandle result = method.invokeInterfaceMethod(MethodDescriptor.ofMethod(JsonWriter.class, "writeProperty", boolean.class, String.class, Boolean.class, boolean.class), jsonWriter,
-                        method.load(getter.name),
-                        method.invokeVirtualMethod(MethodDescriptor.ofMethod(targetType, getter.method.getName(), getter.type), target),
+                        method.load(getter.jsonName),
+                        method.invokeVirtualMethod(MethodDescriptor.ofMethod(targetType, getter.getter.getName(), getter.type), target),
                         comma);
                 if (!forceComma) method.assign(comma, result);
             } else if (getter.type.equals(float.class)) {
                 method.invokeInterfaceMethod(MethodDescriptor.ofMethod(JsonWriter.class, "writeProperty", void.class, String.class, float.class, boolean.class), jsonWriter,
-                        method.load(getter.name),
-                        method.invokeVirtualMethod(MethodDescriptor.ofMethod(targetType, getter.method.getName(), getter.type), target),
+                        method.load(getter.jsonName),
+                        method.invokeVirtualMethod(MethodDescriptor.ofMethod(targetType, getter.getter.getName(), getter.type), target),
                         comma);
                 if (!forceComma) {
                     method.assign(comma, method.load(true));
@@ -381,14 +402,14 @@ public class Serializer {
                 }
             } else if (getter.type.equals(Float.class)) {
                 ResultHandle result = method.invokeInterfaceMethod(MethodDescriptor.ofMethod(JsonWriter.class, "writeProperty", boolean.class, String.class, Float.class, boolean.class), jsonWriter,
-                        method.load(getter.name),
-                        method.invokeVirtualMethod(MethodDescriptor.ofMethod(targetType, getter.method.getName(), getter.type), target),
+                        method.load(getter.jsonName),
+                        method.invokeVirtualMethod(MethodDescriptor.ofMethod(targetType, getter.getter.getName(), getter.type), target),
                         comma);
                 if (!forceComma) method.assign(comma, result);
             } else if (getter.type.equals(double.class)) {
                 method.invokeInterfaceMethod(MethodDescriptor.ofMethod(JsonWriter.class, "writeProperty", void.class, String.class, double.class, boolean.class), jsonWriter,
-                        method.load(getter.name),
-                        method.invokeVirtualMethod(MethodDescriptor.ofMethod(targetType, getter.method.getName(), getter.type), target),
+                        method.load(getter.jsonName),
+                        method.invokeVirtualMethod(MethodDescriptor.ofMethod(targetType, getter.getter.getName(), getter.type), target),
                         comma);
                 if (!forceComma) {
                     method.assign(comma, method.load(true));
@@ -396,14 +417,14 @@ public class Serializer {
                 }
             } else if (getter.type.equals(Double.class)) {
                 ResultHandle result = method.invokeInterfaceMethod(MethodDescriptor.ofMethod(JsonWriter.class, "writeProperty", boolean.class, String.class, Double.class, boolean.class), jsonWriter,
-                        method.load(getter.name),
-                        method.invokeVirtualMethod(MethodDescriptor.ofMethod(targetType, getter.method.getName(), getter.type), target),
+                        method.load(getter.jsonName),
+                        method.invokeVirtualMethod(MethodDescriptor.ofMethod(targetType, getter.getter.getName(), getter.type), target),
                         comma);
                 if (!forceComma) method.assign(comma, result);
             } else if (getter.type.equals(char.class)) {
                 method.invokeInterfaceMethod(MethodDescriptor.ofMethod(JsonWriter.class, "writeProperty", void.class, String.class, char.class, boolean.class), jsonWriter,
-                        method.load(getter.name),
-                        method.invokeVirtualMethod(MethodDescriptor.ofMethod(targetType, getter.method.getName(), getter.type), target),
+                        method.load(getter.jsonName),
+                        method.invokeVirtualMethod(MethodDescriptor.ofMethod(targetType, getter.getter.getName(), getter.type), target),
                         comma);
                 if (!forceComma) {
                     method.assign(comma, method.load(true));
@@ -411,58 +432,58 @@ public class Serializer {
                 }
             } else if (getter.type.equals(Character.class)) {
                 ResultHandle result = method.invokeInterfaceMethod(MethodDescriptor.ofMethod(JsonWriter.class, "writeProperty", boolean.class, String.class, Character.class, boolean.class), jsonWriter,
-                        method.load(getter.name),
-                        method.invokeVirtualMethod(MethodDescriptor.ofMethod(targetType, getter.method.getName(), getter.type), target),
+                        method.load(getter.jsonName),
+                        method.invokeVirtualMethod(MethodDescriptor.ofMethod(targetType, getter.getter.getName(), getter.type), target),
                         comma);
                 if (!forceComma) method.assign(comma, result);
             } else if (getter.type.equals(String.class)) {
                 ResultHandle result = method.invokeInterfaceMethod(MethodDescriptor.ofMethod(JsonWriter.class, "writeProperty", boolean.class, String.class, String.class, boolean.class), jsonWriter,
-                        method.load(getter.name),
-                        method.invokeVirtualMethod(MethodDescriptor.ofMethod(targetType, getter.method.getName(), getter.type), target),
+                        method.load(getter.jsonName),
+                        method.invokeVirtualMethod(MethodDescriptor.ofMethod(targetType, getter.getter.getName(), getter.type), target),
                         comma);
                 if (!forceComma) method.assign(comma, result);
             } else if (Map.class.isAssignableFrom(getter.type)) {
                 if (hasCollectionWriter(getter)) {
                     ResultHandle result = method.invokeInterfaceMethod(MethodDescriptor.ofMethod(JsonWriter.class, "writeProperty", boolean.class, String.class, Map.class, ObjectWriter.class, boolean.class), jsonWriter,
-                            method.load(getter.name),
-                            method.invokeVirtualMethod(MethodDescriptor.ofMethod(targetType, getter.method.getName(), getter.type), target),
+                            method.load(getter.jsonName),
+                            method.invokeVirtualMethod(MethodDescriptor.ofMethod(targetType, getter.getter.getName(), getter.type), target),
                             getMapWriter(method, getter),
                             comma
                     );
                     if (!forceComma) method.assign(comma, result);
                 } else {
                     ResultHandle result = method.invokeInterfaceMethod(MethodDescriptor.ofMethod(JsonWriter.class, "writeProperty", boolean.class, String.class, Map.class, boolean.class), jsonWriter,
-                            method.load(getter.name),
-                            method.invokeVirtualMethod(MethodDescriptor.ofMethod(targetType, getter.method.getName(), getter.type), target),
+                            method.load(getter.jsonName),
+                            method.invokeVirtualMethod(MethodDescriptor.ofMethod(targetType, getter.getter.getName(), getter.type), target),
                             comma);
                     if (!forceComma) method.assign(comma, result);
                 }
             } else if (Collection.class.isAssignableFrom(getter.type)) {
                 if (hasCollectionWriter(getter)) {
                     ResultHandle result = method.invokeInterfaceMethod(MethodDescriptor.ofMethod(JsonWriter.class, "writeProperty", boolean.class, String.class, Collection.class, ObjectWriter.class, boolean.class), jsonWriter,
-                            method.load(getter.name),
-                            method.invokeVirtualMethod(MethodDescriptor.ofMethod(targetType, getter.method.getName(), getter.type), target),
+                            method.load(getter.jsonName),
+                            method.invokeVirtualMethod(MethodDescriptor.ofMethod(targetType, getter.getter.getName(), getter.type), target),
                             getCollectionWriter(method, getter),
                             comma
                     );
                     if (!forceComma) method.assign(comma, result);
                 } else {
                     ResultHandle result = method.invokeInterfaceMethod(MethodDescriptor.ofMethod(JsonWriter.class, "writeProperty", boolean.class, String.class, Collection.class, boolean.class), jsonWriter,
-                            method.load(getter.name),
-                            method.invokeVirtualMethod(MethodDescriptor.ofMethod(targetType, getter.method.getName(), getter.type), target),
+                            method.load(getter.jsonName),
+                            method.invokeVirtualMethod(MethodDescriptor.ofMethod(targetType, getter.getter.getName(), getter.type), target),
                             comma);
                     if (!forceComma) method.assign(comma, result);
                 }
             } else if (getter.type.equals(Object.class)) {
                 ResultHandle result = method.invokeInterfaceMethod(MethodDescriptor.ofMethod(JsonWriter.class, "writeObjectProperty", boolean.class, String.class, Object.class, boolean.class), jsonWriter,
-                        method.load(getter.name),
-                        method.invokeVirtualMethod(MethodDescriptor.ofMethod(targetType, getter.method.getName(), getter.type), target),
+                        method.load(getter.jsonName),
+                        method.invokeVirtualMethod(MethodDescriptor.ofMethod(targetType, getter.getter.getName(), getter.type), target),
                         comma);
                 if (!forceComma) method.assign(comma, result);
             } else {
                 ResultHandle result = method.invokeInterfaceMethod(MethodDescriptor.ofMethod(JsonWriter.class, "writeObjectProperty", boolean.class, String.class, Object.class, ObjectWriter.class, boolean.class), jsonWriter,
-                        method.load(getter.name),
-                        method.invokeVirtualMethod(MethodDescriptor.ofMethod(targetType, getter.method.getName(), getter.type), target),
+                        method.load(getter.jsonName),
+                        method.invokeVirtualMethod(MethodDescriptor.ofMethod(targetType, getter.getter.getName(), getter.type), target),
                         method.readStaticField(FieldDescriptor.of(fqn(getter.type, getter.genericType), "SERIALIZER", fqn(getter.type, getter.genericType))),
                         comma
                 );
@@ -473,8 +494,8 @@ public class Serializer {
         method.returnValue(null);
     }
 
-    private ResultHandle getCollectionWriter(MethodCreator method, Getter getter) {
-        String property = getter.property;
+    private ResultHandle getCollectionWriter(MethodCreator method, PropertyReference getter) {
+        String property = getter.javaName;
         Type genericType = getter.genericType;
         return getCollectionWriter(method, property, (ParameterizedType) genericType);
     }
@@ -494,8 +515,8 @@ public class Serializer {
         }
     }
 
-    private ResultHandle getMapWriter(MethodCreator method, Getter getter) {
-        String property = getter.property;
+    private ResultHandle getMapWriter(MethodCreator method, PropertyReference getter) {
+        String property = getter.javaName;
         Type genericType = getter.genericType;
         return getMapWriter(method, property, (ParameterizedType) genericType);
     }
@@ -548,7 +569,7 @@ public class Serializer {
         return false;
     }
 
-    private boolean hasCollectionWriter(Getter getter) {
+    private boolean hasCollectionWriter(PropertyReference getter) {
         Class type = getter.type;
         Type genericType = getter.genericType;
         return hasCollectionWriter(type, genericType);
@@ -601,53 +622,5 @@ public class Serializer {
         return className;
     }
 
-    private void findGetters(Class clz) {
-        for (Method m : clz.getMethods()) {
-            if (!isGetter(m))
-                continue;
-            Class paramType = m.getReturnType();
-            Type paramGenericType = m.getGenericReturnType();
-            String name;
-            if (m.getName().startsWith("is")) {
-                if (m.getName().length() > 3) {
-                    name = Character.toLowerCase(m.getName().charAt(2)) + m.getName().substring(3);
-                } else {
-                    name = m.getName().substring(2).toLowerCase();
-                }
 
-            } else {
-                if (m.getName().length() > 4) {
-                    name = Character.toLowerCase(m.getName().charAt(3)) + m.getName().substring(4);
-                } else {
-                    name = m.getName().substring(3).toLowerCase();
-                }
-            }
-            getters.add(new Getter(name, name, m, paramType, paramGenericType));
-            Util.addReference(referenced, paramType, paramGenericType);
-        }
-        Collections.sort(getters, (getter, t1) -> getter.name.compareTo(t1.name));
-    }
-
-
-    static boolean isGetter(Method m) {
-        return !Modifier.isStatic(m.getModifiers()) && ((m.getName().startsWith("get") && m.getName().length() > "get".length()) || (m.getName().startsWith("is")) && m.getName().length() > "is".length())
-                && m.getParameterCount() == 0 && !m.getReturnType().equals(void.class)
-                && !m.getDeclaringClass().equals(Object.class);
-    }
-
-    class Getter {
-        String name;
-        String property;
-        Method method;
-        Class type;
-        Type genericType;
-
-        public Getter(String name, String property, Method method, Class type, Type genericType) {
-            this.name = name;
-            this.property = property;
-            this.method = method;
-            this.type = type;
-            this.genericType = genericType;
-        }
-    }
 }

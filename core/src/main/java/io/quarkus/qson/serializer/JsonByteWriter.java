@@ -1,6 +1,6 @@
 package io.quarkus.qson.serializer;
 
-import io.quarkus.qson.IntChar;
+import io.quarkus.qson.util.IntChar;
 
 import java.nio.charset.Charset;
 import java.util.Collection;

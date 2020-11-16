@@ -3,10 +3,6 @@ package io.quarkus.qson.desserializer;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.UnsupportedEncodingException;
-import java.util.ArrayDeque;
-import java.util.LinkedList;
-
-import static io.quarkus.qson.IntChar.*;
 
 public class ByteArrayParserContext extends AbstractParserContext {
     protected BufferBuilder tokenBuffer;

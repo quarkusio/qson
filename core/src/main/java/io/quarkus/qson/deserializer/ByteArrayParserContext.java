@@ -10,11 +10,11 @@ public class ByteArrayParserContext extends AbstractParserContext {
     protected int len;
 
 
-    public ByteArrayParserContext(JsonParser parser, ParserState initialState) {
+    public ByteArrayParserContext(QsonParser parser, ParserState initialState) {
         super(parser, initialState);
     }
 
-    public ByteArrayParserContext(JsonParser parser) {
+    public ByteArrayParserContext(QsonParser parser) {
         super(parser, parser.startState());
     }
 
@@ -229,16 +229,38 @@ public class ByteArrayParserContext extends AbstractParserContext {
         return parse(is, 8192);
     }
 
+    /**
+     * Parse the given input stream.
+     *
+     * @param is
+     * @param <T>
+     * @return
+     * @throws IOException
+     */
     public <T> T finish(InputStream is) throws IOException {
         parse(is);
         return finish();
     }
 
+    /**
+     * Finish this parse with the last string buffer and return the parsed object.
+     *
+     * @param str
+     * @param <T>
+     * @return
+     */
     public <T> T finish(String str) {
         parse(str);
         return finish();
     }
 
+    /**
+     * Finish this parse with the last buffer and return the parsed object.
+     *
+     * @param bytes
+     * @param <T>
+     * @return
+     */
     public <T> T finish(byte[] bytes) {
         parse(bytes);
         return finish();

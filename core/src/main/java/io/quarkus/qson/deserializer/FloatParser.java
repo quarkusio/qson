@@ -1,6 +1,6 @@
 package io.quarkus.qson.deserializer;
 
-public class FloatParser implements JsonParser {
+public class FloatParser implements QsonParser {
     @Override
     public ParserState startState() {
         return ObjectParser.PARSER.startNumberValue;

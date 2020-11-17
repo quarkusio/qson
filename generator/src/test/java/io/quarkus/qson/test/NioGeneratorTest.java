@@ -2,13 +2,13 @@ package io.quarkus.qson.test;
 
 import io.quarkus.qson.GenericType;
 import io.quarkus.qson.deserializer.ByteArrayParserContext;
-import io.quarkus.qson.deserializer.JsonParser;
+import io.quarkus.qson.deserializer.QsonParser;
 import io.quarkus.qson.generator.QsonMapper;
 import io.quarkus.qson.generator.Serializer;
 import io.quarkus.qson.generator.Deserializer;
 import io.quarkus.qson.serializer.ByteArrayJsonWriter;
 import io.quarkus.qson.serializer.JsonByteWriter;
-import io.quarkus.qson.serializer.ObjectWriter;
+import io.quarkus.qson.serializer.QsonObjectWriter;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
 
@@ -52,14 +52,14 @@ public class NioGeneratorTest {
             ByteArrayJsonWriter jsonWriter = new ByteArrayJsonWriter();
             GenericType<Map<String, List<Person2>>> type = new GenericType<>() {
             };
-            ObjectWriter objectWriter = mapper.writerFor(type);
+            QsonObjectWriter objectWriter = mapper.writerFor(type);
             objectWriter.write(jsonWriter, map);
 
             byte[] bytes = jsonWriter.getBytes();
             System.out.println(new String(bytes, JsonByteWriter.UTF8));
 
 
-            JsonParser parser = mapper.parserFor(type);
+            QsonParser parser = mapper.parserFor(type);
             ByteArrayParserContext ctx = new ByteArrayParserContext(parser);
             map = ctx.finish(bytes);
             Assertions.assertEquals("bill", map.get("bb").get(0).getName());
@@ -74,14 +74,14 @@ public class NioGeneratorTest {
             ByteArrayJsonWriter jsonWriter = new ByteArrayJsonWriter();
             GenericType<List<Person2>> type = new GenericType<>() {
             };
-            ObjectWriter objectWriter = mapper.writerFor(type);
+            QsonObjectWriter objectWriter = mapper.writerFor(type);
             objectWriter.write(jsonWriter, list);
 
             byte[] bytes = jsonWriter.getBytes();
             System.out.println(new String(bytes, JsonByteWriter.UTF8));
 
 
-            JsonParser parser = mapper.parserFor(type);
+            QsonParser parser = mapper.parserFor(type);
             ByteArrayParserContext ctx = new ByteArrayParserContext(parser);
             list = ctx.finish(bytes);
             Assertions.assertEquals("bill", list.get(0).getName());
@@ -93,14 +93,14 @@ public class NioGeneratorTest {
             ByteArrayJsonWriter jsonWriter = new ByteArrayJsonWriter();
             GenericType<List<Long>> type = new GenericType<>() {
             };
-            ObjectWriter objectWriter = mapper.writerFor(type);
+            QsonObjectWriter objectWriter = mapper.writerFor(type);
             objectWriter.write(jsonWriter, list);
 
             byte[] bytes = jsonWriter.getBytes();
             System.out.println(new String(bytes, JsonByteWriter.UTF8));
 
 
-            JsonParser parser = mapper.parserFor(type);
+            QsonParser parser = mapper.parserFor(type);
             ByteArrayParserContext ctx = new ByteArrayParserContext(parser);
             list = ctx.finish(bytes);
             Assertions.assertEquals(42L, ((Long)list.get(0)).longValue());
@@ -121,7 +121,7 @@ public class NioGeneratorTest {
     @Test
     public void testSingle() throws Exception {
         QsonMapper mapper = new QsonMapper();
-        JsonParser parser = mapper.parserFor(Single.class);
+        QsonParser parser = mapper.parserFor(Single.class);
         ByteArrayParserContext ctx = new ByteArrayParserContext(parser);
         Assertions.assertTrue(ctx.parse(simpleJson));
         Single single = ctx.popTarget();
@@ -130,7 +130,7 @@ public class NioGeneratorTest {
     @Test
     public void testSimple() throws Exception {
         QsonMapper mapper = new QsonMapper();
-        JsonParser parser = mapper.parserFor(Simple.class);
+        QsonParser parser = mapper.parserFor(Simple.class);
         ByteArrayParserContext ctx = new ByteArrayParserContext(parser);
         Assertions.assertTrue(ctx.parse(simpleJson));
         Simple simple = ctx.popTarget();
@@ -216,7 +216,7 @@ public class NioGeneratorTest {
     @Test
     public void testPerson() throws Exception {
         QsonMapper mapper = new QsonMapper();
-        JsonParser parser = mapper.parserFor(Person2.class);
+        QsonParser parser = mapper.parserFor(Person2.class);
         ByteArrayParserContext ctx = new ByteArrayParserContext(parser);
         Person2 person = ctx.finish(json);
         validatePerson(person);
@@ -224,7 +224,7 @@ public class NioGeneratorTest {
         // serializer
 
         ByteArrayJsonWriter jsonWriter = new ByteArrayJsonWriter();
-        ObjectWriter objectWriter = mapper.writerFor(Person2.class);
+        QsonObjectWriter objectWriter = mapper.writerFor(Person2.class);
         objectWriter.write(jsonWriter, person);
 
         byte[] bytes = jsonWriter.getBytes();
@@ -269,8 +269,8 @@ public class NioGeneratorTest {
     @Test
     public void testEscapes() throws Exception {
         QsonMapper mapper = new QsonMapper();
-        JsonParser parser = mapper.parserFor(Person2.class);
-        ObjectWriter objectWriter = mapper.writerFor(Person2.class);
+        QsonParser parser = mapper.parserFor(Person2.class);
+        QsonObjectWriter objectWriter = mapper.writerFor(Person2.class);
 
         String json = "{ \"name\": \"The \\\"Dude\\\"\" }";
         String expected = "The \"Dude\"";
@@ -278,7 +278,7 @@ public class NioGeneratorTest {
         testEscapes(parser, objectWriter, json, expected);
     }
 
-    private void testEscapes(JsonParser parser, ObjectWriter objectWriter, String json, String expected) {
+    private void testEscapes(QsonParser parser, QsonObjectWriter objectWriter, String json, String expected) {
         ByteArrayParserContext ctx = new ByteArrayParserContext(parser);
         Person2 person = ctx.finish(json);
         Assertions.assertEquals(expected, person.getName());

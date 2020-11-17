@@ -1,5 +1,6 @@
 package io.quarkus.qson.deployment;
 
+import io.quarkus.arc.deployment.AdditionalBeanBuildItem;
 import io.quarkus.arc.deployment.BeanContainerBuildItem;
 import io.quarkus.builder.BuildException;
 import io.quarkus.deployment.annotations.BuildProducer;
@@ -9,10 +10,13 @@ import io.quarkus.deployment.builditem.CombinedIndexBuildItem;
 import io.quarkus.deployment.builditem.GeneratedClassBuildItem;
 import io.quarkus.deployment.recording.RecorderContext;
 import io.quarkus.qson.Qson;
+import io.quarkus.qson.QsonIgnore;
+import io.quarkus.qson.QsonProperty;
+import io.quarkus.qson.runtime.QuarkusQsonMapper;
 import io.quarkus.qson.util.Types;
 import io.quarkus.qson.generator.Deserializer;
 import io.quarkus.qson.generator.Serializer;
-import io.quarkus.qson.runtime.QsonRegistry;
+import io.quarkus.qson.runtime.QuarkusQsonRegistry;
 import org.jboss.jandex.AnnotationInstance;
 import org.jboss.jandex.AnnotationValue;
 import org.jboss.jandex.ClassInfo;
@@ -23,18 +27,39 @@ import java.lang.reflect.Type;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 
 import static io.quarkus.deployment.annotations.ExecutionTime.STATIC_INIT;
 
 public class QsonBuildStep {
     public static final DotName QSON = DotName.createSimple(Qson.class.getName());
+    public static final DotName QSON_PROPERTY = DotName.createSimple(QsonProperty.class.getName());
+    public static final DotName QSON_IGNORE = DotName.createSimple(QsonIgnore.class.getName());
+
+    @BuildStep
+    AdditionalBeanBuildItem additionalBeans() {
+        return AdditionalBeanBuildItem.builder()
+                .setUnremovable()
+                .addBeanClass(QuarkusQsonMapper.class)
+                .build();
+    }
 
     @BuildStep
     void scan(BuildProducer<QsonBuildItem> qson,
               CombinedIndexBuildItem combinedIndex) throws Exception {
         Collection<AnnotationInstance> annotations = combinedIndex.getIndex().getAnnotations(QSON);
+        Set<String> classes = new HashSet<>();
+        register(qson, annotations, classes);
+        annotations = combinedIndex.getIndex().getAnnotations(QSON_PROPERTY);
+        register(qson, annotations, classes);
+        annotations = combinedIndex.getIndex().getAnnotations(QSON_IGNORE);
+        register(qson, annotations, classes);
+    }
+
+    private void register(BuildProducer<QsonBuildItem> qson, Collection<AnnotationInstance> annotations, Set<String> classes) throws BuildException, ClassNotFoundException {
         for (AnnotationInstance ai : annotations) {
             ClassInfo ci = ai.target().asClass();
             if (!Modifier.isPublic(ci.flags()) || Modifier.isInterface(ci.flags())) {
@@ -49,7 +74,10 @@ public class QsonBuildStep {
             AnnotationValue generateWriter = ai.value("generateWriter");
             boolean parser = generateParser == null || generateParser.asBoolean();
             boolean writer = generateWriter == null || generateWriter.asBoolean();
-            qson.produce(new QsonBuildItem(clz, clz, parser, writer));
+            if (!classes.contains(clz.getName())) {
+                qson.produce(new QsonBuildItem(clz, clz, parser, writer));
+                classes.add(clz.getName());
+            }
         }
     }
 
@@ -100,7 +128,7 @@ public class QsonBuildStep {
 
     @BuildStep()
     @Record(STATIC_INIT)
-    public QsonCompletedBuildItem staticInit(QsonRegistry registry,
+    public QsonCompletedBuildItem staticInit(QuarkusQsonRegistry registry,
                                              RecorderContext context,
                                              BeanContainerBuildItem beanContainer, // dependency
                                              GeneratedQsonClassesBuildItem generated) {

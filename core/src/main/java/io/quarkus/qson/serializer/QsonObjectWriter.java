@@ -1,5 +1,5 @@
 package io.quarkus.qson.serializer;
 
-public interface ObjectWriter {
+public interface QsonObjectWriter {
     void write(JsonWriter writer, Object target);
 }

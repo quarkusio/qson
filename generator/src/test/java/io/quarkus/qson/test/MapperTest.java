@@ -2,11 +2,11 @@ package io.quarkus.qson.test;
 
 import io.quarkus.qson.GenericType;
 import io.quarkus.qson.deserializer.ByteArrayParserContext;
-import io.quarkus.qson.deserializer.JsonParser;
+import io.quarkus.qson.deserializer.QsonParser;
 import io.quarkus.qson.generator.QsonMapper;
 import io.quarkus.qson.serializer.ByteArrayJsonWriter;
 import io.quarkus.qson.serializer.JsonByteWriter;
-import io.quarkus.qson.serializer.ObjectWriter;
+import io.quarkus.qson.serializer.QsonObjectWriter;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
 
@@ -91,13 +91,13 @@ public class MapperTest {
     public void testInteger() throws Exception {
         QsonMapper mapper = new QsonMapper();
         {
-            JsonParser parser = mapper.parserFor(int.class);
+            QsonParser parser = mapper.parserFor(int.class);
             ByteArrayParserContext ctx = new ByteArrayParserContext(parser);
             Integer i = ctx.finish("1234");
             Assertions.assertEquals(1234, i.intValue());
         }
         {
-            JsonParser parser = mapper.parserFor(Integer.class);
+            QsonParser parser = mapper.parserFor(Integer.class);
             ByteArrayParserContext ctx = new ByteArrayParserContext(parser);
             Integer i = ctx.finish("1234");
             Assertions.assertEquals(1234, i.intValue());
@@ -107,7 +107,7 @@ public class MapperTest {
     @Test
     public void testBadInteger() throws Exception {
         QsonMapper mapper = new QsonMapper();
-        JsonParser parser = mapper.parserFor(int.class);
+        QsonParser parser = mapper.parserFor(int.class);
         ByteArrayParserContext ctx = new ByteArrayParserContext(parser);
         try {
             Integer i = ctx.finish("ABCDE");
@@ -120,13 +120,13 @@ public class MapperTest {
     public void testShort() throws Exception {
         QsonMapper mapper = new QsonMapper();
         {
-            JsonParser parser = mapper.parserFor(short.class);
+            QsonParser parser = mapper.parserFor(short.class);
             ByteArrayParserContext ctx = new ByteArrayParserContext(parser);
             Short i = ctx.finish("1234");
             Assertions.assertEquals(1234, i.shortValue());
         }
         {
-            JsonParser parser = mapper.parserFor(Short.class);
+            QsonParser parser = mapper.parserFor(Short.class);
             ByteArrayParserContext ctx = new ByteArrayParserContext(parser);
             Short i = ctx.finish("1234");
             Assertions.assertEquals(1234, i.shortValue());
@@ -137,13 +137,13 @@ public class MapperTest {
     public void testLong() throws Exception {
         QsonMapper mapper = new QsonMapper();
         {
-            JsonParser parser = mapper.parserFor(long.class);
+            QsonParser parser = mapper.parserFor(long.class);
             ByteArrayParserContext ctx = new ByteArrayParserContext(parser);
             Long i = ctx.finish("1234");
             Assertions.assertEquals(1234L, i.longValue());
         }
         {
-            JsonParser parser = mapper.parserFor(Long.class);
+            QsonParser parser = mapper.parserFor(Long.class);
             ByteArrayParserContext ctx = new ByteArrayParserContext(parser);
             Long i = ctx.finish("1234");
             Assertions.assertEquals(1234L, i.longValue());
@@ -154,13 +154,13 @@ public class MapperTest {
     public void testByte() throws Exception {
         QsonMapper mapper = new QsonMapper();
         {
-            JsonParser parser = mapper.parserFor(byte.class);
+            QsonParser parser = mapper.parserFor(byte.class);
             ByteArrayParserContext ctx = new ByteArrayParserContext(parser);
             Byte i = ctx.finish("123");
             Assertions.assertEquals(123, i.byteValue());
         }
         {
-            JsonParser parser = mapper.parserFor(Byte.class);
+            QsonParser parser = mapper.parserFor(Byte.class);
             ByteArrayParserContext ctx = new ByteArrayParserContext(parser);
             Byte i = ctx.finish("123");
             Assertions.assertEquals(123, i.byteValue());
@@ -171,25 +171,25 @@ public class MapperTest {
     public void testFloat() throws Exception {
         QsonMapper mapper = new QsonMapper();
         {
-            JsonParser parser = mapper.parserFor(float.class);
+            QsonParser parser = mapper.parserFor(float.class);
             ByteArrayParserContext ctx = new ByteArrayParserContext(parser);
             Float i = ctx.finish("123");
             Assertions.assertEquals(123.0f, i.floatValue());
         }
         {
-            JsonParser parser = mapper.parserFor(Float.class);
+            QsonParser parser = mapper.parserFor(Float.class);
             ByteArrayParserContext ctx = new ByteArrayParserContext(parser);
             Float i = ctx.finish("123");
             Assertions.assertEquals(123.0f, i.floatValue());
         }
         {
-            JsonParser parser = mapper.parserFor(float.class);
+            QsonParser parser = mapper.parserFor(float.class);
             ByteArrayParserContext ctx = new ByteArrayParserContext(parser);
             Float i = ctx.finish("123.1");
             Assertions.assertEquals(123.1f, i.floatValue());
         }
         {
-            JsonParser parser = mapper.parserFor(Float.class);
+            QsonParser parser = mapper.parserFor(Float.class);
             ByteArrayParserContext ctx = new ByteArrayParserContext(parser);
             Float i = ctx.finish("123.1");
             Assertions.assertEquals(123.1f, i.floatValue());
@@ -200,25 +200,25 @@ public class MapperTest {
     public void testDouble() throws Exception {
         QsonMapper mapper = new QsonMapper();
         {
-            JsonParser parser = mapper.parserFor(double.class);
+            QsonParser parser = mapper.parserFor(double.class);
             ByteArrayParserContext ctx = new ByteArrayParserContext(parser);
             Double i = ctx.finish("123");
             Assertions.assertEquals(123.0, i.doubleValue());
         }
         {
-            JsonParser parser = mapper.parserFor(Double.class);
+            QsonParser parser = mapper.parserFor(Double.class);
             ByteArrayParserContext ctx = new ByteArrayParserContext(parser);
             Double i = ctx.finish("123");
             Assertions.assertEquals(123.0, i.doubleValue());
         }
         {
-            JsonParser parser = mapper.parserFor(double.class);
+            QsonParser parser = mapper.parserFor(double.class);
             ByteArrayParserContext ctx = new ByteArrayParserContext(parser);
             Double i = ctx.finish("123.1");
             Assertions.assertEquals(123.1, i.doubleValue());
         }
         {
-            JsonParser parser = mapper.parserFor(Double.class);
+            QsonParser parser = mapper.parserFor(Double.class);
             ByteArrayParserContext ctx = new ByteArrayParserContext(parser);
             Double i = ctx.finish("123.1");
             Assertions.assertEquals(123.1, i.doubleValue());
@@ -229,25 +229,25 @@ public class MapperTest {
     public void testBoolean() throws Exception {
         QsonMapper mapper = new QsonMapper();
         {
-            JsonParser parser = mapper.parserFor(boolean.class);
+            QsonParser parser = mapper.parserFor(boolean.class);
             ByteArrayParserContext ctx = new ByteArrayParserContext(parser);
             Boolean i = ctx.finish("true");
             Assertions.assertEquals(true, i.booleanValue());
         }
         {
-            JsonParser parser = mapper.parserFor(Boolean.class);
+            QsonParser parser = mapper.parserFor(Boolean.class);
             ByteArrayParserContext ctx = new ByteArrayParserContext(parser);
             Boolean i = ctx.finish("true");
             Assertions.assertEquals(true, i.booleanValue());
         }
         {
-            JsonParser parser = mapper.parserFor(boolean.class);
+            QsonParser parser = mapper.parserFor(boolean.class);
             ByteArrayParserContext ctx = new ByteArrayParserContext(parser);
             Boolean i = ctx.finish("false");
             Assertions.assertEquals(false, i.booleanValue());
         }
         {
-            JsonParser parser = mapper.parserFor(Boolean.class);
+            QsonParser parser = mapper.parserFor(Boolean.class);
             ByteArrayParserContext ctx = new ByteArrayParserContext(parser);
             Boolean i = ctx.finish("false");
             Assertions.assertEquals(false, i.booleanValue());
@@ -257,7 +257,7 @@ public class MapperTest {
     @Test
     public void testString() throws Exception {
         QsonMapper mapper = new QsonMapper();
-        JsonParser parser = mapper.parserFor(String.class);
+        QsonParser parser = mapper.parserFor(String.class);
         ByteArrayParserContext ctx = new ByteArrayParserContext(parser);
         String str = ctx.finish("\"ABCDE\"");
         Assertions.assertEquals("ABCDE", str);
@@ -266,7 +266,7 @@ public class MapperTest {
     @Test
     public void testIncompleteString() throws Exception {
         QsonMapper mapper = new QsonMapper();
-        JsonParser parser = mapper.parserFor(String.class);
+        QsonParser parser = mapper.parserFor(String.class);
         ByteArrayParserContext ctx = new ByteArrayParserContext(parser);
         try {
             String str = ctx.finish("\"ABCDE");
@@ -278,10 +278,10 @@ public class MapperTest {
     @Test
     public void testPerson() throws Exception {
         QsonMapper mapper = new QsonMapper();
-        JsonParser parser = mapper.parserFor(Person2.class);
-        ObjectWriter objectWriter = mapper.writerFor(Person2.class);
-        JsonParser parser2 = mapper.parserFor(Person2.class);
-        ObjectWriter objectWriter2 = mapper.writerFor(Person2.class);
+        QsonParser parser = mapper.parserFor(Person2.class);
+        QsonObjectWriter objectWriter = mapper.writerFor(Person2.class);
+        QsonParser parser2 = mapper.parserFor(Person2.class);
+        QsonObjectWriter objectWriter2 = mapper.writerFor(Person2.class);
 
         // test cached
         Assertions.assertTrue(parser == parser2);
@@ -338,8 +338,8 @@ public class MapperTest {
     @Test
     public void testNested() throws Exception {
         QsonMapper mapper = new QsonMapper();
-        JsonParser parser = mapper.parserFor(Team.class);
-        ObjectWriter objectWriter = mapper.writerFor(Team.class);
+        QsonParser parser = mapper.parserFor(Team.class);
+        QsonObjectWriter objectWriter = mapper.writerFor(Team.class);
 
         Team pats = new Team();
         pats.setName("Patriots 2018");
@@ -620,7 +620,7 @@ public class MapperTest {
 
     private void test(String json, GenericType type, Consumer assertions) {
         QsonMapper mapper = new QsonMapper();
-        JsonParser parser = mapper.parserFor(type);
+        QsonParser parser = mapper.parserFor(type);
         Object target = mapper.read(json, type);
         assertions.accept(target);
 

@@ -13,17 +13,13 @@ import io.quarkus.qson.serializer.CollectionWriter;
 import io.quarkus.qson.serializer.GenericObjectWriter;
 import io.quarkus.qson.serializer.JsonWriter;
 import io.quarkus.qson.serializer.MapWriter;
-import io.quarkus.qson.serializer.ObjectWriter;
+import io.quarkus.qson.serializer.QsonObjectWriter;
 
-import java.lang.reflect.Method;
-import java.lang.reflect.Modifier;
 import java.lang.reflect.ParameterizedType;
 import java.lang.reflect.Type;
 import java.util.ArrayList;
 import java.util.Collection;
-import java.util.Collections;
 import java.util.HashMap;
-import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -171,7 +167,7 @@ public class Serializer {
         this.className = className;
         creator = ClassCreator.builder().classOutput(classOutput)
                 .className(className)
-                .interfaces(ObjectWriter.class).build();
+                .interfaces(QsonObjectWriter.class).build();
     }
 
     void generate() {
@@ -196,7 +192,7 @@ public class Serializer {
         if (Map.class.isAssignableFrom(targetType)) {
             if (hasCollectionWriter(targetType, targetGenericType)) {
                 ResultHandle writer = getMapWriter(method, "collection", targetGenericType);
-                method.invokeInterfaceMethod(MethodDescriptor.ofMethod(JsonWriter.class, "write", void.class, Map.class, ObjectWriter.class), jsonWriter,
+                method.invokeInterfaceMethod(MethodDescriptor.ofMethod(JsonWriter.class, "write", void.class, Map.class, QsonObjectWriter.class), jsonWriter,
                         target,
                         writer
                 );
@@ -207,7 +203,7 @@ public class Serializer {
         } else {
             if (hasCollectionWriter(targetType, targetGenericType)) {
                 ResultHandle writer = getCollectionWriter(method, "collection", targetGenericType);
-                method.invokeInterfaceMethod(MethodDescriptor.ofMethod(JsonWriter.class, "write", void.class, Collection.class, ObjectWriter.class), jsonWriter,
+                method.invokeInterfaceMethod(MethodDescriptor.ofMethod(JsonWriter.class, "write", void.class, Collection.class, QsonObjectWriter.class), jsonWriter,
                         target,
                         writer
                 );
@@ -271,7 +267,7 @@ public class Serializer {
             return staticConstructor.readStaticField(FieldDescriptor.of(fqn(type, genericType), "SERIALIZER", fqn(type, genericType)));
         }
         collectionField(staticConstructor, type, genericType, property);
-        return staticConstructor.readStaticField(FieldDescriptor.of(fqn(), property, ObjectWriter.class));
+        return staticConstructor.readStaticField(FieldDescriptor.of(fqn(), property, QsonObjectWriter.class));
     }
 
     private void collectionField(MethodCreator staticConstructor, Class type, Type genericType, String property) {
@@ -283,8 +279,8 @@ public class Serializer {
                 ResultHandle nested = getNestedValueWriter(staticConstructor, valueClass, valueType, property + "_n");
                 if (nested == null) return;
 
-                FieldCreator mapWriter = creator.getFieldCreator(property, ObjectWriter.class).setModifiers(ACC_STATIC | ACC_PRIVATE | ACC_FINAL);
-                ResultHandle instance = staticConstructor.newInstance(MethodDescriptor.ofConstructor(MapWriter.class, ObjectWriter.class),
+                FieldCreator mapWriter = creator.getFieldCreator(property, QsonObjectWriter.class).setModifiers(ACC_STATIC | ACC_PRIVATE | ACC_FINAL);
+                ResultHandle instance = staticConstructor.newInstance(MethodDescriptor.ofConstructor(MapWriter.class, QsonObjectWriter.class),
                         nested);
                 staticConstructor.writeStaticField(mapWriter.getFieldDescriptor(), instance);
             } else if (List.class.isAssignableFrom(type) || Set.class.isAssignableFrom(type)) {
@@ -294,8 +290,8 @@ public class Serializer {
                 ResultHandle nested = getNestedValueWriter(staticConstructor, valueClass, valueType, property + "_n");
                 if (nested == null) return;
 
-                FieldCreator mapWriter = creator.getFieldCreator(property, ObjectWriter.class).setModifiers(ACC_STATIC | ACC_PRIVATE | ACC_FINAL);
-                ResultHandle instance = staticConstructor.newInstance(MethodDescriptor.ofConstructor(CollectionWriter.class, ObjectWriter.class),
+                FieldCreator mapWriter = creator.getFieldCreator(property, QsonObjectWriter.class).setModifiers(ACC_STATIC | ACC_PRIVATE | ACC_FINAL);
+                ResultHandle instance = staticConstructor.newInstance(MethodDescriptor.ofConstructor(CollectionWriter.class, QsonObjectWriter.class),
                         nested);
                 staticConstructor.writeStaticField(mapWriter.getFieldDescriptor(), instance);
             } else {
@@ -444,7 +440,7 @@ public class Serializer {
                 if (!forceComma) method.assign(comma, result);
             } else if (Map.class.isAssignableFrom(getter.type)) {
                 if (hasCollectionWriter(getter)) {
-                    ResultHandle result = method.invokeInterfaceMethod(MethodDescriptor.ofMethod(JsonWriter.class, "writeProperty", boolean.class, String.class, Map.class, ObjectWriter.class, boolean.class), jsonWriter,
+                    ResultHandle result = method.invokeInterfaceMethod(MethodDescriptor.ofMethod(JsonWriter.class, "writeProperty", boolean.class, String.class, Map.class, QsonObjectWriter.class, boolean.class), jsonWriter,
                             method.load(getter.jsonName),
                             method.invokeVirtualMethod(MethodDescriptor.ofMethod(targetType, getter.getter.getName(), getter.type), target),
                             getMapWriter(method, getter),
@@ -460,7 +456,7 @@ public class Serializer {
                 }
             } else if (Collection.class.isAssignableFrom(getter.type)) {
                 if (hasCollectionWriter(getter)) {
-                    ResultHandle result = method.invokeInterfaceMethod(MethodDescriptor.ofMethod(JsonWriter.class, "writeProperty", boolean.class, String.class, Collection.class, ObjectWriter.class, boolean.class), jsonWriter,
+                    ResultHandle result = method.invokeInterfaceMethod(MethodDescriptor.ofMethod(JsonWriter.class, "writeProperty", boolean.class, String.class, Collection.class, QsonObjectWriter.class, boolean.class), jsonWriter,
                             method.load(getter.jsonName),
                             method.invokeVirtualMethod(MethodDescriptor.ofMethod(targetType, getter.getter.getName(), getter.type), target),
                             getCollectionWriter(method, getter),
@@ -481,7 +477,7 @@ public class Serializer {
                         comma);
                 if (!forceComma) method.assign(comma, result);
             } else {
-                ResultHandle result = method.invokeInterfaceMethod(MethodDescriptor.ofMethod(JsonWriter.class, "writeObjectProperty", boolean.class, String.class, Object.class, ObjectWriter.class, boolean.class), jsonWriter,
+                ResultHandle result = method.invokeInterfaceMethod(MethodDescriptor.ofMethod(JsonWriter.class, "writeObjectProperty", boolean.class, String.class, Object.class, QsonObjectWriter.class, boolean.class), jsonWriter,
                         method.load(getter.jsonName),
                         method.invokeVirtualMethod(MethodDescriptor.ofMethod(targetType, getter.getter.getName(), getter.type), target),
                         method.readStaticField(FieldDescriptor.of(fqn(getter.type, getter.genericType), "SERIALIZER", fqn(getter.type, getter.genericType))),
@@ -511,7 +507,7 @@ public class Serializer {
         if (isUserObject(valueClass)) {
             return method.readStaticField(FieldDescriptor.of(fqn(valueClass, valueType), "SERIALIZER", fqn(valueClass, valueType)));
         } else {
-            return method.readStaticField(FieldDescriptor.of(fqn(), property + "_n", ObjectWriter.class));
+            return method.readStaticField(FieldDescriptor.of(fqn(), property + "_n", QsonObjectWriter.class));
         }
     }
 

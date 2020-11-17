@@ -2,10 +2,10 @@ package io.quarkus.qson.serializer;
 
 import java.util.Map;
 
-public class MapWriter implements ObjectWriter {
-    private ObjectWriter valueWriter;
+public class MapWriter implements QsonObjectWriter {
+    private QsonObjectWriter valueWriter;
 
-    public MapWriter(ObjectWriter valueWriter) {
+    public MapWriter(QsonObjectWriter valueWriter) {
         this.valueWriter = valueWriter;
     }
 

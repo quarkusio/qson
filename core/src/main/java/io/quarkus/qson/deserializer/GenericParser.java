@@ -5,7 +5,7 @@ import java.util.HashMap;
 import java.util.LinkedList;
 import java.util.Map;
 
-public class GenericParser extends BaseParser implements JsonParser {
+public class GenericParser extends BaseParser implements QsonParser {
 
     public static final GenericParser PARSER = new GenericParser();
     private ParserState value = this::value;

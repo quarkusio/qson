@@ -2,7 +2,7 @@ package io.quarkus.qson.deserializer;
 
 import static io.quarkus.qson.util.IntChar.*;
 
-public class BaseParser implements JsonParser {
+public class BaseParser implements QsonParser {
     public static final BaseParser PARSER = new BaseParser();
 
     protected BaseParser() {

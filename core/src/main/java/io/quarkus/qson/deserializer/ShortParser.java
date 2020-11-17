@@ -1,6 +1,6 @@
 package io.quarkus.qson.deserializer;
 
-public class ShortParser implements JsonParser {
+public class ShortParser implements QsonParser {
     @Override
     public ParserState startState() {
         return ObjectParser.PARSER.startIntegerValue;

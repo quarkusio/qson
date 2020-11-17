@@ -7,9 +7,9 @@ import io.quarkus.funqy.runtime.FunctionRecorder;
 import io.quarkus.funqy.runtime.RequestContextImpl;
 import io.quarkus.funqy.runtime.query.QueryReader;
 import io.quarkus.qson.deserializer.ByteArrayParserContext;
-import io.quarkus.qson.deserializer.JsonParser;
+import io.quarkus.qson.deserializer.QsonParser;
 import io.quarkus.qson.serializer.ByteArrayJsonWriter;
-import io.quarkus.qson.serializer.ObjectWriter;
+import io.quarkus.qson.serializer.QsonObjectWriter;
 import io.quarkus.security.identity.CurrentIdentityAssociation;
 import io.quarkus.security.identity.SecurityIdentity;
 import io.quarkus.vertx.http.runtime.CurrentVertxRequest;
@@ -108,7 +108,7 @@ public class VertxRequestHandler implements Handler<RoutingContext> {
         routingContext.request().bodyHandler(buff -> {
             Object input = null;
             if (buff.length() > 0) {
-                JsonParser reader = (JsonParser) invoker.getBindingContext().get(JsonParser.class.getName());
+                QsonParser reader = (QsonParser) invoker.getBindingContext().get(QsonParser.class.getName());
                 try {
                     byte[] bytes = buff.getBytes();
                     ByteArrayParserContext ctx = new ByteArrayParserContext(reader);
@@ -144,7 +144,7 @@ public class VertxRequestHandler implements Handler<RoutingContext> {
                         if (invoker.hasOutput()) {
                             routingContext.response().setStatusCode(200);
                             routingContext.response().putHeader("Content-Type", "application/json");
-                            ObjectWriter writer = (ObjectWriter) invoker.getBindingContext().get(ObjectWriter.class.getName());
+                            QsonObjectWriter writer = (QsonObjectWriter) invoker.getBindingContext().get(QsonObjectWriter.class.getName());
                             try {
                                 ByteArrayJsonWriter jsonWriter = new ByteArrayJsonWriter();
                                 writer.write(jsonWriter, o);

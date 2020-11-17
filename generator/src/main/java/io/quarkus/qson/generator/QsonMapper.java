@@ -3,10 +3,10 @@ package io.quarkus.qson.generator;
 import io.quarkus.qson.GenericType;
 import io.quarkus.qson.util.Types;
 import io.quarkus.qson.deserializer.ByteArrayParserContext;
-import io.quarkus.qson.deserializer.JsonParser;
+import io.quarkus.qson.deserializer.QsonParser;
 import io.quarkus.qson.serializer.ByteArrayJsonWriter;
 import io.quarkus.qson.serializer.JsonByteWriter;
-import io.quarkus.qson.serializer.ObjectWriter;
+import io.quarkus.qson.serializer.QsonObjectWriter;
 import io.quarkus.qson.serializer.OutputStreamJsonWriter;
 
 import java.io.IOException;
@@ -24,9 +24,9 @@ import java.util.concurrent.ConcurrentHashMap;
  *
  */
 public class QsonMapper {
-    private ConcurrentHashMap<String, JsonParser> deserializers = new ConcurrentHashMap<>();
+    private ConcurrentHashMap<String, QsonParser> deserializers = new ConcurrentHashMap<>();
     private Map<String, String> generatedDeserializers = new HashMap<>();
-    private ConcurrentHashMap<String, ObjectWriter> serializers = new ConcurrentHashMap<>();
+    private ConcurrentHashMap<String, QsonObjectWriter> serializers = new ConcurrentHashMap<>();
     private Map<String, String> generatedSerializers = new HashMap<>();
     private final GizmoClassLoader cl;
 
@@ -62,7 +62,7 @@ public class QsonMapper {
      * @param clz
      * @return
      */
-    public JsonParser parserFor(Class clz) {
+    public QsonParser parserFor(Class clz) {
        return parserFor(clz, clz);
     }
 
@@ -78,7 +78,7 @@ public class QsonMapper {
      * @param type
      * @return
      */
-    public JsonParser parserFor(GenericType type) {
+    public QsonParser parserFor(GenericType type) {
         return parserFor(type.getRawType(), type.getType());
     }
 
@@ -89,9 +89,9 @@ public class QsonMapper {
      * @param genericType
      * @return
      */
-    public JsonParser parserFor(Class clz, Type genericType) {
+    public QsonParser parserFor(Class clz, Type genericType) {
         String key = key(clz, genericType);
-        JsonParser parser = deserializers.get(key);
+        QsonParser parser = deserializers.get(key);
         if (parser != null) return parser;
         synchronized(deserializers) {
             parser = deserializers.get(key);
@@ -99,7 +99,7 @@ public class QsonMapper {
             String className = generateDeserializers(clz, genericType);
             try {
                 Class deserializer = cl.loadClass(className);
-                parser = (JsonParser) deserializer.newInstance();
+                parser = (QsonParser) deserializer.newInstance();
                 deserializers.put(key, parser);
             } catch (Throwable e) {
                 throw new RuntimeException(e);
@@ -118,7 +118,7 @@ public class QsonMapper {
      * @return
      */
     public <T> T read(byte[] fullBuffer, Class<T> type, Type genericType) {
-        JsonParser parser = parserFor(type, genericType);
+        QsonParser parser = parserFor(type, genericType);
         ByteArrayParserContext ctx = new ByteArrayParserContext(parser);
         return ctx.finish(fullBuffer);
     }
@@ -195,7 +195,7 @@ public class QsonMapper {
      * @throws IOException
      */
     public <T> T read(InputStream is, Class<T> type, Type genericType) throws IOException {
-        JsonParser parser = parserFor(type, genericType);
+        QsonParser parser = parserFor(type, genericType);
         ByteArrayParserContext ctx = new ByteArrayParserContext(parser);
         return ctx.finish(is);
     }
@@ -265,7 +265,7 @@ public class QsonMapper {
      * @param clz
      * @return
      */
-    public ObjectWriter writerFor(Class clz) {
+    public QsonObjectWriter writerFor(Class clz) {
         return writerFor(clz, clz);
     }
 
@@ -275,7 +275,7 @@ public class QsonMapper {
      * @param type
      * @return
      */
-    public ObjectWriter writerFor(GenericType type) {
+    public QsonObjectWriter writerFor(GenericType type) {
         return writerFor(type.getRawType(), type.getType());
     }
 
@@ -286,9 +286,9 @@ public class QsonMapper {
      * @param genericType
      * @return
      */
-    public ObjectWriter writerFor(Class clz, Type genericType) {
+    public QsonObjectWriter writerFor(Class clz, Type genericType) {
         String key = key(clz, genericType);
-        ObjectWriter writer = serializers.get(key);
+        QsonObjectWriter writer = serializers.get(key);
         if (writer != null) return writer;
         synchronized(serializers) {
             writer = serializers.get(key);
@@ -296,7 +296,7 @@ public class QsonMapper {
             String className = generateSerializers(clz, genericType);
             try {
                 Class serializer = cl.loadClass(className);
-                writer = (ObjectWriter) serializer.newInstance();
+                writer = (QsonObjectWriter) serializer.newInstance();
                 serializers.put(key, writer);
             } catch (Throwable e) {
                 throw new RuntimeException(e);
@@ -314,7 +314,7 @@ public class QsonMapper {
      * @param stream
      */
     public void writeStream(Class type, Type genericType, Object target, OutputStream stream) {
-        ObjectWriter objectWriter = writerFor(type, genericType);
+        QsonObjectWriter objectWriter = writerFor(type, genericType);
         OutputStreamJsonWriter jsonWriter = new OutputStreamJsonWriter(stream);
         objectWriter.write(jsonWriter, target);
     }
@@ -362,7 +362,7 @@ public class QsonMapper {
      * @return
      */
     public byte[] writeBytes(Class type, Type genericType, Object target) {
-        ObjectWriter objectWriter = writerFor(type, genericType);
+        QsonObjectWriter objectWriter = writerFor(type, genericType);
         ByteArrayJsonWriter jsonWriter = new ByteArrayJsonWriter();
         objectWriter.write(jsonWriter, target);
         return jsonWriter.getBytes();

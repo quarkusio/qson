@@ -18,7 +18,7 @@ import io.quarkus.qson.deserializer.ByteParser;
 import io.quarkus.qson.deserializer.DoubleParser;
 import io.quarkus.qson.deserializer.FloatParser;
 import io.quarkus.qson.deserializer.IntegerParser;
-import io.quarkus.qson.deserializer.JsonParser;
+import io.quarkus.qson.deserializer.QsonParser;
 import io.quarkus.qson.deserializer.LongParser;
 import io.quarkus.qson.deserializer.ParserContext;
 import io.quarkus.qson.deserializer.ContextValue;
@@ -242,7 +242,7 @@ public class Deserializer {
     void generateCollection() {
         creator = ClassCreator.builder().classOutput(classOutput)
                 .className(className)
-                .interfaces(JsonParser.class).build();
+                .interfaces(QsonParser.class).build();
         MethodCreator staticConstructor = creator.getMethodCreator(CLINIT, void.class);
         staticConstructor.setModifiers(ACC_STATIC);
         collectionField(staticConstructor, targetType, targetGenericType, "collection");

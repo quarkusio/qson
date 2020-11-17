@@ -1,8 +1,8 @@
 package io.quarkus.qson.runtime;
 
 import io.quarkus.qson.util.Types;
-import io.quarkus.qson.deserializer.JsonParser;
-import io.quarkus.qson.serializer.ObjectWriter;
+import io.quarkus.qson.deserializer.QsonParser;
+import io.quarkus.qson.serializer.QsonObjectWriter;
 import io.quarkus.runtime.RuntimeValue;
 import io.quarkus.runtime.annotations.Recorder;
 
@@ -11,12 +11,12 @@ import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 
 @Recorder
-public class QsonRegistry {
-    static final Map<String, JsonParser> parsers = new ConcurrentHashMap<>();
-    static final Map<String, ObjectWriter> writers = new ConcurrentHashMap<>();
+public class QuarkusQsonRegistry {
+    static final Map<String, QsonParser> parsers = new ConcurrentHashMap<>();
+    static final Map<String, QsonObjectWriter> writers = new ConcurrentHashMap<>();
 
-    static final Map<Type, JsonParser> typeParsers = new ConcurrentHashMap<>();
-    static final Map<Type, ObjectWriter> typeWriters = new ConcurrentHashMap<>();
+    static final Map<Type, QsonParser> typeParsers = new ConcurrentHashMap<>();
+    static final Map<Type, QsonObjectWriter> typeWriters = new ConcurrentHashMap<>();
 
     public void clear() {
         parsers.clear();
@@ -25,22 +25,22 @@ public class QsonRegistry {
         typeWriters.clear();
     }
 
-    public void registerParser(String key, RuntimeValue<JsonParser> parser) {
+    public void registerParser(String key, RuntimeValue<QsonParser> parser) {
         parsers.put(key, parser.getValue());
     }
-    public void registerWriter(String key, RuntimeValue<ObjectWriter> writer) {
+    public void registerWriter(String key, RuntimeValue<QsonObjectWriter> writer) {
         writers.put(key, writer.getValue());
     }
 
-    public static JsonParser getParser(String key) {
+    public static QsonParser getParser(String key) {
         return parsers.get(key);
     }
 
-    public static ObjectWriter getWriter(String key) {
+    public static QsonObjectWriter getWriter(String key) {
         return writers.get(key);
     }
-    public static JsonParser getParser(Type key) {
-        JsonParser parser = typeParsers.get(key);
+    public static QsonParser getParser(Type key) {
+        QsonParser parser = typeParsers.get(key);
         if (parser != null) return parser;
         parser = parsers.get(Types.typename(key));
         if (parser == null) return null;
@@ -48,8 +48,8 @@ public class QsonRegistry {
         return parser;
     }
 
-    public static ObjectWriter getWriter(Type key) {
-        ObjectWriter writer = typeWriters.get(key);
+    public static QsonObjectWriter getWriter(Type key) {
+        QsonObjectWriter writer = typeWriters.get(key);
         if (writer != null) return writer;
         writer = writers.get(Types.typename(key));
         if (writer == null) return null;

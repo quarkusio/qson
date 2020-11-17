@@ -1,6 +1,6 @@
 package io.quarkus.qson.deserializer;
 
-public class DoubleParser implements JsonParser {
+public class DoubleParser implements QsonParser {
     @Override
     public ParserState startState() {
         return ObjectParser.PARSER.startNumberValue;

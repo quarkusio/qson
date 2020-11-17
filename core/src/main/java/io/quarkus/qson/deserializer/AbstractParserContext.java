@@ -10,7 +10,7 @@ public abstract class AbstractParserContext implements ParserContext {
     protected ArrayDeque<Object> target = new ArrayDeque<>();
     protected int ptr;
     protected ParserState initialState;
-    protected JsonParser parser;
+    protected QsonParser parser;
     protected boolean buildingToken;
     protected int tokenStart = -1;
     protected int tokenEnd = -1;
@@ -18,7 +18,7 @@ public abstract class AbstractParserContext implements ParserContext {
     protected boolean parserComplete;
     protected Object result;
 
-    public AbstractParserContext(JsonParser parser, ParserState initialState) {
+    public AbstractParserContext(QsonParser parser, ParserState initialState) {
         this.parser = parser;
         this.initialState = initialState;
     }

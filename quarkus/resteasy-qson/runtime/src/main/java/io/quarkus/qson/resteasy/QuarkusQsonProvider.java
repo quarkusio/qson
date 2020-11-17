@@ -1,9 +1,9 @@
 package io.quarkus.qson.resteasy;
 
 import io.quarkus.qson.deserializer.ByteArrayParserContext;
-import io.quarkus.qson.deserializer.JsonParser;
-import io.quarkus.qson.runtime.QsonRegistry;
-import io.quarkus.qson.serializer.ObjectWriter;
+import io.quarkus.qson.deserializer.QsonParser;
+import io.quarkus.qson.runtime.QuarkusQsonRegistry;
+import io.quarkus.qson.serializer.QsonObjectWriter;
 import io.quarkus.qson.serializer.OutputStreamJsonWriter;
 
 import javax.ws.rs.Consumes;
@@ -26,12 +26,12 @@ import java.lang.reflect.Type;
 public class QuarkusQsonProvider implements MessageBodyReader, MessageBodyWriter {
     @Override
     public boolean isReadable(Class type, Type genericType, Annotation[] annotations, MediaType mediaType) {
-        return QsonRegistry.getParser(genericType) != null;
+        return QuarkusQsonRegistry.getParser(genericType) != null;
     }
 
     @Override
     public Object readFrom(Class type, Type genericType, Annotation[] annotations, MediaType mediaType, MultivaluedMap httpHeaders, InputStream entityStream) throws IOException, WebApplicationException {
-        JsonParser parser = QsonRegistry.getParser(genericType);
+        QsonParser parser = QuarkusQsonRegistry.getParser(genericType);
         if (parser == null) {
             throw new IOException("Failed to find QSON parser for: " + genericType.getTypeName());
         }
@@ -41,12 +41,12 @@ public class QuarkusQsonProvider implements MessageBodyReader, MessageBodyWriter
 
     @Override
     public boolean isWriteable(Class type, Type genericType, Annotation[] annotations, MediaType mediaType) {
-        return QsonRegistry.getWriter(genericType) != null;
+        return QuarkusQsonRegistry.getWriter(genericType) != null;
     }
 
     @Override
     public void writeTo(Object o, Class type, Type genericType, Annotation[] annotations, MediaType mediaType, MultivaluedMap httpHeaders, OutputStream entityStream) throws IOException, WebApplicationException {
-        ObjectWriter objectWriter = QsonRegistry.getWriter(genericType);
+        QsonObjectWriter objectWriter = QuarkusQsonRegistry.getWriter(genericType);
         if (objectWriter == null) {
             throw new IOException("Failed to find QSON writer for: " + genericType.getTypeName());
         }

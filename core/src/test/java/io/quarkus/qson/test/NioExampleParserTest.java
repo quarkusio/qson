@@ -2,7 +2,7 @@ package io.quarkus.qson.test;
 
 import io.quarkus.qson.deserializer.ByteArrayParserContext;
 import io.quarkus.qson.deserializer.GenericParser;
-import io.quarkus.qson.deserializer.JsonParser;
+import io.quarkus.qson.deserializer.QsonParser;
 import io.quarkus.qson.deserializer.StringParser;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
@@ -340,7 +340,7 @@ public class NioExampleParserTest {
 
     @Test
     public void testGenericList() {
-        JsonParser p = GenericParser.PARSER;
+        QsonParser p = GenericParser.PARSER;
         ByteArrayParserContext ctx = new ByteArrayParserContext(p);
         List list = ctx.finish(genericList);
         Assertions.assertEquals("one", list.get(0));

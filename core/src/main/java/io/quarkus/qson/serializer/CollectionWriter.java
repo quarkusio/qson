@@ -2,10 +2,10 @@ package io.quarkus.qson.serializer;
 
 import java.util.Collection;
 
-public class CollectionWriter implements ObjectWriter {
-    private ObjectWriter elementWriter;
+public class CollectionWriter implements QsonObjectWriter {
+    private QsonObjectWriter elementWriter;
 
-    public CollectionWriter(ObjectWriter elementWriter) {
+    public CollectionWriter(QsonObjectWriter elementWriter) {
         this.elementWriter = elementWriter;
     }
 

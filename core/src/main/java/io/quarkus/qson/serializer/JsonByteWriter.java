@@ -290,7 +290,7 @@ public abstract class JsonByteWriter implements JsonWriter {
     }
 
     @Override
-    public void write(Map val, ObjectWriter valueWriter) {
+    public void write(Map val, QsonObjectWriter valueWriter) {
         writeByte(IntChar.INT_LCURLY);
         if (!val.isEmpty()) {
             Set<Map.Entry<Object, Object>> set = val.entrySet();
@@ -325,7 +325,7 @@ public abstract class JsonByteWriter implements JsonWriter {
     }
 
     @Override
-    public void write(Collection val, ObjectWriter elementWriter) {
+    public void write(Collection val, QsonObjectWriter elementWriter) {
         writeByte(IntChar.INT_LBRACKET);
         if (!val.isEmpty()) {
             Iterator it = val.iterator();
@@ -496,7 +496,7 @@ public abstract class JsonByteWriter implements JsonWriter {
     }
 
     @Override
-    public boolean writeObjectProperty(String name, Object val, ObjectWriter writer, boolean comma) {
+    public boolean writeObjectProperty(String name, Object val, QsonObjectWriter writer, boolean comma) {
         if (val == null) return comma;
         if (comma) writeByte(IntChar.INT_COMMA);
         write(name);
@@ -596,7 +596,7 @@ public abstract class JsonByteWriter implements JsonWriter {
     static final byte[] COLON_LCURLY = {':', '{'};
 
     @Override
-    public boolean writeProperty(String name, Map val, ObjectWriter objectWriter, boolean comma) {
+    public boolean writeProperty(String name, Map val, QsonObjectWriter objectWriter, boolean comma) {
         if (val == null) return comma;
         if (comma) writeByte(IntChar.INT_COMMA);
         write(name);
@@ -622,7 +622,7 @@ public abstract class JsonByteWriter implements JsonWriter {
     static final byte[] COLON_LBRACKET = {':', '['};
 
     @Override
-    public boolean writeProperty(String name, Collection val, ObjectWriter objectWriter, boolean comma) {
+    public boolean writeProperty(String name, Collection val, QsonObjectWriter objectWriter, boolean comma) {
         if (val == null) return comma;
         if (comma) writeByte(IntChar.INT_COMMA);
         write(name);

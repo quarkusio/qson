@@ -6,9 +6,9 @@ import io.quarkus.funqy.runtime.FunctionInvoker;
 import io.quarkus.funqy.runtime.FunctionRecorder;
 import io.quarkus.funqy.runtime.query.QueryObjectMapper;
 import io.quarkus.funqy.runtime.query.QueryReader;
-import io.quarkus.qson.deserializer.JsonParser;
-import io.quarkus.qson.runtime.QsonRegistry;
-import io.quarkus.qson.serializer.ObjectWriter;
+import io.quarkus.qson.deserializer.QsonParser;
+import io.quarkus.qson.runtime.QuarkusQsonRegistry;
+import io.quarkus.qson.serializer.QsonObjectWriter;
 import io.quarkus.runtime.ShutdownContext;
 import io.quarkus.runtime.annotations.Recorder;
 import io.smallrye.mutiny.Uni;
@@ -33,12 +33,12 @@ public class FunqyHttpBindingRecorder {
         for (FunctionInvoker invoker : FunctionRecorder.registry.invokers()) {
             try {
                 if (invoker.hasInput()) {
-                    JsonParser reader = QsonRegistry.getParser(invoker.getInputGenericType());
+                    QsonParser reader = QuarkusQsonRegistry.getParser(invoker.getInputGenericType());
                     if (reader == null) {
                         throw new RuntimeException("Unable to find JsonParser for invoker:" + invoker.getName());
                     }
                     QueryReader queryReader = queryMapper.readerFor(invoker.getInputType(), invoker.getInputGenericType());
-                    invoker.getBindingContext().put(JsonParser.class.getName(), reader);
+                    invoker.getBindingContext().put(QsonParser.class.getName(), reader);
                     invoker.getBindingContext().put(QueryReader.class.getName(), queryReader);
                 }
                 if (invoker.hasOutput()) {
@@ -47,11 +47,11 @@ public class FunqyHttpBindingRecorder {
                         ParameterizedType pt = (ParameterizedType)invoker.getMethod().getGenericReturnType();
                         genericType = pt.getActualTypeArguments()[0];
                     }
-                    ObjectWriter writer = QsonRegistry.getWriter(genericType);
+                    QsonObjectWriter writer = QuarkusQsonRegistry.getWriter(genericType);
                     if (writer == null) {
                         throw new RuntimeException("Unable to find ObjectWriter for invoker:" + invoker.getName());
                     }
-                    invoker.getBindingContext().put(ObjectWriter.class.getName(), writer);
+                    invoker.getBindingContext().put(QsonObjectWriter.class.getName(), writer);
                 }
             } catch (Exception e) {
                throw new RuntimeException (e);

@@ -1,6 +1,6 @@
 package io.quarkus.qson.deserializer;
 
-public interface JsonParser {
+public interface QsonParser {
     /**
      * Initial state
      *

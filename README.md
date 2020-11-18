@@ -9,6 +9,7 @@ a small set of classes (metaspace size), low memory footprint, and zero reflecti
 ## Limitations
 
 * must use public getter and setter methods
+* only public classes
 * Does not support polymorphism
 * Only UTF-8 encoding supported
 * Lacks other features something like Jackson may have.  Will be adding those features that do not degrade performance and memory footprint

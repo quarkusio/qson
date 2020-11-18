@@ -52,31 +52,51 @@ public class QsonBuildStep {
               CombinedIndexBuildItem combinedIndex) throws Exception {
         Collection<AnnotationInstance> annotations = combinedIndex.getIndex().getAnnotations(QSON);
         Set<String> classes = new HashSet<>();
-        register(qson, annotations, classes);
+        registerQson(qson, annotations, classes);
         annotations = combinedIndex.getIndex().getAnnotations(QSON_PROPERTY);
         register(qson, annotations, classes);
         annotations = combinedIndex.getIndex().getAnnotations(QSON_IGNORE);
         register(qson, annotations, classes);
     }
 
-    private void register(BuildProducer<QsonBuildItem> qson, Collection<AnnotationInstance> annotations, Set<String> classes) throws BuildException, ClassNotFoundException {
+    private void registerQson(BuildProducer<QsonBuildItem> qson, Collection<AnnotationInstance> annotations, Set<String> classes) throws BuildException, ClassNotFoundException {
         for (AnnotationInstance ai : annotations) {
             ClassInfo ci = ai.target().asClass();
+            String className = ci.name().toString();
             if (!Modifier.isPublic(ci.flags()) || Modifier.isInterface(ci.flags())) {
-                throw new BuildException("@Qson annnotation can only be placed on public classes: " + ci.name().toString(), Collections.emptyList());
+                throw new BuildException("@Qson annnotation can only be placed on public classes: " + className, Collections.emptyList());
             }
             if (Modifier.isAbstract(ci.flags())) {
-                throw new BuildException("@Qson annnotation cannot be placed on an abstract class: " + ci.name().toString(), Collections.emptyList());
+                throw new BuildException("@Qson annnotation cannot be placed on an abstract class: " + className, Collections.emptyList());
 
             }
-            Class clz = Thread.currentThread().getContextClassLoader().loadClass(ci.name().toString());
             AnnotationValue generateParser = ai.value("generateParser");
             AnnotationValue generateWriter = ai.value("generateWriter");
             boolean parser = generateParser == null || generateParser.asBoolean();
             boolean writer = generateWriter == null || generateWriter.asBoolean();
-            if (!classes.contains(clz.getName())) {
+            if (!classes.contains(className)) {
+                Class clz = Thread.currentThread().getContextClassLoader().loadClass(className);
                 qson.produce(new QsonBuildItem(clz, clz, parser, writer));
-                classes.add(clz.getName());
+                classes.add(className);
+            }
+        }
+    }
+
+    private void register(BuildProducer<QsonBuildItem> qson, Collection<AnnotationInstance> annotations, Set<String> classes) throws BuildException, ClassNotFoundException {
+        for (AnnotationInstance ai : annotations) {
+            ClassInfo ci = ai.target().asClass();
+            String className = ci.name().toString();
+            if (!Modifier.isPublic(ci.flags()) || Modifier.isInterface(ci.flags())) {
+                throw new BuildException("@Qson annnotation can only be placed on public classes: " + className, Collections.emptyList());
+            }
+            if (Modifier.isAbstract(ci.flags())) {
+                throw new BuildException("@Qson annnotation cannot be placed on an abstract class: " + className, Collections.emptyList());
+
+            }
+            if (!classes.contains(className)) {
+                Class clz = Thread.currentThread().getContextClassLoader().loadClass(className);
+                qson.produce(new QsonBuildItem(clz, clz, true, true));
+                classes.add(className);
             }
         }
     }

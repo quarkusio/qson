@@ -1,5 +1,7 @@
 package io.quarkus.qson.deserializer;
 
+import io.quarkus.qson.QsonException;
+
 import java.util.ArrayDeque;
 import java.util.LinkedList;
 
@@ -135,11 +137,11 @@ public abstract class AbstractParserContext implements ParserContext {
         eof = true;
         while (state != null && !state.isEmpty()) {
             if (!state.peek().parse(this)) {
-                throw new RuntimeException("Parser incomplete.  EOF reached.");
+                throw new QsonException("Parser incomplete.  EOF reached.");
             }
         }
         parserComplete = state == null || state.isEmpty();
-        if (!parserComplete) throw new RuntimeException("Parser incomplete.  EOF reached.");
+        if (!parserComplete) throw new QsonException("Parser incomplete.  EOF reached.");
         result = parser.getTarget(this);
         return (T)result;
     }

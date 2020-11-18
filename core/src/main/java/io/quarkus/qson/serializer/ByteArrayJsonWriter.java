@@ -1,5 +1,7 @@
 package io.quarkus.qson.serializer;
 
+import io.quarkus.qson.QsonException;
+
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 
@@ -36,7 +38,7 @@ public class ByteArrayJsonWriter extends JsonByteWriter {
         try {
             baos.write(bytes);
         } catch (IOException e) {
-            throw new RuntimeException(e);
+            throw new QsonException(e);
         }
     }
 

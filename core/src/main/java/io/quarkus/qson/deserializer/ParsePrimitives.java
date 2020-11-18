@@ -1,5 +1,7 @@
 package io.quarkus.qson.deserializer;
 
+import io.quarkus.qson.QsonException;
+
 import static io.quarkus.qson.util.IntChar.*;
 
 public class ParsePrimitives {
@@ -43,7 +45,7 @@ public class ParsePrimitives {
                         break;
 
                     default:
-                        throw new RuntimeException("Unknown character format in string");
+                        throw new QsonException("Unknown character format in string");
                 }
 
                 if (encoded) {
@@ -53,7 +55,7 @@ public class ParsePrimitives {
                         int ch = buffer[ptr++] & 0xFF;
                         int digit = CharArrays.sHexValues[ch & 0xFF];
                         if (digit < 0) {
-                            throw new RuntimeException("expected a hex-digit for character escape sequence");
+                            throw new QsonException("expected a hex-digit for character escape sequence");
                         }
                         value = (value << 4) | digit;
                     }
@@ -68,7 +70,7 @@ public class ParsePrimitives {
                         // 2 byte
                         int d = (int) buffer[ptr++];
                         if ((d & 0xC0) != 0x080) {
-                            throw new RuntimeException("Invalid UTF8 2 byte encoding");
+                            throw new QsonException("Invalid UTF8 2 byte encoding");
                         }
                         c = ((c & 0x1F) << 6) | (d & 0x3F);
                     } else if (tmp == 0xE0) {
@@ -76,29 +78,29 @@ public class ParsePrimitives {
                         c &= 0x0F;
                         int d = (int) buffer[ptr++];
                         if ((d & 0xC0) != 0x080) {
-                            throw new RuntimeException("Invalid UTF8 3 byte encoding");
+                            throw new QsonException("Invalid UTF8 3 byte encoding");
                         }
                         c = (c << 6) | (d & 0x3F);
                         d = (int) buffer[ptr++];
                         if ((d & 0xC0) != 0x080) {
-                            throw new RuntimeException("Invalid UTF8 3 byte encoding");
+                            throw new QsonException("Invalid UTF8 3 byte encoding");
                         }
                         c = (c << 6) | (d & 0x3F);
                     } else if (tmp == 0xF0) {
                         // 4 byte
                         int d = (int) buffer[ptr++];
                         if ((d & 0xC0) != 0x080) {
-                            throw new RuntimeException("Invalid UTF8 4 byte encoding");
+                            throw new QsonException("Invalid UTF8 4 byte encoding");
                         }
                         c = ((c & 0x07) << 6) | (d & 0x3F);
                         d = (int) buffer[ptr++];
                         if ((d & 0xC0) != 0x080) {
-                            throw new RuntimeException("Invalid UTF8 4 byte encoding");
+                            throw new QsonException("Invalid UTF8 4 byte encoding");
                         }
                         c = (c << 6) | (d & 0x3F);
                         d = (int) buffer[ptr++];
                         if ((d & 0xC0) != 0x080) {
-                            throw new RuntimeException("Invalid UTF8 4 byte encoding");
+                            throw new QsonException("Invalid UTF8 4 byte encoding");
                         }
                         c = ((c << 6) | (d & 0x3F)) - 0x10000;
                         charbuf[count++] = (char) (0xD800 | (c >> 10));
@@ -117,20 +119,20 @@ public class ParsePrimitives {
         if (len == 4) {
             for (int i = 0; i < 4; i++) {
                 if (CharArrays.TRUE_VALUE[i] != ((int) buffer[tokenStart + i] & 0xFF)) {
-                    throw new RuntimeException("Illegal boolean syntax");
+                    throw new QsonException("Illegal boolean syntax");
                 }
             }
             return true;
         } else if (len == 5) {
             for (int i = 0; i < 5; i++) {
                 if (CharArrays.FALSE_VALUE[i] != ((int) buffer[tokenStart + i] & 0xFF)) {
-                    throw new RuntimeException("Illegal boolean syntax");
+                    throw new QsonException("Illegal boolean syntax");
                 }
             }
             return false;
 
         }
-        throw new RuntimeException("Illegal boolean syntax");
+        throw new QsonException("Illegal boolean syntax");
     }
 
     public static long readLong(byte[] buffer, int tokenStart, int tokenEnd) {
@@ -147,11 +149,11 @@ public class ParsePrimitives {
                     negative = true;
                     limit = -9223372036854775808L;
                 } else if (firstChar != INT_PLUS) {
-                    throw new RuntimeException("Illegal number format");
+                    throw new QsonException("Illegal number format");
                 }
 
                 if (len == 1) {
-                    throw new RuntimeException("Illegal number format");
+                    throw new QsonException("Illegal number format");
                 }
 
                 ++i;
@@ -164,12 +166,12 @@ public class ParsePrimitives {
             for (result = 0L; i < len; result -= (long) digit) {
                 digit = (buffer[i++ + tokenStart] & 0xFF) - INT_0;
                 if (digit < 0 || result < multmin) {
-                    throw new RuntimeException("Illegal number format");
+                    throw new QsonException("Illegal number format");
                 }
 
                 result *= (long) 10;
                 if (result < limit + (long) digit) {
-                    throw new RuntimeException("Illegal number format");
+                    throw new QsonException("Illegal number format");
                 }
             }
 

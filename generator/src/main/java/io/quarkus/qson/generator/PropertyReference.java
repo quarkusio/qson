@@ -1,5 +1,6 @@
 package io.quarkus.qson.generator;
 
+import io.quarkus.qson.QsonException;
 import io.quarkus.qson.QsonIgnore;
 import io.quarkus.qson.QsonProperty;
 
@@ -59,10 +60,10 @@ public class PropertyReference {
                 PropertyReference ref = properties.get(javaName);
                 if (ref != null) {
                     if (ref.setter != null) {
-                        throw new RuntimeException("Duplicate setter methods: " + type.getName() + "." + m.getName());
+                        throw new QsonException("Duplicate setter methods: " + type.getName() + "." + m.getName());
                     }
                     if (!ref.type.equals(paramType) || !ref.genericType.equals(paramGenericType)) {
-                        throw new RuntimeException("Type mismatch between getter and setter methods: "+ type.getName() + "." + m.getName());
+                        throw new QsonException("Type mismatch between getter and setter methods: "+ type.getName() + "." + m.getName());
                     }
                 } else {
                     ref = new PropertyReference();
@@ -101,10 +102,10 @@ public class PropertyReference {
                 PropertyReference ref = properties.get(javaName);
                 if (ref != null) {
                     if (ref.getter != null) {
-                        throw new RuntimeException("Duplicate getter methods: " + type.getName() + "." + m.getName());
+                        throw new QsonException("Duplicate getter methods: " + type.getName() + "." + m.getName());
                     }
                     if (!ref.type.equals(mType) || !ref.genericType.equals(mGenericType)) {
-                        throw new RuntimeException("Type mismatch between getter and setter methods: "+ type.getName() + "." + m.getName());
+                        throw new QsonException("Type mismatch between getter and setter methods: "+ type.getName() + "." + m.getName());
                     }
                 } else {
                     ref = new PropertyReference();
@@ -139,21 +140,21 @@ public class PropertyReference {
             QsonProperty property = null;
             if (ref.fieldAnnotation != null) {
                 if (property != null) {
-                    throw new RuntimeException("Conflicting @JsonProperty annotations between field and setter/getter methods: " + ref.javaName);
+                    throw new QsonException("Conflicting @JsonProperty annotations between field and setter/getter methods: " + ref.javaName);
                 }
                 property = ref.fieldAnnotation;
 
             }
             if (ref.getterAnnotation != null) {
                 if (property != null) {
-                    throw new RuntimeException("Conflicting @JsonProperty annotations between field and setter/getter methods: " + ref.javaName);
+                    throw new QsonException("Conflicting @JsonProperty annotations between field and setter/getter methods: " + ref.javaName);
                 }
                 property = ref.getterAnnotation;
 
             }
             if (ref.setterAnnotation != null) {
                 if (property != null) {
-                    throw new RuntimeException("Conflicting @JsonProperty annotations between field and setter/getter methods: " + ref.javaName);
+                    throw new QsonException("Conflicting @JsonProperty annotations between field and setter/getter methods: " + ref.javaName);
                 }
                 property = ref.setterAnnotation;
 

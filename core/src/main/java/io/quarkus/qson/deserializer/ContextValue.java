@@ -1,5 +1,7 @@
 package io.quarkus.qson.deserializer;
 
+import io.quarkus.qson.QsonException;
+
 import java.math.BigDecimal;
 import java.time.OffsetDateTime;
 
@@ -19,7 +21,7 @@ public interface ContextValue {
     ContextValue OBJECT_VALUE = (ctx) -> ctx.popTarget();
     ContextValue CHAR_VALUE = (ctx) -> {
         String val = ctx.popToken();
-        if (val.length() != 1) throw new RuntimeException("Expecting single character for string value");
+        if (val.length() != 1) throw new QsonException("Expecting single character for string value");
         return val.charAt(0);
     };
 }

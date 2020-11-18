@@ -1,5 +1,7 @@
 package io.quarkus.qson.deserializer;
 
+import io.quarkus.qson.QsonException;
+
 import static io.quarkus.qson.util.IntChar.*;
 
 public class BaseParser implements QsonParser {
@@ -73,7 +75,7 @@ public class BaseParser implements QsonParser {
             beginList(ctx);
             return loopListValues(ctx);
         } else {
-            throw new RuntimeException("Expecting start of array");
+            throw new QsonException("Expecting start of array");
         }
     }
 
@@ -93,7 +95,7 @@ public class BaseParser implements QsonParser {
             startTokenNextConsumed(ctx);
             return stringValue(ctx);
         } else {
-            throw new RuntimeException("Illegal value syntax");
+            throw new QsonException("Illegal value syntax");
         }
     }
 
@@ -116,7 +118,7 @@ public class BaseParser implements QsonParser {
             startToken(ctx);
             return booleanValue(ctx);
         } else {
-            throw new RuntimeException("Illegal value syntax");
+            throw new QsonException("Illegal value syntax");
         }
     }
 
@@ -151,7 +153,7 @@ public class BaseParser implements QsonParser {
             beginList(ctx);
             return loopListValues(ctx);
         } else {
-            throw new RuntimeException("Illegal value syntax");
+            throw new QsonException("Illegal value syntax");
         }
     }
 
@@ -201,7 +203,7 @@ public class BaseParser implements QsonParser {
             if (c == INT_RBRACKET) {
                 return true;
             }
-            if (c != INT_COMMA) throw new RuntimeException("Expecting comma separator");
+            if (c != INT_COMMA) throw new QsonException("Expecting comma separator");
             int stateIndex = ctx.stateIndex();
             if (!listValue(ctx)) {
                 ctx.pushState(continueAddListValue, stateIndex);
@@ -238,7 +240,7 @@ public class BaseParser implements QsonParser {
             ctx.pushState(continueValueSeparator);
             return false;
         }
-        if (c != INT_COLON) throw new RuntimeException("Expecting ':' key value separator");
+        if (c != INT_COLON) throw new QsonException("Expecting ':' key value separator");
         return true;
     }
 
@@ -254,7 +256,7 @@ public class BaseParser implements QsonParser {
             return false;
         }
         if (c == INT_EOF) {
-            throw new RuntimeException("String does not have end quote");
+            throw new QsonException("String does not have end quote");
         }
         endToken(ctx);
         endStringValue(ctx);
@@ -284,7 +286,7 @@ public class BaseParser implements QsonParser {
             startToken(ctx);
             return integerValue(ctx);
         } else {
-            throw new RuntimeException("Illegal integer value");
+            throw new QsonException("Illegal integer value");
         }
     }
 
@@ -323,7 +325,7 @@ public class BaseParser implements QsonParser {
             startToken(ctx);
             return numberValue(ctx);
         } else {
-            throw new RuntimeException("Illegal number value");
+            throw new QsonException("Illegal number value");
         }
     }
 
@@ -409,7 +411,7 @@ public class BaseParser implements QsonParser {
             beginObject(ctx);
             return loopKeys(ctx);
         } else {
-            throw new RuntimeException("Illegal value syntax");
+            throw new QsonException("Illegal value syntax");
         }
     }
     public boolean continueLoopKeys(ParserContext ctx) {
@@ -426,7 +428,7 @@ public class BaseParser implements QsonParser {
         if (c == INT_RCURLY) {
             return true;
         }
-        if (c != INT_QUOTE) throw new RuntimeException("Expecting key quote");
+        if (c != INT_QUOTE) throw new QsonException("Expecting key quote");
         startTokenNextConsumed(ctx);
         int stateIndex = ctx.stateIndex();
         if (!key(ctx)) {
@@ -452,13 +454,13 @@ public class BaseParser implements QsonParser {
                 return true;
             }
 
-            if (c != INT_COMMA) throw new RuntimeException("Expecting comma separator");
+            if (c != INT_COMMA) throw new QsonException("Expecting comma separator");
             c = ctx.skipWhitespace();
             if (c == 0) {
                 ctx.pushState(continueLoopKeys);
                 return false;
             }
-            if (c != INT_QUOTE) throw new RuntimeException("Expecting key quote");
+            if (c != INT_QUOTE) throw new QsonException("Expecting key quote");
             startTokenNextConsumed(ctx);
             int stateIndex = ctx.stateIndex();
             if (!key(ctx)) {

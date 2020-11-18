@@ -1,6 +1,7 @@
 package io.quarkus.qson.generator;
 
 import io.quarkus.qson.GenericType;
+import io.quarkus.qson.QsonException;
 import io.quarkus.qson.util.Types;
 import io.quarkus.qson.deserializer.ByteArrayParserContext;
 import io.quarkus.qson.deserializer.QsonParser;
@@ -102,7 +103,7 @@ public class QsonMapper {
                 parser = (QsonParser) deserializer.newInstance();
                 deserializers.put(key, parser);
             } catch (Throwable e) {
-                throw new RuntimeException(e);
+                throw new QsonException(e);
             }
         }
         return parser;
@@ -299,7 +300,7 @@ public class QsonMapper {
                 writer = (QsonObjectWriter) serializer.newInstance();
                 serializers.put(key, writer);
             } catch (Throwable e) {
-                throw new RuntimeException(e);
+                throw new QsonException(e);
             }
         }
         return writer;
@@ -415,7 +416,7 @@ public class QsonMapper {
         try {
             return new String(writeBytes(type, genericType, target), JsonByteWriter.UTF8);
         } catch (Exception e) {
-            throw new RuntimeException(e);
+            throw new QsonException(e);
         }
     }
 

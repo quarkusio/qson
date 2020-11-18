@@ -1,5 +1,7 @@
 package io.quarkus.qson.deserializer;
 
+import io.quarkus.qson.QsonException;
+
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.UnsupportedEncodingException;
@@ -40,7 +42,7 @@ public class ByteArrayParserContext extends AbstractParserContext {
                         tokenBuffer.write(buffer);
                     } catch (IOException e) {
                         // should be unreachable
-                        throw new RuntimeException(e);
+                        throw new QsonException(e);
                     }
 
                 }
@@ -116,8 +118,8 @@ public class ByteArrayParserContext extends AbstractParserContext {
     public String popToken() {
         String val;
         if (tokenBuffer == null) {
-            if (tokenStart < 0) throw new RuntimeException("Token not started.");
-            if (tokenEnd < 0) throw new RuntimeException("Token not ended.");
+            if (tokenStart < 0) throw new QsonException("Token not started.");
+            if (tokenEnd < 0) throw new QsonException("Token not ended.");
             val = ParsePrimitives.readString(buffer, tokenStart, tokenEnd);
         } else {
             val = ParsePrimitives.readString(tokenBuffer.getBuffer(), 0, tokenBuffer.size());
@@ -130,8 +132,8 @@ public class ByteArrayParserContext extends AbstractParserContext {
     public boolean popBooleanToken() {
         boolean val;
         if (tokenBuffer == null) {
-            if (tokenStart < 0) throw new RuntimeException("Token not started.");
-            if (tokenEnd < 0) throw new RuntimeException("Token not ended.");
+            if (tokenStart < 0) throw new QsonException("Token not started.");
+            if (tokenEnd < 0) throw new QsonException("Token not ended.");
             val = ParsePrimitives.readBoolean(buffer, tokenStart, tokenEnd);
         } else {
             val = ParsePrimitives.readBoolean(tokenBuffer.getBuffer(), 0, tokenBuffer.size());
@@ -176,7 +178,7 @@ public class ByteArrayParserContext extends AbstractParserContext {
     }
 
     public boolean parse(byte[] buffer, int len) {
-        if (parserComplete) throw new RuntimeException("Parser is complete, extra bytes invalid");
+        if (parserComplete) throw new QsonException("Parser is complete, extra bytes invalid");
         if (buffer == null || len == 0) return parserComplete;
         this.len = len;
         this.buffer = buffer;
@@ -204,7 +206,7 @@ public class ByteArrayParserContext extends AbstractParserContext {
         try {
             bytes = fullJson.getBytes("UTF-8");
         } catch (UnsupportedEncodingException e) {
-            throw new RuntimeException(e);
+            throw new QsonException(e);
         }
         return parse(bytes);
     }

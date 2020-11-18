@@ -11,6 +11,7 @@ import io.quarkus.gizmo.FunctionCreator;
 import io.quarkus.gizmo.MethodCreator;
 import io.quarkus.gizmo.MethodDescriptor;
 import io.quarkus.gizmo.ResultHandle;
+import io.quarkus.qson.QsonException;
 import io.quarkus.qson.util.Types;
 import io.quarkus.qson.deserializer.BaseParser;
 import io.quarkus.qson.deserializer.BooleanParser;
@@ -256,7 +257,7 @@ public class Deserializer {
         } else if (Set.class.isAssignableFrom(targetType)) {
             collectionParser = SetParser.class;
         } else {
-            throw new RuntimeException("Unsupported collection type: " + targetType.getName());
+            throw new QsonException("Unsupported collection type: " + targetType.getName());
         }
         ResultHandle collection = startState.readStaticField(FieldDescriptor.of(className, "collection", collectionParser));
         ResultHandle result = startState.invokeVirtualMethod(MethodDescriptor.ofMethod(collectionParser, "startState", ParserState.class), collection);
@@ -318,9 +319,9 @@ public class Deserializer {
                 Type valueType = pt.getActualTypeArguments()[1];
                 Class valueClass = Types.getRawType(valueType);
 
-                if (Map.class.isAssignableFrom(valueClass) && !valueClass.equals(Map.class)) throw new RuntimeException("Must use java.util.Map for: " + property);
-                if (List.class.isAssignableFrom(valueClass) && !valueClass.equals(List.class)) throw new RuntimeException("Must use java.util.List for: " + property);
-                if (Set.class.isAssignableFrom(valueClass) && !valueClass.equals(Set.class)) throw new RuntimeException("Must use java.util.Set for: " + property);
+                if (Map.class.isAssignableFrom(valueClass) && !valueClass.equals(Map.class)) throw new QsonException("Must use java.util.Map for: " + property);
+                if (List.class.isAssignableFrom(valueClass) && !valueClass.equals(List.class)) throw new QsonException("Must use java.util.List for: " + property);
+                if (Set.class.isAssignableFrom(valueClass) && !valueClass.equals(Set.class)) throw new QsonException("Must use java.util.Set for: " + property);
 
                 if (valueClass.equals(Map.class) || valueClass.equals(List.class) || valueClass.equals(Set.class)) {
                     collectionField(staticConstructor, valueClass, valueType, property + "_n");
@@ -339,9 +340,9 @@ public class Deserializer {
                 Type valueType = pt.getActualTypeArguments()[0];
                 Class valueClass = Types.getRawType(valueType);
 
-                if (Map.class.isAssignableFrom(valueClass) && !valueClass.equals(Map.class)) throw new RuntimeException("Must use java.util.Map for property: " + property);
-                if (List.class.isAssignableFrom(valueClass) && !valueClass.equals(List.class)) throw new RuntimeException("Must use java.util.List for property: " + property);
-                if (Set.class.isAssignableFrom(valueClass) && !valueClass.equals(Set.class)) throw new RuntimeException("Must use java.util.Set for property: " + property);
+                if (Map.class.isAssignableFrom(valueClass) && !valueClass.equals(Map.class)) throw new QsonException("Must use java.util.Map for property: " + property);
+                if (List.class.isAssignableFrom(valueClass) && !valueClass.equals(List.class)) throw new QsonException("Must use java.util.List for property: " + property);
+                if (Set.class.isAssignableFrom(valueClass) && !valueClass.equals(Set.class)) throw new QsonException("Must use java.util.Set for property: " + property);
 
                 if (valueClass.equals(Map.class) || valueClass.equals(List.class) || valueClass.equals(Set.class)) {
                     collectionField(staticConstructor, valueClass, valueType, property + "_n");
@@ -360,9 +361,9 @@ public class Deserializer {
                 Type valueType = pt.getActualTypeArguments()[0];
                 Class valueClass = Types.getRawType(valueType);
 
-                if (Map.class.isAssignableFrom(valueClass) && !valueClass.equals(Map.class)) throw new RuntimeException("Must use java.util.Map for property: " + property);
-                if (List.class.isAssignableFrom(valueClass) && !valueClass.equals(List.class)) throw new RuntimeException("Must use java.util.List for property: " + property);
-                if (Set.class.isAssignableFrom(valueClass) && !valueClass.equals(Set.class)) throw new RuntimeException("Must use java.util.Set for property: " + property);
+                if (Map.class.isAssignableFrom(valueClass) && !valueClass.equals(Map.class)) throw new QsonException("Must use java.util.Map for property: " + property);
+                if (List.class.isAssignableFrom(valueClass) && !valueClass.equals(List.class)) throw new QsonException("Must use java.util.List for property: " + property);
+                if (Set.class.isAssignableFrom(valueClass) && !valueClass.equals(Set.class)) throw new QsonException("Must use java.util.Set for property: " + property);
 
                 if (valueClass.equals(Map.class) || valueClass.equals(List.class) || valueClass.equals(Set.class)) {
                     collectionField(staticConstructor, valueClass, valueType, property + "_n");
@@ -700,7 +701,7 @@ public class Deserializer {
             ResultHandle PARSER = scope.readStaticField(parserField);
             return scope.readInstanceField(FieldDescriptor.of(ObjectParser.class, "continueStartBooleanValue", ParserState.class), PARSER);
         } else if (List.class.isAssignableFrom(setter.type)) {
-            if (!List.class.equals(setter.type)) throw new RuntimeException("Cannot use concrete list.  Must use java.util.List for property: " + setter.javaName);
+            if (!List.class.equals(setter.type)) throw new QsonException("Cannot use concrete list.  Must use java.util.List for property: " + setter.javaName);
             if (setter.genericType instanceof ParameterizedType) {
                 // continue is on static field
                 FieldDescriptor mapFieldDesc = FieldDescriptor.of(fqn(), setter.javaName, ListParser.class);
@@ -712,7 +713,7 @@ public class Deserializer {
                 return scope.readInstanceField(FieldDescriptor.of(GenericParser.class, "continueStartObject", ParserState.class), PARSER);
             }
         } else if (Set.class.isAssignableFrom(setter.type)) {
-            if (!Set.class.equals(setter.type)) throw new RuntimeException("Cannot use concrete set.  Must use java.util.Set for property: " + setter.javaName);
+            if (!Set.class.equals(setter.type)) throw new QsonException("Cannot use concrete set.  Must use java.util.Set for property: " + setter.javaName);
             if (setter.genericType instanceof ParameterizedType) {
                 // continue is on static field
                 FieldDescriptor mapFieldDesc = FieldDescriptor.of(fqn(), setter.javaName, SetParser.class);
@@ -724,7 +725,7 @@ public class Deserializer {
                 return scope.readInstanceField(FieldDescriptor.of(GenericSetParser.class, "continueStartObject", ParserState.class), PARSER);
             }
         } else if (Map.class.isAssignableFrom(setter.type)) {
-            if (!Map.class.equals(setter.type)) throw new RuntimeException("Cannot use concrete map.  Must use java.util.Map for property: " + setter.javaName);
+            if (!Map.class.equals(setter.type)) throw new QsonException("Cannot use concrete map.  Must use java.util.Map for property: " + setter.javaName);
             if (setter.genericType instanceof ParameterizedType) {
                 FieldDescriptor mapFieldDesc = FieldDescriptor.of(fqn(), setter.javaName, MapParser.class);
                 ResultHandle mapField = scope.readStaticField(mapFieldDesc);
@@ -772,7 +773,7 @@ public class Deserializer {
             MethodDescriptor descriptor = MethodDescriptor.ofMethod(fqn(), "startBooleanValue", boolean.class.getName(), ParserContext.class.getName());
             return scope.invokeVirtualMethod(descriptor, scope.getThis(), ctx.ctx);
         } else if (List.class.isAssignableFrom(setter.type)) {
-            if (!List.class.equals(setter.type)) throw new RuntimeException("Cannot use concrete list.  Must use java.util.List for property: " + setter.javaName);
+            if (!List.class.equals(setter.type)) throw new QsonException("Cannot use concrete list.  Must use java.util.List for property: " + setter.javaName);
             if (setter.genericType instanceof ParameterizedType) {
                 // invoke static field for property
                 MethodDescriptor descriptor = MethodDescriptor.ofMethod(ListParser.class, "start", boolean.class, ParserContext.class);
@@ -786,7 +787,7 @@ public class Deserializer {
                 return scope.invokeVirtualMethod(descriptor, PARSER, ctx.ctx);
             }
         } else if (Set.class.isAssignableFrom(setter.type)) {
-            if (!Set.class.equals(setter.type)) throw new RuntimeException("Cannot use concrete set.  Must use java.util.Set for property: " + setter.javaName);
+            if (!Set.class.equals(setter.type)) throw new QsonException("Cannot use concrete set.  Must use java.util.Set for property: " + setter.javaName);
             if (setter.genericType instanceof ParameterizedType) {
                 // invoke static field for property
                 MethodDescriptor descriptor = MethodDescriptor.ofMethod(SetParser.class, "start", boolean.class, ParserContext.class);
@@ -800,7 +801,7 @@ public class Deserializer {
                 return scope.invokeVirtualMethod(descriptor, PARSER, ctx.ctx);
             }
         } else if (Map.class.isAssignableFrom(setter.type)) {
-            if (!Map.class.equals(setter.type)) throw new RuntimeException("Cannot use concrete map.  Must use java.util.Map for property: " + setter.javaName);
+            if (!Map.class.equals(setter.type)) throw new QsonException("Cannot use concrete map.  Must use java.util.Map for property: " + setter.javaName);
             if (setter.genericType instanceof ParameterizedType) {
                 // invoke static field for property
                 MethodDescriptor descriptor = MethodDescriptor.ofMethod(MapParser.class, "start", boolean.class, ParserContext.class);

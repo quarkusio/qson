@@ -1,6 +1,8 @@
 package io.quarkus.qson.serializer;
 
 
+import io.quarkus.qson.QsonException;
+
 import java.io.IOException;
 import java.io.OutputStream;
 
@@ -20,7 +22,7 @@ public class OutputStreamJsonWriter extends JsonByteWriter {
         try {
             stream.write(b);
         } catch (IOException e) {
-            throw new RuntimeException(e);
+            throw new QsonException(e);
         }
     }
 
@@ -29,7 +31,7 @@ public class OutputStreamJsonWriter extends JsonByteWriter {
         try {
             stream.write(bytes);
         } catch (IOException e) {
-            throw new RuntimeException(e);
+            throw new QsonException(e);
         }
     }
 }

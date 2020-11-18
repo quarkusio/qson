@@ -1,5 +1,6 @@
 package io.quarkus.qson.serializer;
 
+import io.quarkus.qson.QsonException;
 import io.quarkus.qson.util.IntChar;
 
 import java.nio.charset.Charset;
@@ -265,7 +266,7 @@ public abstract class JsonByteWriter implements JsonWriter {
         } else if (obj instanceof Character) {
             write((Character)obj);
         } else {
-            throw new RuntimeException("Unable to determine type to write: " + obj.getClass().getName());
+            throw new QsonException("Unable to determine type to write: " + obj.getClass().getName());
         }
     }
 
@@ -588,7 +589,7 @@ public abstract class JsonByteWriter implements JsonWriter {
         try {
             write(val);
         } catch (RuntimeException e) {
-            throw new RuntimeException("Failed to write collection property: " + name, e);
+            throw new QsonException("Failed to write collection property: " + name, e);
         }
         return true;
     }

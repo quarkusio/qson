@@ -24,7 +24,7 @@ Here's a simple example:
 
 ```json
 {
-  "name": "Cam",
+  "name": "Cam Newton",
   "home-address": "Foxboro"
 }
 ```

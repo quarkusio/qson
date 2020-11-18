@@ -1,9 +1,10 @@
 # QSON json mapper
 
 QSON is an object to json mapper.  It does bytecode generation of deserializer and serilizer classes using Gizmo.
+QSON was born when it's author (Bill Burke) noticed that Jackson took up a decent portion of boot time for a simple Resteasy JAX-RS Quarkus application.
 While Jackson is a more mature json mapper and a de facto standard, QSON aims for better integration with
-Quarkus and Graal with the primary the goals being speed, both boot and runtime, limited heap allocations,
-a small set of classes (metaspace size), low memory footprint,and zero reflection.
+Quarkus and Graal.  The primary goals of QSON are speed, both boot and runtime, limited heap allocations,
+a small set of classes (metaspace size), low memory footprint, and zero reflection.
 
 ## Limitations
 

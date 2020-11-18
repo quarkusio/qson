@@ -30,7 +30,7 @@ public class NioGeneratorTest {
 
     @Test
     public void testRawCollection() throws Exception {
-        GenericType<List<Person2>> type = new GenericType<>() {
+        GenericType<List<Person2>> type = new GenericType<List<Person2>>() {
         };
         Deserializer.Builder builder = Deserializer.create(type.getRawType(), type.getType()).output(new TestClassOutput());
         builder.generate();
@@ -50,7 +50,7 @@ public class NioGeneratorTest {
             map.put("bb", list);
 
             ByteArrayJsonWriter jsonWriter = new ByteArrayJsonWriter();
-            GenericType<Map<String, List<Person2>>> type = new GenericType<>() {
+            GenericType<Map<String, List<Person2>>> type = new GenericType<Map<String, List<Person2>>>() {
             };
             QsonObjectWriter objectWriter = mapper.writerFor(type);
             objectWriter.write(jsonWriter, map);
@@ -72,7 +72,7 @@ public class NioGeneratorTest {
             list.add(bb);
 
             ByteArrayJsonWriter jsonWriter = new ByteArrayJsonWriter();
-            GenericType<List<Person2>> type = new GenericType<>() {
+            GenericType<List<Person2>> type = new GenericType<List<Person2>>() {
             };
             QsonObjectWriter objectWriter = mapper.writerFor(type);
             objectWriter.write(jsonWriter, list);
@@ -91,7 +91,7 @@ public class NioGeneratorTest {
             List<Long> list = new LinkedList<>();
             list.add(42L);
             ByteArrayJsonWriter jsonWriter = new ByteArrayJsonWriter();
-            GenericType<List<Long>> type = new GenericType<>() {
+            GenericType<List<Long>> type = new GenericType<List<Long>>() {
             };
             QsonObjectWriter objectWriter = mapper.writerFor(type);
             objectWriter.write(jsonWriter, list);

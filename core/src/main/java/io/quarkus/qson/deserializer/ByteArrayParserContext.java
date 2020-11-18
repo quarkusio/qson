@@ -30,7 +30,7 @@ public class ByteArrayParserContext extends AbstractParserContext {
             if (buildingToken) {
                 if (tokenBuffer == null ) {
                     if (tokenStart >= 0) {
-                        createTokenBuffer();
+                        tokenBuffer = new BufferBuilder(ptr - tokenStart);
                         tokenBuffer.write(buffer, tokenStart, ptr - tokenStart);
                     } else {
                         tokenStart = 0;
@@ -48,11 +48,6 @@ public class ByteArrayParserContext extends AbstractParserContext {
             return 0;
         }
         return buffer[ptr++] & 0xFF;
-    }
-
-    @Override
-    public void createTokenBuffer() {
-        tokenBuffer = new BufferBuilder(1024);
     }
 
     @Override

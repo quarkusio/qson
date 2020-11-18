@@ -276,6 +276,17 @@ public class MapperTest {
     }
 
     @Test
+    public void testPersonProfile() throws Exception {
+        QsonMapper mapper = new QsonMapper();
+        QsonParser parser = mapper.parserFor(Person2.class);
+        int ITERATIONS = 10000;
+        for (int i = 0; i < ITERATIONS; i++) {
+            ByteArrayParserContext ctx = new ByteArrayParserContext(parser);
+            Person2 person = ctx.finish(json);
+        }
+    }
+
+    @Test
     public void testPerson() throws Exception {
         QsonMapper mapper = new QsonMapper();
         QsonParser parser = mapper.parserFor(Person2.class);

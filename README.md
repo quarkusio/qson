@@ -5,6 +5,13 @@ While Jackson is a more mature json mapper and a de facto standard, QSON aims fo
 Quarkus and Graal with the primary the goals being speed, both boot and runtime, limited heap allocations,
 a small set of classes (metaspace size), low memory footprint,and zero reflection.
 
+## Limitations
+
+* must use public getter and setter methods
+* Does not support polymorphism
+* Only UTF-8 encoding supported
+* Lacks other features something like Jackson may have.  Will be adding those features that do not degrade performance and memory footprint
+
 ## Basics
 
 Classes that you want to map to JSON must have a public getter method for each property you want to be able to serialize to JSON

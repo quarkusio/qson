@@ -13,8 +13,6 @@ public interface ParserContext {
 
     int consume();
 
-    void createTokenBuffer();
-
     void rewind();
 
     void startToken();

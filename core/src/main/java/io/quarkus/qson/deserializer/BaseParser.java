@@ -24,7 +24,7 @@ public class BaseParser implements QsonParser {
     // we do fields to avoid object creations
     // as method references create a new object every time
     // they are referenced
-    public final ParserState start  = this::start;
+    public ParserState start  = this::start;
     public final ParserState startStringValue  = this::startStringValue;
     public final ParserState startIntegerValue  = this::startIntegerValue;
     public final ParserState startBooleanValue  = this::startBooleanValue;
@@ -44,7 +44,7 @@ public class BaseParser implements QsonParser {
     public final ParserState continueFloatValue = this::continueFloatValue;
     public final ParserState continueBooleanValue = this::continueBooleanValue;
     public final ParserState continueStartObject = this::continueStartObject;
-    public final ParserState continueStart = this::continueStart;
+    public ParserState continueStart = this::continueStart;
     public final ParserState continueLoopKeys = this::continueLoopKeys;
     public final ParserState continueNextKeys = this::continueNextKeys;
     public final ParserState continueKey = this::continueKey;

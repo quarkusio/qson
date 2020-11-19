@@ -21,6 +21,8 @@ public class NioGeneratorTest {
 
     @Test
     public void testDeserializer() throws Exception {
+        Serializer.create(Color.class).output(new TestClassOutput()).generate();
+        Serializer.create(PojoEnum.class).output(new TestClassOutput()).generate();
         Deserializer.create(Simple.class).output(new TestClassOutput()).generate();
         Deserializer.create(Single.class).output(new TestClassOutput()).generate();
         Deserializer.create(Person2.class).output(new TestClassOutput()).generate();

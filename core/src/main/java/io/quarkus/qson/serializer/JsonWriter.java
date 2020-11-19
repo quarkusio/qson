@@ -23,6 +23,9 @@ public interface JsonWriter {
     void write(Float val);
     void write(Double val);
     void write(String val);
+
+    void write(Enum e);
+
     void writeObject(Object obj);
     void write(Map val);
     void write(Map val, QsonObjectWriter valueWriter);
@@ -46,6 +49,9 @@ public interface JsonWriter {
     boolean writeProperty(String name, Float val, boolean comma);
     boolean writeProperty(String name, Double val, boolean comma);
     boolean writeProperty(String name, String val, boolean comma);
+
+    boolean writeProperty(String name, Enum val, boolean comma);
+
     boolean writeObjectProperty(String name, Object obj, QsonObjectWriter writer, boolean comma);
     boolean writeObjectProperty(String name, Object obj, boolean comma);
 

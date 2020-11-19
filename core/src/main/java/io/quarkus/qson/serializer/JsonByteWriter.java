@@ -164,6 +164,11 @@ public abstract class JsonByteWriter implements JsonWriter {
         writeByte(IntChar.INT_QUOTE);
     }
 
+    @Override
+    public void write(Enum e) {
+        write(e.name());
+    }
+
     private final static int[] HEX_CHARS;
     static {
         String hex = "0123456789ABCDEF";
@@ -264,7 +269,9 @@ public abstract class JsonByteWriter implements JsonWriter {
         } else if (obj instanceof Boolean) {
             write((Boolean)obj);
         } else if (obj instanceof Character) {
-            write((Character)obj);
+            write((Character) obj);
+        } else if (obj instanceof Enum) {
+            write((Enum)obj);
         } else {
             throw new QsonException("Unable to determine type to write: " + obj.getClass().getName());
         }
@@ -497,6 +504,16 @@ public abstract class JsonByteWriter implements JsonWriter {
     }
 
     @Override
+    public boolean writeProperty(String name, Enum val, boolean comma) {
+        if (val == null) return comma;
+        if (comma) writeByte(IntChar.INT_COMMA);
+        write(name);
+        writeByte(IntChar.INT_COLON);
+        write(val);
+        return true;
+    }
+
+    @Override
     public boolean writeObjectProperty(String name, Object val, QsonObjectWriter writer, boolean comma) {
         if (val == null) return comma;
         if (comma) writeByte(IntChar.INT_COMMA);
@@ -565,6 +582,10 @@ public abstract class JsonByteWriter implements JsonWriter {
             writeByte(IntChar.INT_QUOTE);
             write((Short)obj);
             writeByte(IntChar.INT_QUOTE);
+            return;
+        }
+        if (obj instanceof Enum) {
+            write((Enum)obj);
             return;
         }
         write(obj.toString());

@@ -12,6 +12,7 @@ import io.quarkus.gizmo.MethodCreator;
 import io.quarkus.gizmo.MethodDescriptor;
 import io.quarkus.gizmo.ResultHandle;
 import io.quarkus.qson.QsonException;
+import io.quarkus.qson.deserializer.EnumParser;
 import io.quarkus.qson.util.Types;
 import io.quarkus.qson.deserializer.BaseParser;
 import io.quarkus.qson.deserializer.BooleanParser;
@@ -191,6 +192,12 @@ public class Deserializer {
                 }
                 return this;
             }
+            if (targetType.isEnum()) {
+                Deserializer deserializer = new Deserializer(output, targetType, targetGenericType);
+                deserializer.generateEnum();
+                className = fqn(targetType, targetGenericType);
+                return this;
+            }
             // user class parser generation
 
             if (properties == null) {
@@ -262,6 +269,30 @@ public class Deserializer {
         ResultHandle collection = startState.readStaticField(FieldDescriptor.of(className, "collection", collectionParser));
         ResultHandle result = startState.invokeVirtualMethod(MethodDescriptor.ofMethod(collectionParser, "startState", ParserState.class), collection);
         startState.returnValue(result);
+        creator.close();
+    }
+
+    void generateEnum() {
+        creator = ClassCreator.builder().classOutput(classOutput)
+                .className(className)
+                .superClass(EnumParser.class).build();
+
+        FieldCreator PARSER = creator.getFieldCreator("PARSER", fqn()).setModifiers(ACC_STATIC | ACC_PUBLIC);
+
+
+        MethodCreator staticConstructor = creator.getMethodCreator(CLINIT, void.class);
+        staticConstructor.setModifiers(ACC_STATIC);
+        ResultHandle instance = staticConstructor.newInstance(MethodDescriptor.ofConstructor(fqn()));
+        staticConstructor.writeStaticField(PARSER.getFieldDescriptor(), instance);
+        staticConstructor.returnValue(null);
+
+
+        MethodCreator method = creator.getMethodCreator("endStringValue", void.class, ParserContext.class);
+        _ParserContext ctx = new _ParserContext(method.getMethodParam(0));
+        ResultHandle str = ctx.popToken(method);
+        ResultHandle e = method.invokeStaticMethod(MethodDescriptor.ofMethod(targetType, "valueOf", targetType, String.class), str);
+        ctx.pushTarget(method, e);
+        method.returnValue(null);
         creator.close();
     }
 

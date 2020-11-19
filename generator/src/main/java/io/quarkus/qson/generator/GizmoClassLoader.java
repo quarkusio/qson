@@ -2,6 +2,7 @@ package io.quarkus.qson.generator;
 
 import io.quarkus.gizmo.ClassOutput;
 
+import java.io.IOException;
 import java.io.Writer;
 import java.util.HashMap;
 import java.util.Map;
@@ -43,6 +44,21 @@ class GizmoClassLoader extends ClassLoader implements ClassOutput {
     }
 
     public Writer getSourceWriter(String className) {
-        return Writer.nullWriter();
+        return new Writer() {
+            @Override
+            public void write(char[] chars, int i, int i1) throws IOException {
+
+            }
+
+            @Override
+            public void flush() throws IOException {
+
+            }
+
+            @Override
+            public void close() throws IOException {
+
+            }
+        };
     }
 }

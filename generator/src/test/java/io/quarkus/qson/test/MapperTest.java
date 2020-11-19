@@ -1,5 +1,6 @@
 package io.quarkus.qson.test;
 
+import com.fasterxml.jackson.databind.ObjectMapper;
 import io.quarkus.qson.GenericType;
 import io.quarkus.qson.deserializer.ByteArrayParserContext;
 import io.quarkus.qson.deserializer.QsonParser;
@@ -10,6 +11,7 @@ import io.quarkus.qson.serializer.QsonObjectWriter;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
 
+import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.LinkedList;
 import java.util.List;
@@ -88,6 +90,25 @@ public class MapperTest {
             "}";
 
     @Test
+    public void testEnum() throws Exception {
+        QsonMapper mapper = new QsonMapper();
+        PojoEnum p = new PojoEnum();
+        p.setColor(Color.GREEN);
+        List<Color> colorList = new ArrayList<>();
+        colorList.add(Color.RED);
+        Map<String, Color> colorMap = new HashMap<>();
+        colorMap.put("blue", Color.BLUE);
+        p.setColorList(colorList);
+        p.setColorMap(colorMap);
+        String json = mapper.writeString(p);
+        System.out.println(json);
+        p = mapper.read(json, PojoEnum.class);
+        Assertions.assertEquals(Color.GREEN, p.getColor());
+        Assertions.assertEquals(Color.BLUE, p.getColorMap().get("blue"));
+        Assertions.assertEquals(Color.RED, p.getColorList().get(0));
+    }
+
+    @Test
     public void testInteger() throws Exception {
         QsonMapper mapper = new QsonMapper();
         {
@@ -102,6 +123,7 @@ public class MapperTest {
             Integer i = ctx.finish("1234");
             Assertions.assertEquals(1234, i.intValue());
         }
+        Assertions.assertEquals("123", mapper.writeString(Integer.valueOf((123))));
     }
 
     @Test
@@ -131,6 +153,7 @@ public class MapperTest {
             Short i = ctx.finish("1234");
             Assertions.assertEquals(1234, i.shortValue());
         }
+        Assertions.assertEquals("123", mapper.writeString(Short.valueOf((short)123)));
     }
 
     @Test
@@ -148,6 +171,7 @@ public class MapperTest {
             Long i = ctx.finish("1234");
             Assertions.assertEquals(1234L, i.longValue());
         }
+        Assertions.assertEquals("123", mapper.writeString(Long.valueOf(123)));
     }
 
     @Test
@@ -165,6 +189,7 @@ public class MapperTest {
             Byte i = ctx.finish("123");
             Assertions.assertEquals(123, i.byteValue());
         }
+        Assertions.assertEquals("123", mapper.writeString(Byte.valueOf((byte)123)));
     }
 
     @Test
@@ -194,6 +219,7 @@ public class MapperTest {
             Float i = ctx.finish("123.1");
             Assertions.assertEquals(123.1f, i.floatValue());
         }
+        Assertions.assertEquals("123.1", mapper.writeString(Float.valueOf(123.1f)));
     }
 
     @Test
@@ -223,6 +249,7 @@ public class MapperTest {
             Double i = ctx.finish("123.1");
             Assertions.assertEquals(123.1, i.doubleValue());
         }
+        Assertions.assertEquals("123.1", mapper.writeString(Double.valueOf(123.1)));
     }
 
     @Test
@@ -252,6 +279,8 @@ public class MapperTest {
             Boolean i = ctx.finish("false");
             Assertions.assertEquals(false, i.booleanValue());
         }
+        Assertions.assertEquals("true", mapper.writeString(Boolean.TRUE));
+        Assertions.assertEquals("false", mapper.writeString(Boolean.FALSE));
     }
 
     @Test
@@ -261,6 +290,20 @@ public class MapperTest {
         ByteArrayParserContext ctx = new ByteArrayParserContext(parser);
         String str = ctx.finish("\"ABCDE\"");
         Assertions.assertEquals("ABCDE", str);
+        String json = mapper.writeString(str);
+        Assertions.assertEquals("\"ABCDE\"", json);
+    }
+
+    @Test
+    public void testSingleEnum() throws Exception {
+        QsonMapper mapper = new QsonMapper();
+        QsonParser parser = mapper.parserFor(Color.class);
+        ByteArrayParserContext ctx = new ByteArrayParserContext(parser);
+        Color color = ctx.finish("\"RED\"");
+        Assertions.assertEquals(Color.RED, color);
+        String json = mapper.writeString(Color.BLUE);
+        color = mapper.read(json, Color.class);
+        Assertions.assertEquals(Color.BLUE, color);
     }
 
     @Test

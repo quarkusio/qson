@@ -119,6 +119,11 @@ public class Serializer {
                 s.generateCollection();
                 Util.addReference(referenced, targetType, targetGenericType);
                 return this;
+            } else if (targetType.isEnum()) {
+                Serializer s = new Serializer(output, targetType, targetGenericType);
+                s.generateEnum();
+                className = fqn(targetType, targetGenericType);
+                return this;
             } else {
                 Serializer s = new Serializer(output, targetType, targetGenericType);
                 if (properties == null) {
@@ -168,6 +173,26 @@ public class Serializer {
         creator = ClassCreator.builder().classOutput(classOutput)
                 .className(className)
                 .interfaces(QsonObjectWriter.class).build();
+    }
+
+    void generateEnum() {
+        FieldCreator SERIALIZER = creator.getFieldCreator("SERIALIZER", fqn()).setModifiers(ACC_STATIC | ACC_PUBLIC);
+        MethodCreator staticConstructor = creator.getMethodCreator(CLINIT, void.class);
+        staticConstructor.setModifiers(ACC_STATIC);
+        ResultHandle instance = staticConstructor.newInstance(MethodDescriptor.ofConstructor(fqn()));
+        staticConstructor.writeStaticField(SERIALIZER.getFieldDescriptor(), instance);
+        staticConstructor.returnValue(null);
+
+        MethodCreator method = creator.getMethodCreator("write", void.class, JsonWriter.class, Object.class);
+        ResultHandle writer = method.getMethodParam(0);
+        AssignableResultHandle target = method.createVariable(targetType);
+        method.assign(target, method.getMethodParam(1));
+        method.invokeInterfaceMethod(MethodDescriptor.ofMethod(JsonWriter.class, "write", void.class, Enum.class),
+                writer,
+                target
+        );
+        method.returnValue(null);
+        creator.close();
     }
 
     void generate() {

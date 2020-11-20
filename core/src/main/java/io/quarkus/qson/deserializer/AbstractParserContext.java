@@ -98,8 +98,7 @@ public abstract class AbstractParserContext implements ParserContext {
             ch = consume();
             if (isWhitespace(ch)) continue;
             return ch;
-        } while (ch > 0);
-        return 0;
+        } while (true);
     }
 
     protected boolean escaped = false;
@@ -112,12 +111,11 @@ public abstract class AbstractParserContext implements ParserContext {
             if (ch <= 0) return ch;
             // make sure that last character wasn't escape character
             if (ch != INT_QUOTE || (escaped && ch == INT_QUOTE)) {
-                escaped = escaped ? false : ch == INT_BACKSLASH;
+                escaped = !escaped && ch == INT_BACKSLASH;
                 continue;
             }
             return ch;
-        } while (ch > 0);
-        return 0;
+        } while (true);
     }
 
     @Override
@@ -127,19 +125,17 @@ public abstract class AbstractParserContext implements ParserContext {
             ch = consume();
             if (isDigit(ch)) continue;
             return ch;
-        } while (ch > 0);
-        return 0;
+        } while (true);
     }
 
     @Override
     public int skipAlphabetic() {
-        int ch = 0;
+        int ch;
         do {
             ch = consume();
             if (Character.isAlphabetic(ch)) continue;
             return ch;
-        } while (ch > 0);
-        return 0;
+        } while (true);
     }
 
     @Override

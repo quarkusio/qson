@@ -123,7 +123,6 @@ public class ByteArrayParserContext extends AbstractParserContext {
         String val;
         if (tokenBuffer == null) {
             if (tokenStart < 0) throw new QsonException("Token not started.");
-            if (tokenEnd < 0) throw new QsonException("Token not ended.");
             val = ParsePrimitives.readString(buffer, tokenStart, tokenEnd);
         } else {
             val = ParsePrimitives.readString(tokenBuffer.getBuffer(), 0, tokenBuffer.size());
@@ -141,7 +140,6 @@ public class ByteArrayParserContext extends AbstractParserContext {
         boolean val;
         if (tokenBuffer == null) {
             if (tokenStart < 0) throw new QsonException("Token not started.");
-            if (tokenEnd < 0) throw new QsonException("Token not ended.");
             val = ParsePrimitives.readBoolean(buffer, tokenStart, tokenEnd);
         } else {
             val = ParsePrimitives.readBoolean(tokenBuffer.getBuffer(), 0, tokenBuffer.size());

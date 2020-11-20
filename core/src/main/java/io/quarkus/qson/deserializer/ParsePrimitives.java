@@ -135,6 +135,27 @@ public class ParsePrimitives {
         throw new QsonException("Illegal boolean syntax");
     }
 
+    public static Boolean readBooleanObject(byte[] buffer, int tokenStart, int tokenEnd) {
+        int len = tokenEnd - tokenStart;
+        if (len == 4) {
+            for (int i = 0; i < 4; i++) {
+                if (CharArrays.TRUE_VALUE[i] != ((int) buffer[tokenStart + i] & 0xFF)) {
+                    throw new QsonException("Illegal boolean syntax");
+                }
+            }
+            return Boolean.TRUE;
+        } else if (len == 5) {
+            for (int i = 0; i < 5; i++) {
+                if (CharArrays.FALSE_VALUE[i] != ((int) buffer[tokenStart + i] & 0xFF)) {
+                    throw new QsonException("Illegal boolean syntax");
+                }
+            }
+            return Boolean.FALSE;
+
+        }
+        throw new QsonException("Illegal boolean syntax");
+    }
+
     public static long readLong(byte[] buffer, int tokenStart, int tokenEnd) {
         boolean negative = false;
         int i = 0;

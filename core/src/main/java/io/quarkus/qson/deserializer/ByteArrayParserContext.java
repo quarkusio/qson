@@ -154,7 +154,15 @@ public class ByteArrayParserContext extends AbstractParserContext {
             nullToken = false;
             return null;
         }
-        return popBooleanToken();
+        Boolean val;
+        if (tokenBuffer == null) {
+            if (tokenStart < 0) throw new QsonException("Token not started.");
+            val = ParsePrimitives.readBooleanObject(buffer, tokenStart, tokenEnd);
+        } else {
+            val = ParsePrimitives.readBooleanObject(tokenBuffer.getBuffer(), 0, tokenBuffer.size());
+        }
+        clearToken();
+        return val;
     }
 
     @Override

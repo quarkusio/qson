@@ -5,6 +5,7 @@ import io.quarkus.qson.QsonException;
 import static io.quarkus.qson.util.IntChar.*;
 
 public class BaseParser implements QsonParser {
+
     public static final BaseParser PARSER = new BaseParser();
 
     protected BaseParser() {
@@ -43,6 +44,8 @@ public class BaseParser implements QsonParser {
     public final ParserState continueNumberValue = this::continueNumberValue;
     public final ParserState continueFloatValue = this::continueFloatValue;
     public final ParserState continueBooleanValue = this::continueBooleanValue;
+    public final ParserState continueNullValue = this::continueNullValue;
+    public final ParserState continueNullObject = this::continueNullObject;
     public final ParserState continueStartObject = this::continueStartObject;
     public ParserState continueStart = this::continueStart;
     public final ParserState continueLoopKeys = this::continueLoopKeys;
@@ -74,6 +77,9 @@ public class BaseParser implements QsonParser {
         if (c == INT_LBRACKET) {
             beginList(ctx);
             return loopListValues(ctx);
+        } else if (c == INT_n) {
+            beginNullObject(ctx);
+            return nullObject(ctx);
         } else {
             throw new QsonException("Expecting start of array");
         }
@@ -94,6 +100,9 @@ public class BaseParser implements QsonParser {
         if (c == INT_QUOTE) {
             startTokenNextConsumed(ctx);
             return stringValue(ctx);
+        } else if (c == 'n') {
+            startNullToken(ctx);
+            return nullValue(ctx);
         } else {
             throw new QsonException("Illegal value syntax");
         }
@@ -117,9 +126,15 @@ public class BaseParser implements QsonParser {
         if (c== 't' || c == 'f') {
             startToken(ctx);
             return booleanValue(ctx);
+        } else if (c == 'n') {
+            startNullToken(ctx);
+            return nullValue(ctx);
         } else {
             throw new QsonException("Illegal value syntax");
         }
+    }
+
+    public void startNullToken(ParserContext ctx) {
     }
 
     public void startToken(ParserContext ctx) {
@@ -146,6 +161,9 @@ public class BaseParser implements QsonParser {
         } else if (c == INT_t || c == INT_f) {
             startToken(ctx);
             return booleanValue(ctx);
+        } else if (c == INT_n) {
+            startNullToken(ctx);
+            return nullValue(ctx);
         } else if (c == INT_LCURLY) {
             beginObject(ctx);
             return loopKeys(ctx);
@@ -285,6 +303,9 @@ public class BaseParser implements QsonParser {
         if (isDigit(c) || c == INT_MINUS || c == INT_PLUS) {
             startToken(ctx);
             return integerValue(ctx);
+        } else if (c == 'n') {
+            startNullToken(ctx);
+            return nullValue(ctx);
         } else {
             throw new QsonException("Illegal integer value");
         }
@@ -324,6 +345,9 @@ public class BaseParser implements QsonParser {
         if (isDigit(c) || c == INT_MINUS || c == INT_PLUS) {
             startToken(ctx);
             return numberValue(ctx);
+        } else if (c == INT_n) {
+            startNullToken(ctx);
+            return nullValue(ctx);
         } else {
             throw new QsonException("Illegal number value");
         }
@@ -387,8 +411,42 @@ public class BaseParser implements QsonParser {
         ctx.rewind();
         return true;
     }
-
     public void endBooleanValue(ParserContext ctx) {
+
+    }
+
+    public boolean continueNullValue(ParserContext ctx) {
+        ctx.popState();
+        return nullValue(ctx);
+    }
+
+    public boolean nullValue(ParserContext ctx) {
+        int c = ctx.skipAlphabetic();
+        if (c == 0) {
+            ctx.pushState(continueNullValue);
+            return false;
+        }
+        endNullValue(ctx);
+        ctx.rewind();
+        return true;
+    }
+
+    public boolean continueNullObject(ParserContext ctx) {
+        ctx.popState();
+        return nullValue(ctx);
+    }
+
+    public boolean nullObject(ParserContext ctx) {
+        int c = ctx.skipAlphabetic();
+        if (c == 0) {
+            ctx.pushState(continueNullObject);
+            return false;
+        }
+        ctx.rewind();
+        return true;
+    }
+
+    public void endNullValue(ParserContext ctx) {
 
     }
 
@@ -398,7 +456,19 @@ public class BaseParser implements QsonParser {
             ctx.pushState(continueStartObject);
             return false;
         }
-        return handleObject(ctx, c);
+        if (c == INT_LCURLY) {
+            beginObject(ctx);
+            return loopKeys(ctx);
+        } else if (c == INT_n) {
+            beginNullObject(ctx);
+            return nullObject(ctx);
+        } else {
+            throw new QsonException("Illegal value syntax");
+        }
+    }
+
+    public void beginNullObject(ParserContext ctx) {
+
     }
 
     public boolean continueStartObject(ParserContext ctx) {
@@ -406,14 +476,6 @@ public class BaseParser implements QsonParser {
         return startObject(ctx);
     }
 
-    public boolean handleObject(ParserContext ctx, int c) {
-        if (c == INT_LCURLY) {
-            beginObject(ctx);
-            return loopKeys(ctx);
-        } else {
-            throw new QsonException("Illegal value syntax");
-        }
-    }
     public boolean continueLoopKeys(ParserContext ctx) {
         ctx.popState();
         return loopKeys(ctx);

@@ -1,6 +1,8 @@
 package io.quarkus.qson.deserializer;
 
 public interface ParserContext {
+    Object NULL = new Object();
+
     void pushState(ParserState ps);
 
     void pushState(ParserState ps, int at);
@@ -23,6 +25,10 @@ public interface ParserContext {
 
     void clearToken();
 
+    void startNullToken();
+
+    void endNullToken();
+
     int skipWhitespace();
 
     int skipToQuote();
@@ -39,15 +45,27 @@ public interface ParserContext {
 
     boolean popBooleanToken();
 
+    Boolean popBooleanObjectToken();
+
     int popIntToken();
+
+    Integer popIntObjectToken();
 
     short popShortToken();
 
+    Short popShortObjectToken();
+
     byte popByteToken();
+
+    Byte popByteObjectToken();
 
     float popFloatToken();
 
+    Float popFloatObjectToken();
+
     double popDoubleToken();
+
+    Double popDoubleObjectToken();
 
     long popLongToken();
 
@@ -58,4 +76,6 @@ public interface ParserContext {
     <T> T popTarget();
 
     <T> T finish();
+
+    Long popLongObjectToken();
 }

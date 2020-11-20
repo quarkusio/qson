@@ -26,5 +26,13 @@ public class ObjectParser extends BaseParser {
         ctx.endToken();
     }
 
+    @Override
+    public void startNullToken(ParserContext ctx) {
+        ctx.startNullToken();
+    }
 
+    @Override
+    public void beginNullObject(ParserContext ctx) {
+        ctx.pushTarget(ParserContext.NULL);
+    }
 }

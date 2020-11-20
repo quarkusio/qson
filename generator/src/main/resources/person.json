@@ -1,10 +1,11 @@
 {
-  "deserializedOnly": 42,
-  "serializedOnly": -1,
-  "setterDeserializedOnly": 42,
-  "setterSerializedOnly": -1,
-  "getterDeserializedOnly": 42,
-  "getterSerializedOnly": -1,
-  "fieldDeserializedOnly": 42,
-  "fieldSerializedOnly": -1
+  "name": null,
+  "age": null,
+  "value": null,
+  "nullList": null,
+  "nullMap": null,
+  "list": [null],
+  "map" : {
+    "null": null
+  }
 }

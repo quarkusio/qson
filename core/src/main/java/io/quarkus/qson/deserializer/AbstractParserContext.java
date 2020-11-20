@@ -17,6 +17,7 @@ public abstract class AbstractParserContext implements ParserContext {
     protected int tokenStart = -1;
     protected int tokenEnd = -1;
     protected boolean eof;
+    protected boolean nullToken;
     protected boolean parserComplete;
     protected Object result;
 
@@ -50,7 +51,9 @@ public abstract class AbstractParserContext implements ParserContext {
 
     @Override
     public <T> T target() {
-        return (T)target.peek();
+        Object obj = target.peek();
+        if (obj == ParserContext.NULL) return null;
+        return (T)obj;
     }
 
     @Override
@@ -60,7 +63,9 @@ public abstract class AbstractParserContext implements ParserContext {
 
     @Override
     public <T> T popTarget() {
-        return (T)target.pop();
+        Object obj = target.pop();
+        if (obj == ParserContext.NULL) return null;
+        return (T)obj;
     }
 
     @Override
@@ -70,9 +75,20 @@ public abstract class AbstractParserContext implements ParserContext {
 
     @Override
     public void startToken() {
+        nullToken = false;
         escaped = false;
         buildingToken = true;
         tokenStart = ptr - 1;
+    }
+
+    @Override
+    public void startNullToken() {
+        nullToken = true;
+    }
+
+    @Override
+    public void endNullToken() {
+        nullToken = false;
     }
 
     @Override

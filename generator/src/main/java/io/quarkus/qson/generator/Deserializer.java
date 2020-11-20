@@ -598,20 +598,34 @@ public class Deserializer {
     private ResultHandle popSetterValue(_ParserContext ctx, PropertyReference setter, BytecodeCreator scope) {
         if (setter.type.equals(String.class)) {
             return ctx.popToken(scope);
-        } else if (setter.type.equals(short.class) || setter.type.equals(Short.class)) {
+        } else if (setter.type.equals(short.class)) {
             return ctx.popShortToken(scope);
-        } else if (setter.type.equals(byte.class) || setter.type.equals(Byte.class)) {
+        } else if (setter.type.equals(Short.class)) {
+            return ctx.popShortObjectToken(scope);
+        } else if (setter.type.equals(byte.class)) {
             return ctx.popByteToken(scope);
-        } else if (setter.type.equals(int.class) || setter.type.equals(Integer.class)) {
+        } else if (setter.type.equals(Byte.class)) {
+            return ctx.popByteObjectToken(scope);
+        } else if (setter.type.equals(int.class)) {
             return ctx.popIntToken(scope);
-        } else if (setter.type.equals(long.class) || setter.type.equals(Long.class)) {
+        } else if (setter.type.equals(Integer.class)) {
+            return ctx.popIntObjectToken(scope);
+        } else if (setter.type.equals(long.class)) {
             return ctx.popLongToken(scope);
-        } else if (setter.type.equals(float.class) || setter.type.equals(Float.class)) {
+        } else if (setter.type.equals(Long.class)) {
+            return ctx.popLongObjectToken(scope);
+        } else if (setter.type.equals(float.class)) {
             return ctx.popFloatToken(scope);
-        } else if (setter.type.equals(double.class) || setter.type.equals(Double.class)) {
+        } else if (setter.type.equals(Float.class)) {
+            return ctx.popFloatObjectToken(scope);
+        } else if (setter.type.equals(double.class)) {
             return ctx.popDoubleToken(scope);
-        } else if (setter.type.equals(boolean.class) || setter.type.equals(Boolean.class)) {
+        } else if (setter.type.equals(Double.class)) {
+            return ctx.popDoubleObjectToken(scope);
+        } else if (setter.type.equals(boolean.class)) {
             return ctx.popBooleanToken(scope);
+        } else if (setter.type.equals(Boolean.class)) {
+            return ctx.popBooleanObjectToken(scope);
         } else {
             return ctx.popTarget(scope);
         }
@@ -908,28 +922,56 @@ public class Deserializer {
             return scope.invokeInterfaceMethod(MethodDescriptor.ofMethod(ParserContext.class, "popBooleanToken", boolean.class), ctx);
         }
 
+        public ResultHandle popBooleanObjectToken(BytecodeCreator scope) {
+            return scope.invokeInterfaceMethod(MethodDescriptor.ofMethod(ParserContext.class, "popBooleanObjectToken", Boolean.class), ctx);
+        }
+
         public ResultHandle popIntToken(BytecodeCreator scope) {
             return scope.invokeInterfaceMethod(MethodDescriptor.ofMethod(ParserContext.class, "popIntToken", int.class), ctx);
+        }
+
+        public ResultHandle popIntObjectToken(BytecodeCreator scope) {
+            return scope.invokeInterfaceMethod(MethodDescriptor.ofMethod(ParserContext.class, "popIntObjectToken", Integer.class), ctx);
         }
 
         public ResultHandle popShortToken(BytecodeCreator scope) {
             return scope.invokeInterfaceMethod(MethodDescriptor.ofMethod(ParserContext.class, "popShortToken", short.class), ctx);
         }
 
+        public ResultHandle popShortObjectToken(BytecodeCreator scope) {
+            return scope.invokeInterfaceMethod(MethodDescriptor.ofMethod(ParserContext.class, "popShortObjectToken", Short.class), ctx);
+        }
+
         public ResultHandle popByteToken(BytecodeCreator scope) {
             return scope.invokeInterfaceMethod(MethodDescriptor.ofMethod(ParserContext.class, "popByteToken", byte.class), ctx);
+        }
+
+        public ResultHandle popByteObjectToken(BytecodeCreator scope) {
+            return scope.invokeInterfaceMethod(MethodDescriptor.ofMethod(ParserContext.class, "popByteObjectToken", Byte.class), ctx);
         }
 
         public ResultHandle popLongToken(BytecodeCreator scope) {
             return scope.invokeInterfaceMethod(MethodDescriptor.ofMethod(ParserContext.class, "popLongToken", long.class), ctx);
         }
 
+        public ResultHandle popLongObjectToken(BytecodeCreator scope) {
+            return scope.invokeInterfaceMethod(MethodDescriptor.ofMethod(ParserContext.class, "popLongObjectToken", Long.class), ctx);
+        }
+
         public ResultHandle popFloatToken(BytecodeCreator scope) {
             return scope.invokeInterfaceMethod(MethodDescriptor.ofMethod(ParserContext.class, "popFloatToken", float.class), ctx);
         }
 
+        public ResultHandle popFloatObjectToken(BytecodeCreator scope) {
+            return scope.invokeInterfaceMethod(MethodDescriptor.ofMethod(ParserContext.class, "popFloatObjectToken", Float.class), ctx);
+        }
+
         public ResultHandle popDoubleToken(BytecodeCreator scope) {
             return scope.invokeInterfaceMethod(MethodDescriptor.ofMethod(ParserContext.class, "popDoubleToken", double.class), ctx);
+        }
+
+        public ResultHandle popDoubleObjectToken(BytecodeCreator scope) {
+            return scope.invokeInterfaceMethod(MethodDescriptor.ofMethod(ParserContext.class, "popDoubleObjectToken", Double.class), ctx);
         }
 
         public ResultHandle target(BytecodeCreator scope) {

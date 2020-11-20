@@ -28,6 +28,16 @@ public class GenericParser extends BaseParser implements QsonParser {
         ctx.endToken();
     }
 
+    @Override
+    public void startNullToken(ParserContext ctx) {
+        ctx.startNullToken();
+    }
+
+    @Override
+    public void endNullValue(ParserContext ctx) {
+        ctx.endNullToken();
+        ctx.pushTarget(ParserContext.NULL);
+    }
 
     @Override
     public ParserState startState() {
@@ -88,22 +98,34 @@ public class GenericParser extends BaseParser implements QsonParser {
     }
 
     @Override
+    public void beginNullObject(ParserContext ctx) {
+        ctx.pushTarget(ParserContext.NULL);
+    }
+    @Override
     public void endStringValue(ParserContext ctx) {
-        ctx.pushTarget(ctx.popToken());
+        String obj = ctx.popToken();
+        if (obj == null) ctx.pushTarget(ParserContext.NULL);
+        else ctx.pushTarget(obj);
     }
 
     @Override
     public void endNumberValue(ParserContext ctx) {
-        ctx.pushTarget(ctx.popLongToken());
+        Long obj = ctx.popLongObjectToken();
+        if (obj == null) ctx.pushTarget(ParserContext.NULL);
+        else ctx.pushTarget(obj);
     }
 
     @Override
     public void endFloatValue(ParserContext ctx) {
-        ctx.pushTarget(Float.valueOf(ctx.popToken()));
+        Float obj = ctx.popFloatObjectToken();
+        if (obj == null) ctx.pushTarget(ParserContext.NULL);
+        else ctx.pushTarget(obj);
     }
 
     @Override
     public void endBooleanValue(ParserContext ctx) {
-        ctx.pushTarget(ctx.popBooleanToken());
+        Boolean obj = ctx.popBooleanObjectToken();
+        if (obj == null) ctx.pushTarget(ParserContext.NULL);
+        else ctx.pushTarget(obj);
     }
 }

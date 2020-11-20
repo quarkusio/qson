@@ -38,6 +38,7 @@ public class IntChar {
     public final static int INT_a = 'a';
     public final static int INT_l = 'l';
     public final static int INT_s = 's';
+    public final static int INT_n = 'n';
 
 
     public static boolean isDigit(int ch) {

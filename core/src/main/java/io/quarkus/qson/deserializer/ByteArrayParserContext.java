@@ -116,6 +116,10 @@ public class ByteArrayParserContext extends AbstractParserContext {
 
     @Override
     public String popToken() {
+        if (nullToken) {
+            nullToken = false;
+            return null;
+        }
         String val;
         if (tokenBuffer == null) {
             if (tokenStart < 0) throw new QsonException("Token not started.");
@@ -130,6 +134,10 @@ public class ByteArrayParserContext extends AbstractParserContext {
 
     @Override
     public boolean popBooleanToken() {
+        if (nullToken) {
+            nullToken = false;
+            return false;
+        }
         boolean val;
         if (tokenBuffer == null) {
             if (tokenStart < 0) throw new QsonException("Token not started.");
@@ -143,30 +151,97 @@ public class ByteArrayParserContext extends AbstractParserContext {
     }
 
     @Override
+    public Boolean popBooleanObjectToken() {
+        if (nullToken) {
+            nullToken = false;
+            return null;
+        }
+        return popBooleanToken();
+    }
+
+    @Override
     public int popIntToken() {
         return (int) popLongToken();
+    }
+
+    @Override
+    public Integer popIntObjectToken() {
+        if (nullToken) {
+            nullToken = false;
+            return null;
+        }
+        return (int)popLongToken();
     }
     @Override
     public short popShortToken() {
         return (short) popLongToken();
     }
+
+    @Override
+    public Short popShortObjectToken() {
+        if (nullToken) {
+            nullToken = false;
+            return null;
+        }
+        return (short) popLongToken();
+    }
+
     @Override
     public byte popByteToken() {
         return (byte) popLongToken();
     }
 
     @Override
+    public Byte popByteObjectToken() {
+        if (nullToken) {
+            nullToken = false;
+            return null;
+        }
+        return (byte) popLongToken();
+    }
+
+    @Override
     public float popFloatToken() {
+        if (nullToken) {
+            nullToken = false;
+            return 0.0f;
+        }
         return Float.parseFloat(popToken());
     }
 
     @Override
+    public Float popFloatObjectToken() {
+        if (nullToken) {
+            nullToken = false;
+            return null;
+        }
+        return Float.valueOf(popToken());
+    }
+
+    @Override
     public double popDoubleToken() {
+        if (nullToken) {
+            nullToken = false;
+            return 0.0;
+        }
         return Double.parseDouble(popToken());
     }
 
     @Override
+    public Double popDoubleObjectToken() {
+        if (nullToken) {
+            nullToken = false;
+            return null;
+        }
+        return Double.valueOf(popToken());
+    }
+
+    @Override
     public long popLongToken() {
+        if (nullToken) {
+            nullToken = false;
+            return 0;
+        }
         long val;
         if (tokenBuffer == null) {
             val = ParsePrimitives.readLong(buffer, tokenStart, tokenEnd);
@@ -175,6 +250,15 @@ public class ByteArrayParserContext extends AbstractParserContext {
         }
         clearToken();
         return val;
+    }
+
+    @Override
+    public Long popLongObjectToken() {
+        if (nullToken) {
+            nullToken = false;
+            return null;
+        }
+        return popLongToken();
     }
 
     public boolean parse(byte[] buffer, int len) {

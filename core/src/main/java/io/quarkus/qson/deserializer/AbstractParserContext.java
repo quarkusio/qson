@@ -108,9 +108,8 @@ public abstract class AbstractParserContext implements ParserContext {
         int ch = 0;
         do {
             ch = consume();
-            if (ch <= 0) return ch;
             // make sure that last character wasn't escape character
-            if (ch != INT_QUOTE || (escaped && ch == INT_QUOTE)) {
+            if (ch > 0 && (ch != INT_QUOTE || (escaped && ch == INT_QUOTE))) {
                 escaped = !escaped && ch == INT_BACKSLASH;
                 continue;
             }
@@ -152,8 +151,7 @@ public abstract class AbstractParserContext implements ParserContext {
                 throw new QsonException("Parser incomplete.  EOF reached.");
             }
         }
-        parserComplete = state == null || state.isEmpty();
-        if (!parserComplete) throw new QsonException("Parser incomplete.  EOF reached.");
+        parserComplete = true;
         result = parser.getTarget(this);
         return (T)result;
     }

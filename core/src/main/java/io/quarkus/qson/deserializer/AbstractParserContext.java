@@ -156,4 +156,31 @@ public abstract class AbstractParserContext implements ParserContext {
         return (T)result;
     }
 
+    @Override
+    public boolean handleAny(AnySetter setter) {
+        String key = popToken();
+        int stateIndex = stateIndex();
+        if (ObjectParser.PARSER.valueSeparator(this)) {
+            if (GenericParser.PARSER.start(this)) {
+                Object value = popTarget();
+                setter.setAny(target(), key, value);
+                return true;
+            } else {
+                pushState(GenericParser.PARSER.continueStart, stateIndex);
+            }
+
+        } else {
+            pushState(ObjectParser.PARSER.continueValueSeparator, stateIndex);
+            pushState(GenericParser.PARSER.continueStart, stateIndex);
+        }
+        pushState((ctx) -> {
+            ctx.popState();
+            Object value = ctx.popTarget();
+            setter.setAny(target(), key, value);
+            return true;
+        }, stateIndex);
+        return false;
+
+    }
+
 }

@@ -12,6 +12,7 @@ import io.quarkus.gizmo.MethodCreator;
 import io.quarkus.gizmo.MethodDescriptor;
 import io.quarkus.gizmo.ResultHandle;
 import io.quarkus.qson.QsonException;
+import io.quarkus.qson.deserializer.AnySetter;
 import io.quarkus.qson.deserializer.EnumParser;
 import io.quarkus.qson.util.Types;
 import io.quarkus.qson.deserializer.BaseParser;
@@ -34,6 +35,7 @@ import io.quarkus.qson.deserializer.SetParser;
 import io.quarkus.qson.deserializer.ShortParser;
 import io.quarkus.qson.deserializer.StringParser;
 
+import java.lang.reflect.Method;
 import java.lang.reflect.ParameterizedType;
 import java.lang.reflect.Type;
 import java.math.BigDecimal;
@@ -60,6 +62,7 @@ public class Deserializer {
     public static final String INIT = "<init>";
     // static initializer
     public static final String CLINIT = "<clinit>";
+    public static final String QSON_ANY_SETTER = "_qson_any_setter";
 
     public static Builder create(Class targetType) {
         return new Builder().type(targetType);
@@ -207,8 +210,13 @@ public class Deserializer {
             // and somebody wants to reuse.
             List<PropertyReference> tmp = new ArrayList<>();
 
+            Method anySetter = null;
             for (PropertyReference ref : properties) {
                 if (ref.setter != null) {
+                    if (ref.isAnySetter) {
+                        anySetter = ref.setter;
+                        continue;
+                    }
                     tmp.add(ref);
                     Util.addReference(referenced, ref.type, ref.genericType);
                 }
@@ -216,6 +224,7 @@ public class Deserializer {
             // make sure properties are sorted so key matching works.
             Collections.sort(tmp, (ref, t1) -> ref.jsonName.compareTo(t1.jsonName));
             Deserializer deserializer = new Deserializer(output, targetType, targetGenericType);
+            deserializer.anyMethod = anySetter;
             // set properties list to setters only list
             deserializer.properties = tmp;
             deserializer.generate();
@@ -231,6 +240,7 @@ public class Deserializer {
     List<PropertyReference> properties;
     final ClassOutput classOutput;
     final String className;
+    Method anyMethod;
 
     private static String fqn(Class clz, Type genericType) {
         return clz.getName() + "__Parser";
@@ -329,6 +339,9 @@ public class Deserializer {
             collectionField(staticConstructor, ref);
             MethodCreator method = propertyEndMethod(ref);
             propertyEndFunction(ref, staticConstructor, method);
+        }
+        if (anyMethod != null) {
+            anySetterFunction(staticConstructor);
         }
         staticConstructor.returnValue(null);
     }
@@ -569,6 +582,18 @@ public class Deserializer {
         }
     }
 
+    private void anySetterFunction(MethodCreator staticConstructor) {
+        String endName = QSON_ANY_SETTER;
+        FieldCreator endField = creator.getFieldCreator(endName, AnySetter.class).setModifiers(ACC_STATIC | ACC_PRIVATE);
+        FunctionCreator endFunction = staticConstructor.createFunction(AnySetter.class);
+        BytecodeCreator ebc = endFunction.getBytecode();
+        AssignableResultHandle target = ebc.createVariable(targetType);
+        ebc.assign(target, ebc.getMethodParam(0));
+        ebc.invokeVirtualMethod(MethodDescriptor.ofMethod(anyMethod), target, ebc.getMethodParam(1), ebc.getMethodParam(2));
+        ebc.returnValue(null);
+        staticConstructor.writeStaticField(endField.getFieldDescriptor(), endFunction.getInstance());
+    }
+
     private void propertyEndFunction(PropertyReference setter, MethodCreator staticConstructor, MethodCreator method) {
         String endName = endProperty(setter);
         FieldCreator endField = creator.getFieldCreator(endName, ParserState.class).setModifiers(ACC_STATIC | ACC_PRIVATE);
@@ -648,9 +673,14 @@ public class Deserializer {
 
         chooseField(method, ctx, stateIndex, properties, 0);
 
-        ResultHandle result = method.invokeVirtualMethod(MethodDescriptor.ofMethod(BaseParser.class, "skipValue", boolean.class, ParserContext.class),
-                method.readStaticField(FieldDescriptor.of(BaseParser.class, "PARSER", BaseParser.class)), ctx.ctx);
-        method.returnValue(result);
+        if (anyMethod == null) {
+            ResultHandle result = method.invokeVirtualMethod(MethodDescriptor.ofMethod(BaseParser.class, "skipValue", boolean.class, ParserContext.class),
+                    method.readStaticField(FieldDescriptor.of(BaseParser.class, "PARSER", BaseParser.class)), ctx.ctx);
+            method.returnValue(result);
+        } else {
+            ResultHandle result = ctx.handleAny(method, method.readStaticField(FieldDescriptor.of(fqn(), QSON_ANY_SETTER, AnySetter.class)));
+            method.returnValue(result);
+        }
     }
 
     private void chooseField(BytecodeCreator scope, _ParserContext ctx, ResultHandle stateIndex, List<PropertyReference> setters, int offset) {
@@ -886,6 +916,11 @@ public class Deserializer {
 
         public _ParserContext(ResultHandle ctx) {
             this.ctx = ctx;
+        }
+
+        public ResultHandle handleAny(BytecodeCreator scope, ResultHandle setter) {
+            return scope.invokeInterfaceMethod(MethodDescriptor.ofMethod(ParserContext.class, "handleAny", boolean.class, AnySetter.class), ctx, setter);
+
         }
 
         public ResultHandle consume(BytecodeCreator scope) {

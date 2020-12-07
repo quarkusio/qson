@@ -26,8 +26,10 @@ public class NioGeneratorTest {
         Deserializer.create(Simple.class).output(new TestClassOutput()).generate();
         Deserializer.create(Single.class).output(new TestClassOutput()).generate();
         Deserializer.create(Person2.class).output(new TestClassOutput()).generate();
+        Deserializer.create(PersonAny.class).output(new TestClassOutput()).generate();
         Serializer.create(Single.class).output(new TestClassOutput()).generate();
         Serializer.create(Person2.class).output(new TestClassOutput()).generate();
+        Serializer.create(PersonAny.class).output(new TestClassOutput()).generate();
     }
 
     @Test
@@ -213,6 +215,41 @@ public class NioGeneratorTest {
             "    \"married\": true\n" +
             "  }\n" +
             "}";
+
+    @Test
+    public void testAny() throws Exception {
+        QsonMapper mapper = new QsonMapper();
+        QsonParser parser = mapper.parserFor(PersonAny.class);
+        ByteArrayParserContext ctx = new ByteArrayParserContext(parser);
+        PersonAny person = ctx.finish(json);
+        validateAny(person);
+
+        ByteArrayJsonWriter jsonWriter = new ByteArrayJsonWriter();
+        QsonObjectWriter objectWriter = mapper.writerFor(PersonAny.class);
+        objectWriter.write(jsonWriter, person);
+
+        byte[] bytes = jsonWriter.getBytes();
+        System.out.println(new String(bytes, JsonByteWriter.UTF8));
+
+        ctx = new ByteArrayParserContext(parser);
+        person = ctx.finish(bytes);
+        validateAny(person);
+
+    }
+
+    public void validateAny(PersonAny person) {
+        validatePerson(person);
+        Map<String, Object> any = person.getAny();
+        List<String> junkList = (List<String>)any.get("junkList");
+        Assertions.assertEquals("1", junkList.get(0));
+        Assertions.assertEquals("2", junkList.get(1));
+        Map<String, Object> junkMap = (Map<String, Object>)any.get("junkMap");
+        Assertions.assertEquals("bar", junkMap.get("foo"));
+        Assertions.assertEquals(1, (Long)junkMap.get("one"));
+        Assertions.assertTrue((Boolean)any.get("junkBool"));
+        Assertions.assertEquals(666, (Long)any.get("junkInt"));
+
+    }
 
 
     @Test

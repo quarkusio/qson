@@ -1,5 +1,6 @@
 package io.quarkus.qson.generator;
 
+import io.quarkus.qson.QsonAny;
 import io.quarkus.qson.QsonException;
 import io.quarkus.qson.QsonIgnore;
 import io.quarkus.qson.QsonProperty;
@@ -35,12 +36,33 @@ public class PropertyReference {
     private QsonProperty fieldAnnotation;
     private QsonProperty getterAnnotation;
     private QsonProperty setterAnnotation;
+    public boolean isAnySetter;
+    public boolean isAnyGetter;
 
     public static List<PropertyReference> getProperties(Class type) {
         if (type.equals(Object.class)) return Collections.emptyList();
         Map<String, PropertyReference> properties = new HashMap<>();
         Set<String> ignored = new HashSet<>();
         for (Method m : type.getMethods()) {
+            if (m.isAnnotationPresent(QsonAny.class)) {
+                if (m.getParameterTypes().length == 2
+                    && m.getParameterTypes()[0].equals(String.class)
+                        && m.getParameterTypes()[1].equals(Object.class)) {
+                    PropertyReference ref = new PropertyReference();
+                    ref.setter = m;
+                    ref.isAnySetter = true;
+                    properties.put("@QsonAnySetter", ref);
+                } else if (m.getParameterTypes().length == 0 && m.getReturnType().equals(Map.class)) {
+                    PropertyReference ref = new PropertyReference();
+                    ref.getter = m;
+                    ref.isAnyGetter = true;
+                    properties.put("@QsonAnyGetter", ref);
+
+                } else {
+                    throw new QsonException("Illegal use of @QsonAny: " + m.toString());
+                }
+                continue;
+            }
             if (isSetter(m)) {
                 String javaName;
                 if (m.getName().length() > 4) {
@@ -172,12 +194,12 @@ public class PropertyReference {
     }
 
     static boolean isSetter(Method m) {
-        return !Modifier.isStatic(m.getModifiers()) && m.getName().startsWith("set") && m.getName().length() > "set".length()
+        return Modifier.isPublic(m.getModifiers()) && !Modifier.isStatic(m.getModifiers()) && m.getName().startsWith("set") && m.getName().length() > "set".length()
                 && m.getParameterCount() == 1;
     }
 
     static boolean isGetter(Method m) {
-        return !Modifier.isStatic(m.getModifiers()) && ((m.getName().startsWith("get") && m.getName().length() > "get".length()) || (m.getName().startsWith("is")) && m.getName().length() > "is".length())
+        return Modifier.isPublic(m.getModifiers()) && !Modifier.isStatic(m.getModifiers()) && ((m.getName().startsWith("get") && m.getName().length() > "get".length()) || (m.getName().startsWith("is")) && m.getName().length() > "is".length())
                 && m.getParameterCount() == 0 && !m.getReturnType().equals(void.class)
                 && !m.getDeclaringClass().equals(Object.class);
     }

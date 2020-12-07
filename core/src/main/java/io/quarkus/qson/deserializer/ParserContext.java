@@ -78,4 +78,6 @@ public interface ParserContext {
     <T> T finish();
 
     Long popLongObjectToken();
+
+    boolean handleAny(AnySetter setter);
 }

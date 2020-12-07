@@ -28,6 +28,9 @@ public interface JsonWriter {
 
     void writeObject(Object obj);
     void write(Map val);
+
+    boolean writeAny(Map val, boolean comma);
+
     void write(Map val, QsonObjectWriter valueWriter);
     void write(Collection val);
     void write(Collection val, QsonObjectWriter elementWriter);

@@ -280,20 +280,7 @@ public abstract class JsonByteWriter implements JsonWriter {
     @Override
     public void write(Map val) {
         writeByte(IntChar.INT_LCURLY);
-        if (!val.isEmpty()) {
-            Iterator<Map.Entry<Object, Object>> it = val.entrySet().iterator();
-            Map.Entry<Object, Object> entry = it.next();
-            writePropertyName(entry.getKey());
-            writeByte(IntChar.INT_COLON);
-            writeObject(entry.getValue());
-            while (it.hasNext()) {
-                entry = it.next();
-                writeByte(IntChar.INT_COMMA);
-                writePropertyName(entry.getKey());
-                writeByte(IntChar.INT_COLON);
-                writeObject(entry.getValue());
-            }
-        }
+        writeAny(val, false);
         writeByte(IntChar.INT_RCURLY);
     }
 
@@ -532,6 +519,27 @@ public abstract class JsonByteWriter implements JsonWriter {
         write(val);
         return true;
     }
+
+    @Override
+    public boolean writeAny(Map val, boolean comma) {
+        if (val == null || val.isEmpty()) return comma;
+        if (comma) writeByte(IntChar.INT_COMMA);
+        Iterator<Map.Entry<Object, Object>> it = val.entrySet().iterator();
+        Map.Entry<Object, Object> entry = it.next();
+        writePropertyName(entry.getKey());
+        writeByte(IntChar.INT_COLON);
+        writeObject(entry.getValue());
+        while (it.hasNext()) {
+            entry = it.next();
+            writeByte(IntChar.INT_COMMA);
+            writePropertyName(entry.getKey());
+            writeByte(IntChar.INT_COLON);
+            writeObject(entry.getValue());
+        }
+        return true;
+    }
+
+
 
     private void writePropertyName(Object obj) {
         if (obj instanceof String) {

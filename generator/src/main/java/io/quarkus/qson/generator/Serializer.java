@@ -15,6 +15,7 @@ import io.quarkus.qson.serializer.JsonWriter;
 import io.quarkus.qson.serializer.MapWriter;
 import io.quarkus.qson.serializer.QsonObjectWriter;
 
+import java.lang.reflect.Method;
 import java.lang.reflect.ParameterizedType;
 import java.lang.reflect.Type;
 import java.util.ArrayList;
@@ -133,13 +134,19 @@ public class Serializer {
                 // and somebody wants to reuse.
                 List<PropertyReference> tmp = new ArrayList<>();
 
+                Method anyGetter = null;
                 for (PropertyReference ref : properties) {
                     if (ref.getter != null) {
+                        if (ref.isAnyGetter) {
+                            anyGetter = ref.getter;
+                            continue;
+                        }
                         tmp.add(ref);
                         Util.addReference(referenced, ref.type, ref.genericType);
                     }
                 }
                 s.properties = tmp;
+                s.anyGetter = anyGetter;
                 s.generate();
                 className = fqn(targetType, targetGenericType);
                 return this;
@@ -153,6 +160,7 @@ public class Serializer {
     Type targetGenericType;
     List<PropertyReference> properties;
     String className;
+    Method anyGetter;
 
     public static String name(Class clz, Type genericType) {
         return clz.getSimpleName() + "__Serializer";
@@ -510,6 +518,12 @@ public class Serializer {
                 );
                 if (!forceComma) method.assign(comma, result);
             }
+        }
+        if (anyGetter != null) {
+            method.invokeInterfaceMethod(MethodDescriptor.ofMethod(JsonWriter.class, "writeAny", boolean.class, Map.class, boolean.class), jsonWriter,
+                    method.invokeVirtualMethod(MethodDescriptor.ofMethod(anyGetter), target),
+                    comma
+            );
         }
         method.invokeInterfaceMethod(MethodDescriptor.ofMethod(JsonWriter.class, "writeRCurley", void.class), jsonWriter);
         method.returnValue(null);

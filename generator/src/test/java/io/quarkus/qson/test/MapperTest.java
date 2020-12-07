@@ -124,6 +124,7 @@ public class MapperTest {
             Assertions.assertEquals(1234, i.intValue());
         }
         Assertions.assertEquals("123", mapper.writeString(Integer.valueOf((123))));
+        Assertions.assertEquals("-123", mapper.writeString(Integer.valueOf((-123))));
     }
 
     @Test
@@ -154,6 +155,7 @@ public class MapperTest {
             Assertions.assertEquals(1234, i.shortValue());
         }
         Assertions.assertEquals("123", mapper.writeString(Short.valueOf((short)123)));
+        Assertions.assertEquals("-123", mapper.writeString(Short.valueOf((short)-123)));
     }
 
     @Test
@@ -172,6 +174,7 @@ public class MapperTest {
             Assertions.assertEquals(1234L, i.longValue());
         }
         Assertions.assertEquals("123", mapper.writeString(Long.valueOf(123)));
+        Assertions.assertEquals("-123", mapper.writeString(Long.valueOf(-123)));
     }
 
     @Test
@@ -190,6 +193,7 @@ public class MapperTest {
             Assertions.assertEquals(123, i.byteValue());
         }
         Assertions.assertEquals("123", mapper.writeString(Byte.valueOf((byte)123)));
+        Assertions.assertEquals("-123", mapper.writeString(Byte.valueOf((byte)-123)));
     }
 
     @Test
@@ -220,6 +224,7 @@ public class MapperTest {
             Assertions.assertEquals(123.1f, i.floatValue());
         }
         Assertions.assertEquals("123.1", mapper.writeString(Float.valueOf(123.1f)));
+        Assertions.assertEquals("-123.1", mapper.writeString(Float.valueOf(-123.1f)));
     }
 
     @Test
@@ -250,6 +255,7 @@ public class MapperTest {
             Assertions.assertEquals(123.1, i.doubleValue());
         }
         Assertions.assertEquals("123.1", mapper.writeString(Double.valueOf(123.1)));
+        Assertions.assertEquals("-123.1", mapper.writeString(Double.valueOf(-123.1)));
     }
 
     @Test

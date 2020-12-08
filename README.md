@@ -62,6 +62,7 @@ must be placed on a method that takes two parameters, a String key, and an Objec
 it must be placed on a method that takes no parameters and returns a `Map<String, Object>`.
 
 ```java
+public class Pojo {
     private Map<String, Object> any;
 
     @QsonAny
@@ -74,6 +75,7 @@ it must be placed on a method that takes no parameters and returns a `Map<String
         if (this.any == null) this.any = new HashMap<>();
         this.any.put(key, val);
     }
+}
 ```
 
 ## Integration Outside of Quarkus

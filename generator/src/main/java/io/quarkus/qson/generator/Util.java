@@ -10,7 +10,7 @@ import java.util.Set;
 
 public class Util {
     /**
-     * Generate a classname from a pure generic type.  For example List<Foo> to what
+     * Generate a classname from a pure generic type.  For example List&lt;Foo&gt; to what
      * a generated class would be for that  List_Foo
      *
      * @param type
@@ -21,7 +21,7 @@ public class Util {
     }
 
     /**
-     * Generate a classname from a pure generic type.  For example List<Foo> to what
+     * Generate a classname from a pure generic type.  For example List&lt;Foo&gt; to what
      * a generated class would be for that  List_Foo
      *
      * @param type
@@ -40,7 +40,7 @@ public class Util {
     }
 
     /**
-     * Checks to see if clz is a user object or contains one (i.e. List<UserObject>)
+     * Checks to see if clz is a user object or contains one (i.e. List&lt;UserObject&gt;)
      * If it does, it adds the class and generic type to the referenceMap
      *
      * @param referenceMap

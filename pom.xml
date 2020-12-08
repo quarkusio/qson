@@ -50,6 +50,7 @@
         <quarkus.platform.version>1.10.3.Final</quarkus.platform.version>
         <surefire-plugin.version>2.22.1</surefire-plugin.version>
         <nexus-staging-maven-plugin.version>1.6.8</nexus-staging-maven-plugin.version>
+        <version.gpg.plugin>1.6</version.gpg.plugin>
     </properties>
 
     <modules>
@@ -213,6 +214,7 @@
                          -->
                         <groupId>org.apache.maven.plugins</groupId>
                         <artifactId>maven-gpg-plugin</artifactId>
+                        <version>${version.gpg.plugin}</version>
                         <executions>
                             <execution>
                                 <id>sign-artifacts</id>

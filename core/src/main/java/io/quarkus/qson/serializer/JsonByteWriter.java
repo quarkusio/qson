@@ -49,9 +49,8 @@ public abstract class JsonByteWriter implements JsonWriter {
         long n = x / 10;
         for (; n != 0; n /= 10) places *= 10;
 
-        StringBuilder builder = new StringBuilder();
         if (x < 0) {
-            builder.append('-');
+            writeByte('-');
             for (int place = places; place >=1; place /= 10) {
                 int i = (int)(x / place);
                 writeByte('0' - i);

@@ -6,8 +6,21 @@
     <modelVersion>4.0.0</modelVersion>
     <groupId>io.quarkus.qson</groupId>
     <artifactId>qson-parent</artifactId>
-    <packaging>pom</packaging>
+    <name>Qson - Parent pom</name>
+    <description>Qson - Json parser and object mapper</description>
+    <url>https://github.com/quarkusio/qson</url>
     <version>999-SNAPSHOT</version>
+    <packaging>pom</packaging>
+
+    <developers>
+        <developer>
+            <id>bburke</id>
+            <name>Bill Burke</name>
+            <email>bburke@redhat.com</email>
+            <organization>Red Hat</organization>
+            <organizationUrl>http://redhat.com</organizationUrl>
+         </developer>
+    </developers>
 
     <licenses>
         <license>

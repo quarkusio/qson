@@ -18,9 +18,9 @@
     </licenses>
 
     <scm>
-        <url>https://github.com/quarkusio/quarkus</url>
-        <connection>scm:git:git@github.com:quarkusio/quarkus.git</connection>
-        <developerConnection>scm:git:git@github.com:quarkusio/quarkus.git</developerConnection>
+        <url>https://github.com/quarkusio/qson</url>
+        <connection>scm:git:git@github.com:quarkusio/qson.git</connection>
+        <developerConnection>scm:git:git@github.com:quarkusio/qson.git</developerConnection>
         <tag>HEAD</tag>
     </scm>
 

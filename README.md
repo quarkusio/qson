@@ -57,6 +57,25 @@ public class Person {
 
 When parsing, Qson automatically ignores any extra json that does not map to your class.
 
+Qson also supports arbitrary JSON with the `io.quarkus.qson.QsonAny` annotation.  For deserialization, this annotation
+must be placed on a method that takes two parameters, a String key, and an Object value.  For serialization,
+it must be placed on amethod that takes no parameters and returns a `Map<String, Object>`.
+
+```java
+    private Map<String, Object> any;
+
+    @QsonAny
+    public Map<String, Object> getAny() {
+        return any;
+    }
+
+    @QsonAny
+    public void setAny(String key, Object val) {
+        if (this.any == null) this.any = new HashMap<>();
+        this.any.put(key, val);
+    }
+```
+
 ## Integration Outside of Quarkus
 
 You must first pull in the QSON generator dependency

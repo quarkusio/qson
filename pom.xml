@@ -4,7 +4,7 @@
     <groupId>io.quarkus.qson</groupId>
     <artifactId>qson-parent</artifactId>
     <packaging>pom</packaging>
-    <version>1.0.Final</version>
+    <version>999-SNAPSHOT</version>
 
     <licenses>
         <license>
@@ -18,7 +18,7 @@
         <url>https://github.com/quarkusio/qson</url>
         <connection>scm:git:git@github.com:quarkusio/qson.git</connection>
         <developerConnection>scm:git:git@github.com:quarkusio/qson.git</developerConnection>
-        <tag>1.0.Final</tag>
+        <tag>HEAD</tag>
     </scm>
 
     <properties>

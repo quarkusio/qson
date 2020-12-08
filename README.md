@@ -59,7 +59,7 @@ When parsing, Qson automatically ignores any extra json that does not map to you
 
 Qson also supports arbitrary JSON with the `io.quarkus.qson.QsonAny` annotation.  For deserialization, this annotation
 must be placed on a method that takes two parameters, a String key, and an Object value.  For serialization,
-it must be placed on amethod that takes no parameters and returns a `Map<String, Object>`.
+it must be placed on a method that takes no parameters and returns a `Map<String, Object>`.
 
 ```java
     private Map<String, Object> any;

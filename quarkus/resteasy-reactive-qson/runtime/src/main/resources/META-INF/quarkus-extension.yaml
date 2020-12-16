@@ -1,0 +1,15 @@
+---
+name: "Resteasy Reactive QSON"
+metadata:
+  keywords:
+  - "resteasy-reactive-qson"
+  - "jaxrs-json"
+  - "resteasy-reactive-json"
+  - "resteasy-reactive"
+  - "jaxrs"
+  - "json"
+  - "qson"
+  categories:
+  - "web"
+  - "serialization"
+  status: "experimental"

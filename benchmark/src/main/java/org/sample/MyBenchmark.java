@@ -321,9 +321,7 @@ public class MyBenchmark {
     @Benchmark
     public Object testWriterJackson(JacksonWriter q) {
         try {
-            ByteArrayOutputStream out = new ByteArrayOutputStream(1024);
-            q.objectWriter.writeValue(out, q.person);
-            return out.toByteArray();
+            return q.objectWriter.writeValueAsBytes(q.person);
         } catch (IOException e) {
             throw new RuntimeException(e);
         }
@@ -331,9 +329,7 @@ public class MyBenchmark {
     @Benchmark
     public Object testWriterAfterburner(AfterburnerWriter q) {
         try {
-            ByteArrayOutputStream out = new ByteArrayOutputStream(1024);
-            q.objectWriter.writeValue(out, q.person);
-            return out.toByteArray();
+            return q.objectWriter.writeValueAsBytes(q.person);
         } catch (IOException e) {
             throw new RuntimeException(e);
         }

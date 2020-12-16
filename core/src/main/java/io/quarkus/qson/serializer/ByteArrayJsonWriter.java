@@ -4,20 +4,23 @@ import io.quarkus.qson.QsonException;
 
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
+import java.util.Arrays;
 
 /**
  * Writer that creates a byte array as a result
  *
  */
 public class ByteArrayJsonWriter extends JsonByteWriter {
-    ByteArrayOutputStream baos;
+
+    byte[] buffer;
+    int count;
 
     /**
      * Uses 1024 bytes as an initial capacity for its buffer
      *
      */
     public ByteArrayJsonWriter() {
-        baos = new ByteArrayOutputStream(1024);
+        this(512);
     }
 
     /**
@@ -25,21 +28,24 @@ public class ByteArrayJsonWriter extends JsonByteWriter {
      * @param initialCapacity of the buffer
      */
     public ByteArrayJsonWriter(int initialCapacity) {
-        baos = new ByteArrayOutputStream(initialCapacity);
+        buffer = new byte[initialCapacity];
     }
 
     @Override
     public void writeByte(int b) {
-        baos.write(b);
+        if (count == buffer.length) {
+            buffer = Arrays.copyOf(buffer, buffer.length + buffer.length / 2);
+        }
+        buffer[count++] = (byte)b;
     }
 
     @Override
     public void writeBytes(byte[] bytes) {
-        try {
-            baos.write(bytes);
-        } catch (IOException e) {
-            throw new QsonException(e);
+        if (count + bytes.length > buffer.length) {
+            buffer = Arrays.copyOf(buffer, buffer.length + buffer.length / 2 + bytes.length);
         }
+        System.arraycopy(bytes, 0, buffer, count, bytes.length);
+        count += bytes.length;
     }
 
     /**
@@ -48,6 +54,26 @@ public class ByteArrayJsonWriter extends JsonByteWriter {
      * @return
      */
     public byte[] getBytes() {
-        return baos.toByteArray();
+        return Arrays.copyOf(buffer, count);
+    }
+
+    /**
+     * Get the underlying buffer (no copy)
+     * This byte array may be padded with unwritten bytes.  Get the size() to
+     * get the actual length of bytes written
+     *
+     * @return
+     */
+    public byte[] getBuffer() {
+        return buffer;
+    }
+
+    /**
+     * Size of bytes written to buffer.
+     *
+     * @return
+     */
+    public int size() {
+        return count;
     }
 }

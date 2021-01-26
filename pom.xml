@@ -58,6 +58,8 @@
         <module>quarkus/extension</module>
         <module>quarkus/funqy-http</module>
         <module>quarkus/resteasy-qson</module>
+        <module>quarkus/resteasy-qson-common</module>
+        <module>quarkus/resteasy-reactive-qson</module>
     </modules>
 
     <repositories>
@@ -106,12 +108,32 @@
             </dependency>
             <dependency>
                 <groupId>io.quarkus.qson</groupId>
+                <artifactId>quarkus-resteasy-qson-common</artifactId>
+                <version>${project.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>io.quarkus.qson</groupId>
+                <artifactId>quarkus-resteasy-qson-common-deployment</artifactId>
+                <version>${project.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>io.quarkus.qson</groupId>
                 <artifactId>quarkus-resteasy-qson</artifactId>
                 <version>${project.version}</version>
             </dependency>
             <dependency>
                 <groupId>io.quarkus.qson</groupId>
                 <artifactId>quarkus-resteasy-qson-deployment</artifactId>
+                <version>${project.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>io.quarkus.qson</groupId>
+                <artifactId>quarkus-resteasy-reactive-qson</artifactId>
+                <version>${project.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>io.quarkus.qson</groupId>
+                <artifactId>quarkus-resteasy-reactive-qson-deployment</artifactId>
                 <version>${project.version}</version>
             </dependency>
             <dependency>

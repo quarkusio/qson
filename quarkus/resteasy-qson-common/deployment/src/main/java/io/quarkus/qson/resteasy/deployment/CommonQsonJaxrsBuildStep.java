@@ -9,7 +9,6 @@ import io.quarkus.deployment.builditem.CapabilityBuildItem;
 import io.quarkus.deployment.builditem.FeatureBuildItem;
 import io.quarkus.qson.util.Types;
 import io.quarkus.qson.deployment.QsonBuildItem;
-import io.quarkus.resteasy.common.spi.ResteasyDotNames;
 import org.jboss.jandex.AnnotationInstance;
 import org.jboss.jandex.AnnotationValue;
 import org.jboss.jandex.ClassInfo;
@@ -29,33 +28,23 @@ import java.util.LinkedList;
 import java.util.List;
 import java.util.Set;
 
-public class QsonJaxrsBuildStep {
-
-    @BuildStep
-    void feature(BuildProducer<FeatureBuildItem> feature) {
-        feature.produce(new FeatureBuildItem("resteasy-qson"));
-    }
-
-    @BuildStep
-    void capabilities(BuildProducer<CapabilityBuildItem> capability) {
-        capability.produce(new CapabilityBuildItem(Capability.RESTEASY_JSON));
-    }
+public class CommonQsonJaxrsBuildStep {
 
     @BuildStep
     public void findQsonClasses(BeanArchiveIndexBuildItem beanArchiveIndexBuildItem,
                                 BuildProducer<QsonBuildItem> qson
                                             ) throws Exception {
         IndexView index = beanArchiveIndexBuildItem.getIndex();
-        for (AnnotationInstance ai : index.getAnnotations(ResteasyDotNames.GET)) {
+        for (AnnotationInstance ai : index.getAnnotations(DotNames.GET)) {
             MethodInfo method = ai.target().asMethod();
             registerProducesJson(index, qson, method);
         }
 
         Set<AnnotationInstance> methods = new HashSet<>();
-        methods.addAll(index.getAnnotations(ResteasyDotNames.POST));
-        methods.addAll(index.getAnnotations(ResteasyDotNames.PUT));
-        methods.addAll(index.getAnnotations(ResteasyDotNames.DELETE));
-        methods.addAll(index.getAnnotations(ResteasyDotNames.PATCH));
+        methods.addAll(index.getAnnotations(DotNames.POST));
+        methods.addAll(index.getAnnotations(DotNames.PUT));
+        methods.addAll(index.getAnnotations(DotNames.DELETE));
+        methods.addAll(index.getAnnotations(DotNames.PATCH));
         for (AnnotationInstance ai : methods) {
             MethodInfo method = ai.target().asMethod();
             registerProducesJson(index, qson, method);
@@ -66,8 +55,8 @@ public class QsonJaxrsBuildStep {
     }
 
     private void registerProducesJson(IndexView index, BuildProducer<QsonBuildItem> qson, MethodInfo method) throws Exception {
-        if (method.hasAnnotation(ResteasyDotNames.PRODUCES)) {
-            AnnotationInstance produces = method.annotation(ResteasyDotNames.PRODUCES);
+        if (method.hasAnnotation(DotNames.PRODUCES)) {
+            AnnotationInstance produces = method.annotation(DotNames.PRODUCES);
             if (isJsonMediaType(produces)) {
                 Method m = findMethod(method);
                 if (m == null) {
@@ -78,7 +67,7 @@ public class QsonJaxrsBuildStep {
                 register(index, qson, method, genericType, false, true);
             }
         } else {
-            AnnotationInstance produces = method.declaringClass().classAnnotation(ResteasyDotNames.PRODUCES);
+            AnnotationInstance produces = method.declaringClass().classAnnotation(DotNames.PRODUCES);
             if (isJsonMediaType(produces)) {
                 Method m = findMethod(method);
                 if (m == null) {
@@ -95,7 +84,7 @@ public class QsonJaxrsBuildStep {
         if (Types.containsTypeVariable(genericType)) {
             for (ClassInfo ci : index.getAllKnownSubclasses(method.declaringClass().name())) {
                 Class sub = Thread.currentThread().getContextClassLoader().loadClass(ci.name().toString());
-                genericType = org.jboss.resteasy.spi.util.Types.resolveTypeVariables(sub, genericType);
+                genericType = TypeUtil.resolveTypeVariables(sub, genericType);
                 if (!Types.containsTypeVariable(genericType)) {
                     qson.produce(new QsonBuildItem(Types.getRawType(genericType), genericType, parser, writer));
                 }
@@ -106,8 +95,8 @@ public class QsonJaxrsBuildStep {
     }
 
     private void registerConsumesJson(IndexView index, BuildProducer<QsonBuildItem> qson, MethodInfo method) throws Exception {
-        if (method.hasAnnotation(ResteasyDotNames.CONSUMES)) {
-            AnnotationInstance consumes = method.annotation(ResteasyDotNames.CONSUMES);
+        if (method.hasAnnotation(DotNames.CONSUMES)) {
+            AnnotationInstance consumes = method.annotation(DotNames.CONSUMES);
             if (isJsonMediaType(consumes)) {
                 Method m = findMethod(method);
                 if (m == null) {
@@ -119,7 +108,7 @@ public class QsonJaxrsBuildStep {
                 register(index, qson, method, genericType, true, false);
             }
         } else {
-            AnnotationInstance consumes = method.declaringClass().classAnnotation(ResteasyDotNames.CONSUMES);
+            AnnotationInstance consumes = method.declaringClass().classAnnotation(DotNames.CONSUMES);
             if (isJsonMediaType(consumes)) {
                 Method m = findMethod(method);
                 if (m == null) {

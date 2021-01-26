@@ -1,25 +1,21 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
     <parent>
-        <artifactId>quarkus-resteasy-qson-parent</artifactId>
+        <artifactId>quarkus-resteasy-qson-common-parent</artifactId>
         <groupId>io.quarkus.qson</groupId>
         <version>999-SNAPSHOT</version>
         <relativePath>../</relativePath>
     </parent>
     <modelVersion>4.0.0</modelVersion>
 
-    <artifactId>quarkus-resteasy-qson</artifactId>
-    <name>Quarkus - Resteasy QSON - Runtime</name>
-    <description>Resteasy JAX-RS Provider for QSON</description>
+    <artifactId>quarkus-resteasy-qson-common</artifactId>
+    <name>Quarkus - Resteasy Common QSON - Runtime</name>
+    <description>Resteasy Common JAX-RS Provider for QSON</description>
 
     <dependencies>
         <dependency>
             <groupId>io.quarkus.qson</groupId>
-            <artifactId>quarkus-resteasy-qson-common</artifactId>
-        </dependency>
-        <dependency>
-            <groupId>io.quarkus</groupId>
-            <artifactId>quarkus-resteasy</artifactId>
+            <artifactId>quarkus-qson</artifactId>
         </dependency>
     </dependencies>
 

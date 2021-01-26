@@ -1,0 +1,16 @@
+---
+name: "Resteasy QSON Common"
+metadata:
+  keywords:
+  - "resteasy-qson"
+  - "jaxrs-json"
+  - "resteasy-json"
+  - "resteasy"
+  - "jaxrs"
+  - "json"
+  - "qson"
+  categories:
+  - "web"
+  - "serialization"
+  status: "experimental"
+  unlisted: "true"

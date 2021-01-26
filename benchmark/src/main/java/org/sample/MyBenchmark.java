@@ -39,6 +39,7 @@ import com.fasterxml.jackson.module.afterburner.AfterburnerModule;
 import io.quarkus.qson.deserializer.ByteArrayParserContext;
 import io.quarkus.qson.generator.QsonMapper;
 import io.quarkus.qson.serializer.ByteArrayJsonWriter;
+import io.quarkus.qson.serializer.OutputStreamJsonWriter;
 import io.quarkus.qson.serializer.QsonObjectWriter;
 import org.openjdk.jmh.annotations.Benchmark;
 import org.openjdk.jmh.annotations.Fork;
@@ -313,9 +314,7 @@ public class MyBenchmark {
 
     @Benchmark
     public Object testWriterQson(QsonWriter q) {
-        ByteArrayJsonWriter jsonWriter = new ByteArrayJsonWriter(1024);
-        q.objectWriter.write(jsonWriter, q.person);
-        return jsonWriter.getBytes();
+        return q.objectWriter.writeValueAsBytes(q.person);
     }
 
     @Benchmark
@@ -326,38 +325,11 @@ public class MyBenchmark {
             throw new RuntimeException(e);
         }
     }
+
     @Benchmark
     public Object testWriterAfterburner(AfterburnerWriter q) {
         try {
             return q.objectWriter.writeValueAsBytes(q.person);
-        } catch (IOException e) {
-            throw new RuntimeException(e);
-        }
-    }
-
-    //@Benchmark
-    public Object testSimpleQsonWriter(SimpleQsonWriter q) {
-        ByteArrayJsonWriter jsonWriter = new ByteArrayJsonWriter();
-        q.objectWriter.write(jsonWriter, q.simple);
-        return jsonWriter.getBytes();
-    }
-
-    //@Benchmark
-    public Object testSimpleJacksonWriter(SimpleJacksonWriter q) {
-        try {
-            ByteArrayOutputStream out = new ByteArrayOutputStream();
-            q.objectWriter.writeValue(out, q.simple);
-            return out.toByteArray();
-        } catch (IOException e) {
-            throw new RuntimeException(e);
-        }
-    }
-    //@Benchmark
-    public Object testSimpleAfterburnerWriter(SimpleAfterburnerWriter q) {
-        try {
-            ByteArrayOutputStream out = new ByteArrayOutputStream();
-            q.objectWriter.writeValue(out, q.simple);
-            return out.toByteArray();
         } catch (IOException e) {
             throw new RuntimeException(e);
         }

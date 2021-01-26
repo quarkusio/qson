@@ -86,7 +86,7 @@ public class TestCharEscaping
         ByteArrayJsonWriter writer = new ByteArrayJsonWriter();
         String target = "Line\u2028feed, \u00D6l!";
         objectWriter.write(writer, target);
-        String json = new String(writer.getBytes(), UTF8);
+        String json = new String(writer.toByteArray(), UTF8);
         Assertions.assertEquals("\"" + target + "\"", json);
     }
 
@@ -125,12 +125,12 @@ public class TestCharEscaping
                 .configure(MapperFeature.ACCEPT_CASE_INSENSITIVE_PROPERTIES, false);
 
         // We assume Jackson is correct.  This tests our writer against Jackson
-        String jackson = mapper.readValue(jsonWriter.getBytes(), String.class);
+        String jackson = mapper.readValue(jsonWriter.toByteArray(), String.class);
         Assertions.assertEquals(target, jackson);
 
         // now test our parser
         ByteArrayParserContext ctx = new ByteArrayParserContext(GenericParser.PARSER, GenericParser.PARSER.startState());
-        String value = ctx.finish(jsonWriter.getBytes());
+        String value = ctx.finish(jsonWriter.toByteArray());
         Assertions.assertEquals(target, value);
     }
 
@@ -152,7 +152,7 @@ public class TestCharEscaping
         ByteArrayJsonWriter jsonWriter = new ByteArrayJsonWriter();
         jsonWriter.write(c);
         ByteArrayParserContext ctx = new ByteArrayParserContext(GenericParser.PARSER, GenericParser.PARSER.startState());
-        String value = ctx.finish(jsonWriter.getBytes());
+        String value = ctx.finish(jsonWriter.toByteArray());
         Assertions.assertEquals(Character.toString(c), value);
     }
 

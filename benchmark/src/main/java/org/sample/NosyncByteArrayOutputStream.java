@@ -1,17 +1,16 @@
-package io.quarkus.qson.serializer;
+package org.sample;
 
-import io.quarkus.qson.QsonException;
 
-import java.io.ByteArrayOutputStream;
 import java.io.IOException;
+import java.io.OutputStream;
 import java.util.Arrays;
 
 /**
  * Writer that creates a byte array as a result
+ *
  */
-public class ByteArrayJsonWriter extends JsonByteWriter {
+public class NosyncByteArrayOutputStream extends OutputStream {
 
-    // NOTE:  ByteArrayOutputStream.write is synchronized and hurt microbenchmark numbers
     byte[] buffer;
     int count;
 
@@ -19,7 +18,7 @@ public class ByteArrayJsonWriter extends JsonByteWriter {
      * Uses 512 bytes as an initial capacity for its buffer
      *
      */
-    public ByteArrayJsonWriter() {
+    public NosyncByteArrayOutputStream() {
         this(512);
     }
 
@@ -27,21 +26,21 @@ public class ByteArrayJsonWriter extends JsonByteWriter {
      *
      * @param initialCapacity of the buffer
      */
-    public ByteArrayJsonWriter(int initialCapacity) {
+    public NosyncByteArrayOutputStream(int initialCapacity) {
         buffer = new byte[initialCapacity];
     }
 
     @Override
-    public void writeByte(int b) {
+    public void write(int i) throws IOException {
         if (count == buffer.length) {
             buffer = Arrays.copyOf(buffer, buffer.length + buffer.length / 2);
         }
-        buffer[count++] = (byte)b;
+        buffer[count++] = (byte)i;
     }
 
     @Override
-    public void writeBytes(byte[] bytes) {
-        if (count + bytes.length > buffer.length) {
+    public void write(byte[] bytes, int off, int len) throws IOException {
+         if (count + bytes.length > buffer.length) {
             buffer = Arrays.copyOf(buffer, buffer.length + buffer.length / 2 + bytes.length);
         }
         System.arraycopy(bytes, 0, buffer, count, bytes.length);

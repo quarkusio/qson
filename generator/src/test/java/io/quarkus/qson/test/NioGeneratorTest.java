@@ -59,7 +59,7 @@ public class NioGeneratorTest {
             QsonObjectWriter objectWriter = mapper.writerFor(type);
             objectWriter.write(jsonWriter, map);
 
-            byte[] bytes = jsonWriter.getBytes();
+            byte[] bytes = jsonWriter.toByteArray();
             System.out.println(new String(bytes, JsonByteWriter.UTF8));
 
 
@@ -81,7 +81,7 @@ public class NioGeneratorTest {
             QsonObjectWriter objectWriter = mapper.writerFor(type);
             objectWriter.write(jsonWriter, list);
 
-            byte[] bytes = jsonWriter.getBytes();
+            byte[] bytes = jsonWriter.toByteArray();
             System.out.println(new String(bytes, JsonByteWriter.UTF8));
 
 
@@ -100,7 +100,7 @@ public class NioGeneratorTest {
             QsonObjectWriter objectWriter = mapper.writerFor(type);
             objectWriter.write(jsonWriter, list);
 
-            byte[] bytes = jsonWriter.getBytes();
+            byte[] bytes = jsonWriter.toByteArray();
             System.out.println(new String(bytes, JsonByteWriter.UTF8));
 
 
@@ -228,7 +228,7 @@ public class NioGeneratorTest {
         QsonObjectWriter objectWriter = mapper.writerFor(PersonAny.class);
         objectWriter.write(jsonWriter, person);
 
-        byte[] bytes = jsonWriter.getBytes();
+        byte[] bytes = jsonWriter.toByteArray();
         System.out.println(new String(bytes, JsonByteWriter.UTF8));
 
         ctx = new ByteArrayParserContext(parser);
@@ -266,7 +266,7 @@ public class NioGeneratorTest {
         QsonObjectWriter objectWriter = mapper.writerFor(Person2.class);
         objectWriter.write(jsonWriter, person);
 
-        byte[] bytes = jsonWriter.getBytes();
+        byte[] bytes = jsonWriter.toByteArray();
         System.out.println(new String(bytes, JsonByteWriter.UTF8));
 
         // validate serializer
@@ -327,7 +327,7 @@ public class NioGeneratorTest {
         ByteArrayJsonWriter jsonWriter = new ByteArrayJsonWriter();
         objectWriter.write(jsonWriter, person);
 
-        byte[] bytes = jsonWriter.getBytes();
+        byte[] bytes = jsonWriter.toByteArray();
         System.out.println(new String(bytes, JsonByteWriter.UTF8));
 
         // validate serializer

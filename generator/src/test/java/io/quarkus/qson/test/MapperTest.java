@@ -1,6 +1,5 @@
 package io.quarkus.qson.test;
 
-import com.fasterxml.jackson.databind.ObjectMapper;
 import io.quarkus.qson.GenericType;
 import io.quarkus.qson.deserializer.ByteArrayParserContext;
 import io.quarkus.qson.deserializer.QsonParser;
@@ -356,7 +355,7 @@ public class MapperTest {
         ByteArrayJsonWriter jsonWriter = new ByteArrayJsonWriter();
         objectWriter.write(jsonWriter, person);
 
-        byte[] bytes = jsonWriter.getBytes();
+        byte[] bytes = jsonWriter.toByteArray();
         System.out.println(new String(bytes, JsonByteWriter.UTF8));
 
         // validate serializer
@@ -423,7 +422,7 @@ public class MapperTest {
 
         ByteArrayJsonWriter jsonWriter = new ByteArrayJsonWriter();
         objectWriter.write(jsonWriter, pats);
-        byte[] bytes = jsonWriter.getBytes();
+        byte[] bytes = jsonWriter.toByteArray();
         ByteArrayParserContext ctx = new ByteArrayParserContext(parser);
         Team team = ctx.finish(bytes);
         Assertions.assertEquals("Patriots 2018", team.getName());

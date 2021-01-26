@@ -120,8 +120,7 @@ public class QsonMapper {
      */
     public <T> T read(byte[] fullBuffer, Class<T> type, Type genericType) {
         QsonParser parser = parserFor(type, genericType);
-        ByteArrayParserContext ctx = new ByteArrayParserContext(parser);
-        return ctx.finish(fullBuffer);
+        return parser.readFrom(fullBuffer);
     }
 
     /**
@@ -197,8 +196,7 @@ public class QsonMapper {
      */
     public <T> T read(InputStream is, Class<T> type, Type genericType) throws IOException {
         QsonParser parser = parserFor(type, genericType);
-        ByteArrayParserContext ctx = new ByteArrayParserContext(parser);
-        return ctx.finish(is);
+        return parser.readFrom(is);
     }
 
     /**
@@ -316,8 +314,7 @@ public class QsonMapper {
      */
     public void writeStream(Class type, Type genericType, Object target, OutputStream stream) {
         QsonObjectWriter objectWriter = writerFor(type, genericType);
-        OutputStreamJsonWriter jsonWriter = new OutputStreamJsonWriter(stream);
-        objectWriter.write(jsonWriter, target);
+        objectWriter.writeValue(stream, target);
     }
 
     /**
@@ -364,9 +361,7 @@ public class QsonMapper {
      */
     public byte[] writeBytes(Class type, Type genericType, Object target) {
         QsonObjectWriter objectWriter = writerFor(type, genericType);
-        ByteArrayJsonWriter jsonWriter = new ByteArrayJsonWriter();
-        objectWriter.write(jsonWriter, target);
-        return jsonWriter.getBytes();
+        return objectWriter.writeValueAsBytes(target);
     }
 
     /**
@@ -413,11 +408,8 @@ public class QsonMapper {
      * @return
      */
     public String writeString(Class type, Type genericType, Object target) {
-        try {
-            return new String(writeBytes(type, genericType, target), JsonByteWriter.UTF8);
-        } catch (Exception e) {
-            throw new QsonException(e);
-        }
+        QsonObjectWriter objectWriter = writerFor(type, genericType);
+        return objectWriter.writeValueAsString(target);
     }
 
     /**

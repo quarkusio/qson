@@ -33,11 +33,11 @@ public class FunqyHttpBindingRecorder {
         for (FunctionInvoker invoker : FunctionRecorder.registry.invokers()) {
             try {
                 if (invoker.hasInput()) {
-                    QsonParser reader = QuarkusQsonRegistry.getParser(invoker.getInputGenericType());
+                    QsonParser reader = QuarkusQsonRegistry.getParser(invoker.getInputType());
                     if (reader == null) {
                         throw new RuntimeException("Unable to find JsonParser for invoker:" + invoker.getName());
                     }
-                    QueryReader queryReader = queryMapper.readerFor(invoker.getInputType(), invoker.getInputGenericType());
+                    QueryReader queryReader = queryMapper.readerFor(invoker.getInputType());
                     invoker.getBindingContext().put(QsonParser.class.getName(), reader);
                     invoker.getBindingContext().put(QueryReader.class.getName(), queryReader);
                 }

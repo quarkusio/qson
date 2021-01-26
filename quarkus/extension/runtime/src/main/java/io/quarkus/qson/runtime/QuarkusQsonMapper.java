@@ -97,7 +97,7 @@ public class QuarkusQsonMapper {
         QsonObjectWriter objectWriter = writerFor(typename);
         ByteArrayJsonWriter jsonWriter = new ByteArrayJsonWriter();
         objectWriter.write(jsonWriter, target);
-        return jsonWriter.getBytes();
+        return jsonWriter.toByteArray();
     }
 
     /**

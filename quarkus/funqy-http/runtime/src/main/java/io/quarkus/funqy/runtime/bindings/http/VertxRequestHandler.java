@@ -149,7 +149,7 @@ public class VertxRequestHandler implements Handler<RoutingContext> {
                                 ByteArrayJsonWriter jsonWriter = new ByteArrayJsonWriter();
                                 writer.write(jsonWriter, o);
 
-                                routingContext.response().end(Buffer.buffer(jsonWriter.getBytes()));
+                                routingContext.response().end(Buffer.buffer(jsonWriter.toByteArray()));
                             } catch (Exception e) {
                                 log.error("Failed to marshal", e);
                                 routingContext.fail(400);

@@ -1,6 +1,10 @@
 package io.quarkus.qson.resteasy.reactive;
 
 import io.quarkus.qson.resteasy.QsonResteasyUtil;
+import io.quarkus.qson.runtime.QuarkusQsonRegistry;
+import io.quarkus.qson.serializer.ByteArrayJsonWriter;
+import io.quarkus.qson.serializer.OutputStreamJsonWriter;
+import io.quarkus.qson.serializer.QsonObjectWriter;
 import org.jboss.resteasy.reactive.server.spi.ResteasyReactiveResourceInfo;
 import org.jboss.resteasy.reactive.server.spi.ServerMessageBodyWriter;
 import org.jboss.resteasy.reactive.server.spi.ServerRequestContext;
@@ -22,7 +26,9 @@ public class QsonMessageBodyWriter implements ServerMessageBodyWriter<Object> {
 
     @Override
     public void writeResponse(Object o, Type genericType, ServerRequestContext context) throws WebApplicationException, IOException {
-        QsonResteasyUtil.write(o, genericType, context.getOrCreateOutputStream());
+        OutputStream outputStream = context.getOrCreateOutputStream();
+        writeResponse(o, genericType, outputStream);
+        outputStream.close();
     }
 
     @Override
@@ -32,6 +38,16 @@ public class QsonMessageBodyWriter implements ServerMessageBodyWriter<Object> {
 
     @Override
     public void writeTo(Object o, Class<?> type, Type genericType, Annotation[] annotations, MediaType mediaType, MultivaluedMap<String, Object> httpHeaders, OutputStream entityStream) throws IOException, WebApplicationException {
-        QsonResteasyUtil.write(o, genericType, entityStream);
+        writeResponse(o, genericType, entityStream);
+    }
+
+    private void writeResponse(Object o, Type genericType, OutputStream outputStream) throws IOException {
+        QsonObjectWriter objectWriter = QuarkusQsonRegistry.getWriter(genericType);
+        if (objectWriter == null) {
+            throw new IOException("Failed to find QSON writer for: " + genericType.getTypeName());
+        }
+        ByteArrayJsonWriter jsonWriter = new ByteArrayJsonWriter();
+        objectWriter.write(jsonWriter, o);
+        outputStream.write(jsonWriter.getBuffer());
     }
 }

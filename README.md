@@ -85,7 +85,7 @@ You must first pull in the QSON generator dependency
 <dependency>
    <groupId>io.quarkus.qson</groupId>
    <artifactId>qson-generator</artifactId>
-</dependency>\>
+</dependency>
 ```
 
 You and read and write json with the `io.quarkus.qson.QsonMapper` class.  Unforunately, this class does not work with
@@ -140,7 +140,7 @@ You do not include the `qson-generator` dependency, but instead should include
 <dependency>
    <groupId>io.quarkus.qson</groupId>
    <artifactId>quarkus-qson</artifactId>
-</dependency>\>
+</dependency>
 ```
 
 The QSON Quarkus extension will automatically scan your project for classes annotated
@@ -169,7 +169,7 @@ this dependency:
 <dependency>
    <groupId>io.quarkus.qson</groupId>
    <artifactId>quarkus-resteasy-qson</artifactId>
-</dependency>\>
+</dependency>
 ```
 
 The Quarkus extension will scan all your resource classes that have JSON input or output and make sure

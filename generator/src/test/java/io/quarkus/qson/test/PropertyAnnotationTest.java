@@ -1,6 +1,8 @@
 package io.quarkus.qson.test;
 
 import io.quarkus.qson.QsonIgnore;
+import io.quarkus.qson.QsonIgnoreRead;
+import io.quarkus.qson.QsonIgnoreWrite;
 import io.quarkus.qson.QsonProperty;
 import io.quarkus.qson.generator.Deserializer;
 import io.quarkus.qson.generator.PropertyReference;
@@ -128,21 +130,21 @@ public class PropertyAnnotationTest {
         int getterDeserializedOnly;
         int getterSerializedOnly;
 
-        @QsonProperty(serialization = QsonProperty.Serialization.DESERIALIZED_ONLY)
+        @QsonIgnoreWrite
         int fieldDeserializedOnly;
-        @QsonProperty(serialization = QsonProperty.Serialization.SERIALIZED_ONLY)
+        @QsonIgnoreRead
         int fieldSerializedOnly;
 
         public void setDeserializedOnly(int deserializedOnly) {
             this.deserializedOnly = deserializedOnly;
         }
 
-        @QsonProperty(serialization = QsonProperty.Serialization.DESERIALIZED_ONLY)
+        @QsonIgnoreWrite
         public void setSetterDeserializedOnly(int setterDeserializedOnly) {
             this.setterDeserializedOnly = setterDeserializedOnly;
         }
 
-        @QsonProperty(serialization = QsonProperty.Serialization.SERIALIZED_ONLY)
+        @QsonIgnoreRead
         public void setSetterSerializedOnly(int setterSerializedOnly) {
             this.setterSerializedOnly = setterSerializedOnly;
         }
@@ -175,12 +177,12 @@ public class PropertyAnnotationTest {
             return setterSerializedOnly;
         }
 
-        @QsonProperty(serialization = QsonProperty.Serialization.DESERIALIZED_ONLY)
+        @QsonIgnoreWrite
         public int getGetterDeserializedOnly() {
             return getterDeserializedOnly;
         }
 
-        @QsonProperty(serialization = QsonProperty.Serialization.SERIALIZED_ONLY)
+        @QsonIgnoreRead
         public int getGetterSerializedOnly() {
             return getterSerializedOnly;
         }

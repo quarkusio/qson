@@ -6,9 +6,11 @@ import java.lang.annotation.RetentionPolicy;
 import java.lang.annotation.Target;
 
 /**
- * Ignore a property for serialization or deserialization
+ * If placed on a property method or field, this
+ * property will be ignored when serializing this object
+ *
  */
 @Target({ElementType.FIELD, ElementType.METHOD})
 @Retention(RetentionPolicy.RUNTIME)
-public @interface QsonIgnore {
+public @interface QsonIgnoreWrite {
 }

@@ -621,35 +621,40 @@ public class Deserializer {
     }
 
     private ResultHandle popSetterValue(_ParserContext ctx, PropertyReference setter, BytecodeCreator scope) {
-        if (setter.type.equals(String.class)) {
+        Class type = setter.type;
+        return popValue(ctx, scope, type);
+    }
+
+    private ResultHandle popValue(_ParserContext ctx, BytecodeCreator scope, Class type) {
+        if (type.equals(String.class)) {
             return ctx.popToken(scope);
-        } else if (setter.type.equals(short.class)) {
+        } else if (type.equals(short.class)) {
             return ctx.popShortToken(scope);
-        } else if (setter.type.equals(Short.class)) {
+        } else if (type.equals(Short.class)) {
             return ctx.popShortObjectToken(scope);
-        } else if (setter.type.equals(byte.class)) {
+        } else if (type.equals(byte.class)) {
             return ctx.popByteToken(scope);
-        } else if (setter.type.equals(Byte.class)) {
+        } else if (type.equals(Byte.class)) {
             return ctx.popByteObjectToken(scope);
-        } else if (setter.type.equals(int.class)) {
+        } else if (type.equals(int.class)) {
             return ctx.popIntToken(scope);
-        } else if (setter.type.equals(Integer.class)) {
+        } else if (type.equals(Integer.class)) {
             return ctx.popIntObjectToken(scope);
-        } else if (setter.type.equals(long.class)) {
+        } else if (type.equals(long.class)) {
             return ctx.popLongToken(scope);
-        } else if (setter.type.equals(Long.class)) {
+        } else if (type.equals(Long.class)) {
             return ctx.popLongObjectToken(scope);
-        } else if (setter.type.equals(float.class)) {
+        } else if (type.equals(float.class)) {
             return ctx.popFloatToken(scope);
-        } else if (setter.type.equals(Float.class)) {
+        } else if (type.equals(Float.class)) {
             return ctx.popFloatObjectToken(scope);
-        } else if (setter.type.equals(double.class)) {
+        } else if (type.equals(double.class)) {
             return ctx.popDoubleToken(scope);
-        } else if (setter.type.equals(Double.class)) {
+        } else if (type.equals(Double.class)) {
             return ctx.popDoubleObjectToken(scope);
-        } else if (setter.type.equals(boolean.class)) {
+        } else if (type.equals(boolean.class)) {
             return ctx.popBooleanToken(scope);
-        } else if (setter.type.equals(Boolean.class)) {
+        } else if (type.equals(Boolean.class)) {
             return ctx.popBooleanObjectToken(scope);
         } else {
             return ctx.popTarget(scope);

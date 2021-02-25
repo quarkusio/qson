@@ -3,6 +3,8 @@ package io.quarkus.qson.generator;
 import io.quarkus.qson.QsonAny;
 import io.quarkus.qson.QsonException;
 import io.quarkus.qson.QsonIgnore;
+import io.quarkus.qson.QsonIgnoreRead;
+import io.quarkus.qson.QsonIgnoreWrite;
 import io.quarkus.qson.QsonProperty;
 
 import java.lang.reflect.Field;
@@ -36,6 +38,8 @@ public class PropertyReference {
     private QsonProperty fieldAnnotation;
     private QsonProperty getterAnnotation;
     private QsonProperty setterAnnotation;
+    private boolean ignoreRead;
+    private boolean ignoreWrite;
     public boolean isAnySetter;
     public boolean isAnyGetter;
 
@@ -76,7 +80,6 @@ public class PropertyReference {
                     properties.remove(javaName);
                     continue;
                 };
-
                 Class paramType = m.getParameterTypes()[0];
                 Type paramGenericType = m.getGenericParameterTypes()[0];
                 PropertyReference ref = properties.get(javaName);
@@ -94,6 +97,12 @@ public class PropertyReference {
                     ref.javaName = javaName;
                     ref.jsonName = javaName;
                     properties.put(javaName, ref);
+                }
+                if (m.isAnnotationPresent(QsonIgnoreRead.class)) {
+                    ref.ignoreRead = true;
+                }
+                if (m.isAnnotationPresent(QsonIgnoreWrite.class)) {
+                    ref.ignoreWrite = true;
                 }
                 ref.setter = m;
                 ref.setterAnnotation = m.getAnnotation(QsonProperty.class);
@@ -137,6 +146,12 @@ public class PropertyReference {
                     ref.jsonName = javaName;
                     properties.put(javaName, ref);
                 }
+                if (m.isAnnotationPresent(QsonIgnoreRead.class)) {
+                    ref.ignoreRead = true;
+                }
+                if (m.isAnnotationPresent(QsonIgnoreWrite.class)) {
+                    ref.ignoreWrite = true;
+                }
                 ref.getter = m;
                 ref.getterAnnotation = m.getAnnotation(QsonProperty.class);
             }
@@ -155,6 +170,12 @@ public class PropertyReference {
                     QsonProperty property = field.getAnnotation(QsonProperty.class);
                     ref.fieldAnnotation = property;
                 }
+                if (field.isAnnotationPresent(QsonIgnoreRead.class)) {
+                    ref.ignoreRead = true;
+                }
+                if (field.isAnnotationPresent(QsonIgnoreWrite.class)) {
+                    ref.ignoreWrite = true;
+                }
             }
             target = target.getSuperclass();
         }
@@ -162,31 +183,28 @@ public class PropertyReference {
             QsonProperty property = null;
             if (ref.fieldAnnotation != null) {
                 if (property != null) {
-                    throw new QsonException("Conflicting @JsonProperty annotations between field and setter/getter methods: " + ref.javaName);
+                    throw new QsonException("Conflicting @QsonProperty annotations between field and setter/getter methods: " + ref.javaName);
                 }
                 property = ref.fieldAnnotation;
 
             }
             if (ref.getterAnnotation != null) {
                 if (property != null) {
-                    throw new QsonException("Conflicting @JsonProperty annotations between field and setter/getter methods: " + ref.javaName);
+                    throw new QsonException("Conflicting @QsonProperty annotations between field and setter/getter methods: " + ref.javaName);
                 }
                 property = ref.getterAnnotation;
 
             }
             if (ref.setterAnnotation != null) {
                 if (property != null) {
-                    throw new QsonException("Conflicting @JsonProperty annotations between field and setter/getter methods: " + ref.javaName);
+                    throw new QsonException("Conflicting @QsonProperty annotations between field and setter/getter methods: " + ref.javaName);
                 }
                 property = ref.setterAnnotation;
 
             }
+            if (ref.ignoreRead) ref.setter = null;
+            if (ref.ignoreWrite) ref.getter = null;
             if (property != null) {
-                if (property.serialization() == QsonProperty.Serialization.DESERIALIZED_ONLY) {
-                    ref.getter = null;
-                } else if (property.serialization() == QsonProperty.Serialization.SERIALIZED_ONLY) {
-                    ref.setter = null;
-                }
                 if (!property.value().isEmpty()) ref.jsonName = property.value();
             }
         }

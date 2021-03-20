@@ -2,7 +2,30 @@ package io.quarkus.qson.deserializer;
 
 import io.quarkus.qson.QsonException;
 
-import static io.quarkus.qson.util.IntChar.*;
+import static io.quarkus.qson.util.IntChar.INT_0;
+import static io.quarkus.qson.util.IntChar.INT_1;
+import static io.quarkus.qson.util.IntChar.INT_2;
+import static io.quarkus.qson.util.IntChar.INT_3;
+import static io.quarkus.qson.util.IntChar.INT_4;
+import static io.quarkus.qson.util.IntChar.INT_5;
+import static io.quarkus.qson.util.IntChar.INT_6;
+import static io.quarkus.qson.util.IntChar.INT_7;
+import static io.quarkus.qson.util.IntChar.INT_8;
+import static io.quarkus.qson.util.IntChar.INT_9;
+import static io.quarkus.qson.util.IntChar.INT_COLON;
+import static io.quarkus.qson.util.IntChar.INT_COMMA;
+import static io.quarkus.qson.util.IntChar.INT_EOF;
+import static io.quarkus.qson.util.IntChar.INT_LBRACKET;
+import static io.quarkus.qson.util.IntChar.INT_LCURLY;
+import static io.quarkus.qson.util.IntChar.INT_MINUS;
+import static io.quarkus.qson.util.IntChar.INT_PERIOD;
+import static io.quarkus.qson.util.IntChar.INT_PLUS;
+import static io.quarkus.qson.util.IntChar.INT_QUOTE;
+import static io.quarkus.qson.util.IntChar.INT_RBRACKET;
+import static io.quarkus.qson.util.IntChar.INT_RCURLY;
+import static io.quarkus.qson.util.IntChar.INT_f;
+import static io.quarkus.qson.util.IntChar.INT_n;
+import static io.quarkus.qson.util.IntChar.INT_t;
 
 public class BaseParser implements QsonParser {
 
@@ -13,7 +36,7 @@ public class BaseParser implements QsonParser {
     }
 
     @Override
-    public <T> T getTarget(ParserContext ctx) {
+    public <T> T getTarget(final ParserContext ctx) {
         return ctx.target();
     }
 
@@ -53,167 +76,174 @@ public class BaseParser implements QsonParser {
     public final ParserState continueKey = this::continueKey;
     public final ParserState continueStartList = this::continueStartList;
 
-
-    public boolean continueStart(ParserContext ctx) {
+    public boolean continueStart(final ParserContext ctx) {
         ctx.popState();
         return start(ctx);
     }
 
-    public boolean start(ParserContext ctx) {
+    public boolean start(final ParserContext ctx) {
         return value(ctx);
     }
 
-    public boolean continueStartList(ParserContext ctx) {
+    public boolean continueStartList(final ParserContext ctx) {
         ctx.popState();
         return startList(ctx);
     }
 
-    public boolean startList(ParserContext ctx) {
-        int c = ctx.skipWhitespace();
-        if (c == 0) {
-            ctx.pushState(continueStartList);
-            return false;
-        }
-        if (c == INT_LBRACKET) {
-            beginList(ctx);
-            return loopListValues(ctx);
-        } else if (c == INT_n) {
-            beginNullObject(ctx);
-            return nullObject(ctx);
-        } else {
-            throw new QsonException("Expecting start of array");
+    public boolean startList(final ParserContext ctx) {
+        switch (ctx.skipWhitespace()) {
+            case 0:
+                ctx.pushState(continueStartList);
+                return false;
+            case INT_LBRACKET:
+                beginList(ctx);
+                return loopListValues(ctx);
+            case INT_n:
+                beginNullObject(ctx);
+                return nullObject(ctx);
+            default:
+                throw new QsonException("Expecting start of array");
         }
     }
 
-
-    public boolean continueStartStringValue(ParserContext ctx) {
+    public boolean continueStartStringValue(final ParserContext ctx) {
         ctx.popState();
         return startStringValue(ctx);
     }
 
-    public boolean startStringValue(ParserContext ctx) {
-        int c = ctx.skipWhitespace();
-        if (c == 0) {
-            ctx.pushState(continueStartStringValue);
-            return false;
-        }
-        if (c == INT_QUOTE) {
-            startTokenNextConsumed(ctx);
-            return stringValue(ctx);
-        } else if (c == 'n') {
-            startNullToken(ctx);
-            return nullValue(ctx);
-        } else {
-            throw new QsonException("Illegal value syntax");
+    public boolean startStringValue(final ParserContext ctx) {
+        switch (ctx.skipWhitespace()) {
+            case 0:
+                ctx.pushState(continueStartStringValue);
+                return false;
+            case INT_QUOTE:
+                startTokenNextConsumed(ctx);
+                return stringValue(ctx);
+            case INT_n:
+                startNullToken(ctx);
+                return nullValue(ctx);
+            default:
+                throw new QsonException("Illegal value syntax");
         }
     }
 
-    public void startTokenNextConsumed(ParserContext ctx) {
+    public void startTokenNextConsumed(final ParserContext ctx) {
         // complete, do nothing if skipping
     }
 
-    public boolean continueStartBooleanValue(ParserContext ctx) {
+    public boolean continueStartBooleanValue(final ParserContext ctx) {
         ctx.popState();
         return startBooleanValue(ctx);
     }
 
-    public boolean startBooleanValue(ParserContext ctx) {
-        int c = ctx.skipWhitespace();
-        if (c == 0) {
-            ctx.pushState(continueStartBooleanValue);
-            return false;
-        }
-        if (c== 't' || c == 'f') {
-            startToken(ctx);
-            return booleanValue(ctx);
-        } else if (c == 'n') {
-            startNullToken(ctx);
-            return nullValue(ctx);
-        } else {
-            throw new QsonException("Illegal value syntax");
+    public boolean startBooleanValue(final ParserContext ctx) {
+        switch (ctx.skipWhitespace()) {
+            case 0:
+                ctx.pushState(continueStartBooleanValue);
+                return false;
+            case INT_t:
+            case INT_f:
+                startToken(ctx);
+                return booleanValue(ctx);
+            case INT_n:
+                startNullToken(ctx);
+                return nullValue(ctx);
+            default:
+                throw new QsonException("Illegal value syntax");
         }
     }
 
-    public void startNullToken(ParserContext ctx) {
+    public void startNullToken(final ParserContext ctx) {
     }
 
-    public void startToken(ParserContext ctx) {
+    public void startToken(final ParserContext ctx) {
         // complete, do nothing if skipping
     }
 
-    public boolean continueValue(ParserContext ctx) {
+    public boolean continueValue(final ParserContext ctx) {
         ctx.popState();
         return value(ctx);
     }
 
-    public boolean value(ParserContext ctx) {
-        int c = ctx.skipWhitespace();
-        if (c == 0) {
-            ctx.pushState(continueValue);
-            return false;
-        }
-        if (c == INT_QUOTE) {
-            startTokenNextConsumed(ctx);
-            return stringValue(ctx);
-        } else if (isDigit(c) || c == INT_MINUS || c == INT_PLUS) {
-            startToken(ctx);
-            return numberValue(ctx);
-        } else if (c == INT_t || c == INT_f) {
-            startToken(ctx);
-            return booleanValue(ctx);
-        } else if (c == INT_n) {
-            startNullToken(ctx);
-            return nullValue(ctx);
-        } else if (c == INT_LCURLY) {
-            beginObject(ctx);
-            return loopKeys(ctx);
-        } else if (c == INT_LBRACKET) {
-            beginList(ctx);
-            return loopListValues(ctx);
-        } else {
-            throw new QsonException("Illegal value syntax");
+    public boolean value(final ParserContext ctx) {
+        switch (ctx.skipWhitespace()) {
+            case 0:
+                ctx.pushState(continueValue);
+                return false;
+            case INT_QUOTE:
+                startTokenNextConsumed(ctx);
+                return stringValue(ctx);
+            case INT_0:
+            case INT_1:
+            case INT_2:
+            case INT_3:
+            case INT_4:
+            case INT_5:
+            case INT_6:
+            case INT_7:
+            case INT_8:
+            case INT_9:
+            case INT_MINUS:
+            case INT_PLUS:
+                startToken(ctx);
+                return numberValue(ctx);
+            case INT_t:
+            case INT_f:
+                startToken(ctx);
+                return booleanValue(ctx);
+            case INT_n:
+                startNullToken(ctx);
+                return nullValue(ctx);
+            case INT_LCURLY:
+                beginObject(ctx);
+                return loopKeys(ctx);
+            case INT_LBRACKET:
+                beginList(ctx);
+                return loopListValues(ctx);
+            default:
+                throw new QsonException("Illegal value syntax");
         }
     }
 
-    public boolean continueLoopListValues(ParserContext ctx) {
+    public boolean continueLoopListValues(final ParserContext ctx) {
         ctx.popState();
         return loopListValues(ctx);
     }
 
-    public boolean continueAddListValue(ParserContext ctx) {
+    public boolean continueAddListValue(final ParserContext ctx) {
         ctx.popState();
         addListValue(ctx);
         return true;
     }
 
-    public boolean loopListValues(ParserContext ctx) {
-        int c = ctx.skipWhitespace();
-        if (c == 0) {
-            ctx.pushState(continueLoopListValues);
-            return false;
+    public boolean loopListValues(final ParserContext ctx) {
+        switch (ctx.skipWhitespace()) {
+            case 0:
+                ctx.pushState(continueLoopListValues);
+                return false;
+            case INT_RBRACKET:
+                return true;
+            default:
+                ctx.rewind();
+                final int stateIndex = ctx.stateIndex();
+                if (!listValue(ctx)) {
+                    ctx.pushState(continueAddListValue, stateIndex);
+                    ctx.pushState(continueNextListValues, stateIndex);
+                    return false;
+                }
+                addListValue(ctx);
+                return nextListValues(ctx);
         }
-        if (c == INT_RBRACKET) {
-            return true;
-        }
-        ctx.rewind();
-        int stateIndex = ctx.stateIndex();
-        if (!listValue(ctx)) {
-            ctx.pushState(continueAddListValue, stateIndex);
-            ctx.pushState(continueNextListValues, stateIndex);
-            return false;
-        }
-        addListValue(ctx);
-        return nextListValues(ctx);
     }
 
-    public boolean continueNextListValues(ParserContext ctx) {
+    public boolean continueNextListValues(final ParserContext ctx) {
         ctx.popState();
         return nextListValues(ctx);
     }
 
-    public boolean nextListValues(ParserContext ctx) {
+    public boolean nextListValues(final ParserContext ctx) {
         while (true) {
-            int c = ctx.skipWhitespace();
+            final int c = ctx.skipWhitespace();
             if (c == 0) {
                 ctx.pushState(continueNextListValues);
                 return false;
@@ -232,28 +262,27 @@ public class BaseParser implements QsonParser {
         }
     }
 
-    public boolean listValue(ParserContext ctx) {
+    public boolean listValue(final ParserContext ctx) {
         return value(ctx);
     }
 
-    public void beginList(ParserContext ctx) {
+    public void beginList(final ParserContext ctx) {
 
     }
 
-    public void addListValue(ParserContext ctx) {
+    public void addListValue(final ParserContext ctx) {
     }
 
-    public void beginObject(ParserContext ctx) {
+    public void beginObject(final ParserContext ctx) {
     }
 
-    public boolean continueValueSeparator(ParserContext ctx) {
+    public boolean continueValueSeparator(final ParserContext ctx) {
         ctx.popState();
         return valueSeparator(ctx);
     }
 
-
-    public boolean valueSeparator(ParserContext ctx) {
-        int c = ctx.skipWhitespace();
+    public boolean valueSeparator(final ParserContext ctx) {
+        final int c = ctx.skipWhitespace();
         if (c == 0) {
             ctx.pushState(continueValueSeparator);
             return false;
@@ -262,63 +291,72 @@ public class BaseParser implements QsonParser {
         return true;
     }
 
-    public boolean continueStringValue(ParserContext ctx) {
+    public boolean continueStringValue(final ParserContext ctx) {
         ctx.popState();
         return stringValue(ctx);
     }
 
-    public boolean stringValue(ParserContext ctx) {
-        int c = ctx.skipToQuote();
-        if (c == 0) {
-            ctx.pushState(continueStringValue);
-            return false;
+    public boolean stringValue(final ParserContext ctx) {
+        switch (ctx.skipToQuote()) {
+            case 0:
+                ctx.pushState(continueStringValue);
+                return false;
+            case INT_EOF:
+                throw new QsonException("String does not have end quote");
+            default:
+                endToken(ctx);
+                endStringValue(ctx);
+                return true;
         }
-        if (c == INT_EOF) {
-            throw new QsonException("String does not have end quote");
-        }
-        endToken(ctx);
-        endStringValue(ctx);
-        return true;
     }
 
-    public void endToken(ParserContext ctx) {
+    public void endToken(final ParserContext ctx) {
         // complete, do nothing if skipping
     }
 
-    public void endStringValue(ParserContext ctx) {
+    public void endStringValue(final ParserContext ctx) {
 
     }
 
-    public boolean continueStartIntegerValue(ParserContext ctx) {
+    public boolean continueStartIntegerValue(final ParserContext ctx) {
         ctx.popState();
         return startIntegerValue(ctx);
     }
 
-    public boolean startIntegerValue(ParserContext ctx) {
-        int c = ctx.skipWhitespace();
-        if (c == 0) {
-            ctx.pushState(continueStartIntegerValue);
-            return false;
-        }
-        if (isDigit(c) || c == INT_MINUS || c == INT_PLUS) {
-            startToken(ctx);
-            return integerValue(ctx);
-        } else if (c == 'n') {
-            startNullToken(ctx);
-            return nullValue(ctx);
-        } else {
-            throw new QsonException("Illegal integer value");
+    public boolean startIntegerValue(final ParserContext ctx) {
+        switch (ctx.skipWhitespace()) {
+            case 0:
+                ctx.pushState(continueStartIntegerValue);
+                return false;
+            case INT_0:
+            case INT_1:
+            case INT_2:
+            case INT_3:
+            case INT_4:
+            case INT_5:
+            case INT_6:
+            case INT_7:
+            case INT_8:
+            case INT_9:
+            case INT_MINUS:
+            case INT_PLUS:
+                startToken(ctx);
+                return integerValue(ctx);
+            case INT_n:
+                startNullToken(ctx);
+                return nullValue(ctx);
+            default:
+                throw new QsonException("Illegal integer value");
         }
     }
 
-    public boolean continueIntegerValue(ParserContext ctx) {
+    public boolean continueIntegerValue(final ParserContext ctx) {
         ctx.popState();
         return integerValue(ctx);
     }
 
-    public boolean integerValue(ParserContext ctx) {
-        int c = ctx.skipDigits();
-        if (c == 0) {
+    public boolean integerValue(final ParserContext ctx) {
+        if (ctx.skipDigits() == 0) {
             ctx.pushState(continueIntegerValue);
             return false;
         }
@@ -328,60 +366,69 @@ public class BaseParser implements QsonParser {
         return true;
     }
 
-    public void endNumberValue(ParserContext ctx) {
+    public void endNumberValue(final ParserContext ctx) {
 
     }
 
-    public boolean continueStartNumberValue(ParserContext ctx) {
+    public boolean continueStartNumberValue(final ParserContext ctx) {
         ctx.popState();
         return startNumberValue(ctx);
     }
-    public boolean startNumberValue(ParserContext ctx) {
-        int c = ctx.skipWhitespace();
-        if (c == 0) {
-            ctx.pushState(continueStartNumberValue);
-            return false;
-        }
-        if (isDigit(c) || c == INT_MINUS || c == INT_PLUS) {
-            startToken(ctx);
-            return numberValue(ctx);
-        } else if (c == INT_n) {
-            startNullToken(ctx);
-            return nullValue(ctx);
-        } else {
-            throw new QsonException("Illegal number value");
+
+    public boolean startNumberValue(final ParserContext ctx) {
+        switch (ctx.skipWhitespace()) {
+            case 0:
+                ctx.pushState(continueStartNumberValue);
+                return false;
+            case INT_0:
+            case INT_1:
+            case INT_2:
+            case INT_3:
+            case INT_4:
+            case INT_5:
+            case INT_6:
+            case INT_7:
+            case INT_8:
+            case INT_9:
+            case INT_MINUS:
+            case INT_PLUS:
+                startToken(ctx);
+                return numberValue(ctx);
+            case INT_n:
+                startNullToken(ctx);
+                return nullValue(ctx);
+            default:
+                throw new QsonException("Illegal number value");
         }
     }
 
-    public boolean continueNumberValue(ParserContext ctx) {
+    public boolean continueNumberValue(final ParserContext ctx) {
         ctx.popState();
         return numberValue(ctx);
     }
 
-    public boolean numberValue(ParserContext ctx) {
-        int c = ctx.skipDigits();
-        if (c == 0) {
-            ctx.pushState(continueNumberValue);
-            return false;
-        }
-        if (c == INT_PERIOD) {
-            return floatValue(ctx);
-        } else {
-            endToken(ctx);
-            endNumberValue(ctx);
-            ctx.rewind();
-            return true;
+    public boolean numberValue(final ParserContext ctx) {
+        switch (ctx.skipDigits()) {
+            case 0:
+                ctx.pushState(continueNumberValue);
+                return false;
+            case INT_PERIOD:
+                return floatValue(ctx);
+            default:
+                endToken(ctx);
+                endNumberValue(ctx);
+                ctx.rewind();
+                return true;
         }
     }
 
-    public boolean continueFloatValue(ParserContext ctx) {
+    public boolean continueFloatValue(final ParserContext ctx) {
         ctx.popState();
         return floatValue(ctx);
     }
 
-    public boolean floatValue(ParserContext ctx) {
-        int c = ctx.skipDigits();
-        if (c == 0) {
+    public boolean floatValue(final ParserContext ctx) {
+        if (ctx.skipDigits() == 0) {
             ctx.pushState(continueFloatValue);
             return false;
         }
@@ -391,18 +438,17 @@ public class BaseParser implements QsonParser {
         return true;
     }
 
-    public void endFloatValue(ParserContext ctx) {
+    public void endFloatValue(final ParserContext ctx) {
 
     }
 
-    public boolean continueBooleanValue(ParserContext ctx) {
+    public boolean continueBooleanValue(final ParserContext ctx) {
         ctx.popState();
         return booleanValue(ctx);
     }
 
-    public boolean booleanValue(ParserContext ctx) {
-        int c = ctx.skipAlphabetic();
-        if (c == 0) {
+    public boolean booleanValue(final ParserContext ctx) {
+        if (ctx.skipAlphabetic() == 0) {
             ctx.pushState(continueBooleanValue);
             return false;
         }
@@ -411,18 +457,18 @@ public class BaseParser implements QsonParser {
         ctx.rewind();
         return true;
     }
-    public void endBooleanValue(ParserContext ctx) {
+
+    public void endBooleanValue(final ParserContext ctx) {
 
     }
 
-    public boolean continueNullValue(ParserContext ctx) {
+    public boolean continueNullValue(final ParserContext ctx) {
         ctx.popState();
         return nullValue(ctx);
     }
 
-    public boolean nullValue(ParserContext ctx) {
-        int c = ctx.skipAlphabetic();
-        if (c == 0) {
+    public boolean nullValue(final ParserContext ctx) {
+        if (ctx.skipAlphabetic() == 0) {
             ctx.pushState(continueNullValue);
             return false;
         }
@@ -431,14 +477,13 @@ public class BaseParser implements QsonParser {
         return true;
     }
 
-    public boolean continueNullObject(ParserContext ctx) {
+    public boolean continueNullObject(final ParserContext ctx) {
         ctx.popState();
         return nullValue(ctx);
     }
 
-    public boolean nullObject(ParserContext ctx) {
-        int c = ctx.skipAlphabetic();
-        if (c == 0) {
+    public boolean nullObject(final ParserContext ctx) {
+        if (ctx.skipAlphabetic() == 0) {
             ctx.pushState(continueNullObject);
             return false;
         }
@@ -446,43 +491,42 @@ public class BaseParser implements QsonParser {
         return true;
     }
 
-    public void endNullValue(ParserContext ctx) {
+    public void endNullValue(final ParserContext ctx) {
 
     }
 
-    public boolean startObject(ParserContext ctx) {
-        int c = ctx.skipWhitespace();
-        if (c == 0) {
-            ctx.pushState(continueStartObject);
-            return false;
+    public boolean startObject(final ParserContext ctx) {
+        switch (ctx.skipWhitespace()) {
+            case 0:
+                ctx.pushState(continueStartObject);
+                return false;
+            case INT_LCURLY:
+                beginObject(ctx);
+                return loopKeys(ctx);
+            case INT_n:
+                beginNullObject(ctx);
+                return nullObject(ctx);
+            default:
+                throw new QsonException("Illegal value syntax");
         }
-        if (c == INT_LCURLY) {
-            beginObject(ctx);
-            return loopKeys(ctx);
-        } else if (c == INT_n) {
-            beginNullObject(ctx);
-            return nullObject(ctx);
-        } else {
-            throw new QsonException("Illegal value syntax");
-        }
     }
 
-    public void beginNullObject(ParserContext ctx) {
+    public void beginNullObject(final ParserContext ctx) {
 
     }
 
-    public boolean continueStartObject(ParserContext ctx) {
+    public boolean continueStartObject(final ParserContext ctx) {
         ctx.popState();
         return startObject(ctx);
     }
 
-    public boolean continueLoopKeys(ParserContext ctx) {
+    public boolean continueLoopKeys(final ParserContext ctx) {
         ctx.popState();
         return loopKeys(ctx);
     }
 
-    public boolean loopKeys(ParserContext ctx) {
-        int c = ctx.skipWhitespace();
+    public boolean loopKeys(final ParserContext ctx) {
+        final int c = ctx.skipWhitespace();
         if (c == 0) {
             ctx.pushState(continueLoopKeys);
             return false;
@@ -492,7 +536,7 @@ public class BaseParser implements QsonParser {
         }
         if (c != INT_QUOTE) throw new QsonException("Expecting key quote");
         startTokenNextConsumed(ctx);
-        int stateIndex = ctx.stateIndex();
+        final int stateIndex = ctx.stateIndex();
         if (!key(ctx)) {
             ctx.pushState(continueNextKeys, stateIndex);
             return false;
@@ -500,12 +544,12 @@ public class BaseParser implements QsonParser {
         return nextKeys(ctx);
     }
 
-    public boolean continueNextKeys(ParserContext ctx) {
+    public boolean continueNextKeys(final ParserContext ctx) {
         ctx.popState();
         return nextKeys(ctx);
     }
 
-    public boolean nextKeys(ParserContext ctx) {
+    public boolean nextKeys(final ParserContext ctx) {
         do {
             int c = ctx.skipWhitespace();
             if (c == 0) {
@@ -524,7 +568,7 @@ public class BaseParser implements QsonParser {
             }
             if (c != INT_QUOTE) throw new QsonException("Expecting key quote");
             startTokenNextConsumed(ctx);
-            int stateIndex = ctx.stateIndex();
+            final int stateIndex = ctx.stateIndex();
             if (!key(ctx)) {
                 ctx.pushState(continueNextKeys, stateIndex);
                 return false;
@@ -532,26 +576,25 @@ public class BaseParser implements QsonParser {
         } while (true);
     }
 
-    public boolean key(ParserContext ctx) {
-        int c = ctx.skipToQuote();
-        if (c == 0) {
+    public boolean key(final ParserContext ctx) {
+        if (ctx.skipToQuote() == 0) {
             ctx.pushState(continueKey);
             return false;
         }
         return skipValue(ctx);
     }
 
-    public boolean skipValue(ParserContext ctx) {
+    public boolean skipValue(final ParserContext ctx) {
         ctx.clearToken();
-        int stateIndex = ctx.stateIndex();
+        final int stateIndex = ctx.stateIndex();
         if (!valueSeparator(ctx)) {
             ctx.pushState(continueValue, stateIndex);
-           return false;
+            return false;
         }
         return value(ctx);
     }
 
-    public boolean continueKey(ParserContext ctx) {
+    public boolean continueKey(final ParserContext ctx) {
         ctx.popState();
         return key(ctx);
     }

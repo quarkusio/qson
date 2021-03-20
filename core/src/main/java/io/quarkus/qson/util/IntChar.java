@@ -23,6 +23,14 @@ public class IntChar {
 
     // Number chars
     public final static int INT_0 = '0';
+    public final static int INT_1 = '1';
+    public final static int INT_2 = '2';
+    public final static int INT_3 = '3';
+    public final static int INT_4 = '4';
+    public final static int INT_5 = '5';
+    public final static int INT_6 = '6';
+    public final static int INT_7 = '7';
+    public final static int INT_8 = '8';
     public final static int INT_9 = '9';
     public final static int INT_MINUS = '-';
     public final static int INT_PLUS = '+';

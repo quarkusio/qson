@@ -68,7 +68,7 @@ public class ParsePrimitives {
                     int tmp = c & 0xF0; // mask out top 4 bits to test for multibyte
                     if (tmp == 0xC0 || tmp == 0xD0) {
                         // 2 byte
-                        int d = (int) buffer[ptr++];
+                        int d = buffer[ptr++];
                         if ((d & 0xC0) != 0x080) {
                             throw new QsonException("Invalid UTF8 2 byte encoding");
                         }
@@ -76,29 +76,29 @@ public class ParsePrimitives {
                     } else if (tmp == 0xE0) {
                         // 3 byte
                         c &= 0x0F;
-                        int d = (int) buffer[ptr++];
+                        int d = buffer[ptr++];
                         if ((d & 0xC0) != 0x080) {
                             throw new QsonException("Invalid UTF8 3 byte encoding");
                         }
                         c = (c << 6) | (d & 0x3F);
-                        d = (int) buffer[ptr++];
+                        d = buffer[ptr++];
                         if ((d & 0xC0) != 0x080) {
                             throw new QsonException("Invalid UTF8 3 byte encoding");
                         }
                         c = (c << 6) | (d & 0x3F);
                     } else if (tmp == 0xF0) {
                         // 4 byte
-                        int d = (int) buffer[ptr++];
+                        int d = buffer[ptr++];
                         if ((d & 0xC0) != 0x080) {
                             throw new QsonException("Invalid UTF8 4 byte encoding");
                         }
                         c = ((c & 0x07) << 6) | (d & 0x3F);
-                        d = (int) buffer[ptr++];
+                        d = buffer[ptr++];
                         if ((d & 0xC0) != 0x080) {
                             throw new QsonException("Invalid UTF8 4 byte encoding");
                         }
                         c = (c << 6) | (d & 0x3F);
-                        d = (int) buffer[ptr++];
+                        d = buffer[ptr++];
                         if ((d & 0xC0) != 0x080) {
                             throw new QsonException("Invalid UTF8 4 byte encoding");
                         }
@@ -190,7 +190,7 @@ public class ParsePrimitives {
                     throw new QsonException("Illegal number format");
                 }
 
-                result *= (long) 10;
+                result *= 10L;
                 if (result < limit + (long) digit) {
                     throw new QsonException("Illegal number format");
                 }

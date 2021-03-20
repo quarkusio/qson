@@ -2,13 +2,10 @@ package io.quarkus.qson.generator;
 
 import io.quarkus.qson.GenericType;
 import io.quarkus.qson.QsonException;
-import io.quarkus.qson.util.Types;
-import io.quarkus.qson.deserializer.ByteArrayParserContext;
 import io.quarkus.qson.deserializer.QsonParser;
-import io.quarkus.qson.serializer.ByteArrayJsonWriter;
 import io.quarkus.qson.serializer.JsonByteWriter;
 import io.quarkus.qson.serializer.QsonObjectWriter;
-import io.quarkus.qson.serializer.OutputStreamJsonWriter;
+import io.quarkus.qson.util.Types;
 
 import java.io.IOException;
 import java.io.InputStream;
@@ -25,10 +22,10 @@ import java.util.concurrent.ConcurrentHashMap;
  *
  */
 public class QsonMapper {
-    private ConcurrentHashMap<String, QsonParser> deserializers = new ConcurrentHashMap<>();
-    private Map<String, String> generatedDeserializers = new HashMap<>();
-    private ConcurrentHashMap<String, QsonObjectWriter> serializers = new ConcurrentHashMap<>();
-    private Map<String, String> generatedSerializers = new HashMap<>();
+    private final ConcurrentHashMap<String, QsonParser> deserializers = new ConcurrentHashMap<>();
+    private final Map<String, String> generatedDeserializers = new HashMap<>();
+    private final ConcurrentHashMap<String, QsonObjectWriter> serializers = new ConcurrentHashMap<>();
+    private final Map<String, String> generatedSerializers = new HashMap<>();
     private final GizmoClassLoader cl;
 
     /**
@@ -100,7 +97,7 @@ public class QsonMapper {
             String className = generateDeserializers(clz, genericType);
             try {
                 Class deserializer = cl.loadClass(className);
-                parser = (QsonParser) deserializer.newInstance();
+                parser = (QsonParser) deserializer.getDeclaredConstructor().newInstance();
                 deserializers.put(key, parser);
             } catch (Throwable e) {
                 throw new QsonException(e);
@@ -295,7 +292,7 @@ public class QsonMapper {
             String className = generateSerializers(clz, genericType);
             try {
                 Class serializer = cl.loadClass(className);
-                writer = (QsonObjectWriter) serializer.newInstance();
+                writer = (QsonObjectWriter) serializer.getDeclaredConstructor().newInstance();
                 serializers.put(key, writer);
             } catch (Throwable e) {
                 throw new QsonException(e);

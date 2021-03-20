@@ -8,7 +8,7 @@ import java.util.Map;
 public class GenericParser extends BaseParser implements QsonParser {
 
     public static final GenericParser PARSER = new GenericParser();
-    private ParserState value = this::value;
+    private final ParserState value = this::value;
 
     public GenericParser() {
     }

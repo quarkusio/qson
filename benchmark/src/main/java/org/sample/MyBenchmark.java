@@ -38,8 +38,6 @@ import com.fasterxml.jackson.databind.ObjectReader;
 import com.fasterxml.jackson.module.afterburner.AfterburnerModule;
 import io.quarkus.qson.deserializer.ByteArrayParserContext;
 import io.quarkus.qson.generator.QsonMapper;
-import io.quarkus.qson.serializer.ByteArrayJsonWriter;
-import io.quarkus.qson.serializer.OutputStreamJsonWriter;
 import io.quarkus.qson.serializer.QsonObjectWriter;
 import org.openjdk.jmh.annotations.Benchmark;
 import org.openjdk.jmh.annotations.Fork;
@@ -50,16 +48,16 @@ import org.openjdk.jmh.annotations.Setup;
 import org.openjdk.jmh.annotations.State;
 import org.openjdk.jmh.annotations.Warmup;
 
-import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.StringReader;
+import java.nio.charset.StandardCharsets;
 
 @Fork(1)
 @Warmup(iterations = 2)
 @Measurement(iterations = 2)
 public class MyBenchmark {
 
-    static String json = "{\n" +
+    static final String json = "{\n" +
             "  \"intMap\": {\n" +
             "    \"one\": 1,\n" +
             "    \"two\": 2\n" +
@@ -242,7 +240,7 @@ public class MyBenchmark {
             parser = mapper.parserFor(Person2.class);
 
             try {
-                jsonBytes = json.getBytes("UTF-8");
+                jsonBytes = json.getBytes(StandardCharsets.UTF_8);
             } catch (Exception e) {
                 throw new RuntimeException();
             }
@@ -262,7 +260,7 @@ public class MyBenchmark {
                     .configure(MapperFeature.ACCEPT_CASE_INSENSITIVE_PROPERTIES, false);
             reader = mapper.readerFor(Person2.class);
             try {
-                jsonBytes = json.getBytes("UTF-8");
+                jsonBytes = json.getBytes(StandardCharsets.UTF_8);
             } catch (Exception e) {
                 throw new RuntimeException();
             }
@@ -281,7 +279,7 @@ public class MyBenchmark {
             mapper.registerModule(new AfterburnerModule());
             reader = mapper.readerFor(Person2.class);
             try {
-                jsonBytes = json.getBytes("UTF-8");
+                jsonBytes = json.getBytes(StandardCharsets.UTF_8);
             } catch (Exception e) {
                 throw new RuntimeException();
             }

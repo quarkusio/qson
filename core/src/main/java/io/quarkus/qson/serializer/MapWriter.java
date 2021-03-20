@@ -3,7 +3,7 @@ package io.quarkus.qson.serializer;
 import java.util.Map;
 
 public class MapWriter implements QsonObjectWriter {
-    private QsonObjectWriter valueWriter;
+    private final QsonObjectWriter valueWriter;
 
     public MapWriter(QsonObjectWriter valueWriter) {
         this.valueWriter = valueWriter;

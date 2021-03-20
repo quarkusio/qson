@@ -93,9 +93,7 @@ public class VertxRequestHandler implements Handler<RoutingContext> {
                 }
             }
             Object finalInput = input;
-            executor.execute(() -> {
-                dispatch(routingContext, invoker, finalInput);
-            });
+            executor.execute(() -> dispatch(routingContext, invoker, finalInput));
         } else if (routingContext.request().method() == HttpMethod.POST) {
             postBytes(routingContext, invoker);
         } else {
@@ -121,9 +119,7 @@ public class VertxRequestHandler implements Handler<RoutingContext> {
                 }
             }
             Object finalInput = input;
-            executor.execute(() -> {
-                dispatch(routingContext, invoker, finalInput);
-            });
+            executor.execute(() -> dispatch(routingContext, invoker, finalInput));
         });
     }
 
@@ -159,7 +155,7 @@ public class VertxRequestHandler implements Handler<RoutingContext> {
                             routingContext.response().end();
                         }
                     },
-                    t -> routingContext.fail(t));
+                    routingContext::fail);
 
         } catch (Exception e) {
             routingContext.fail(e);

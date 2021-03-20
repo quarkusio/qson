@@ -31,7 +31,7 @@ class GizmoClassLoader extends ClassLoader implements ClassOutput {
     }
 
     protected Class<?> findClass(String name) throws ClassNotFoundException {
-        byte[] bytes = (byte[])this.appClasses.get(name);
+        byte[] bytes = this.appClasses.get(name);
         if (bytes == null) {
             throw new ClassNotFoundException();
         } else {

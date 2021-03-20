@@ -3,8 +3,8 @@ package io.quarkus.qson.deserializer;
 import java.util.Collection;
 
 public class CollectionParser extends ObjectParser {
-    ContextValue valueFunction;
-    ParserState valueState;
+    final ContextValue valueFunction;
+    final ParserState valueState;
 
     public CollectionParser(ContextValue valueFunction, ParserState valueState) {
         this.valueFunction = valueFunction;

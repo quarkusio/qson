@@ -9,10 +9,10 @@ import static io.quarkus.qson.util.IntChar.*;
 
 public abstract class AbstractParserContext implements ParserContext {
     protected LinkedList<ParserState> state;
-    protected ArrayDeque<Object> target = new ArrayDeque<>();
+    protected final ArrayDeque<Object> target = new ArrayDeque<>();
     protected int ptr;
-    protected ParserState initialState;
-    protected QsonParser parser;
+    protected final ParserState initialState;
+    protected final QsonParser parser;
     protected boolean buildingToken;
     protected int tokenStart = -1;
     protected int tokenEnd = -1;

@@ -4,10 +4,10 @@ import java.util.HashMap;
 import java.util.Map;
 
 public class MapParser extends ObjectParser {
-    ContextValue keyFunction;
-    ContextValue valueFunction;
-    ParserState valueState;
-    ParserState continueValueState;
+    final ContextValue keyFunction;
+    final ContextValue valueFunction;
+    final ParserState valueState;
+    final ParserState continueValueState;
 
     public MapParser(ContextValue keyFunction, ContextValue valueFunction, ParserState valueState, ParserState continueValueState) {
         this.keyFunction = keyFunction;

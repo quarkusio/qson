@@ -4,6 +4,7 @@ import io.quarkus.qson.QsonException;
 import io.quarkus.qson.util.IntChar;
 
 import java.nio.charset.Charset;
+import java.nio.charset.StandardCharsets;
 import java.util.Collection;
 import java.util.Iterator;
 import java.util.List;
@@ -17,7 +18,7 @@ public abstract class JsonByteWriter implements JsonWriter {
     static final byte[] TRUE_PROPERTY_VALUE = {':', 't', 'r', 'u', 'e'};
     static final byte[] FALSE_PROPERTY_VALUE = {':', 'f', 'a', 'l', 's', 'e'};
 
-    public static Charset UTF8 = Charset.forName("UTF-8");
+    public static final Charset UTF8 = StandardCharsets.UTF_8;
 
     abstract protected void writeBytes(byte[] bytes);
     abstract protected void writeByte(int b);
@@ -139,11 +140,10 @@ public abstract class JsonByteWriter implements JsonWriter {
     @Override
     public void write(String val) {
         writeByte(IntChar.INT_QUOTE);
-        final int[] escCodes = sOutputEscapes128;
         for (int i = 0; i < val.length(); i++) {
             int ch = val.charAt(i);
             if (ch <= 0x7F) {
-                int escape = escCodes[ch];
+                int escape = sOutputEscapes128[ch];
                 if (escape == 0) {
                     writeByte(ch);
                 } else if (escape > 0) { // 2-char escape

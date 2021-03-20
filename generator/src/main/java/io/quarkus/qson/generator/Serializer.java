@@ -8,12 +8,12 @@ import io.quarkus.gizmo.FieldDescriptor;
 import io.quarkus.gizmo.MethodCreator;
 import io.quarkus.gizmo.MethodDescriptor;
 import io.quarkus.gizmo.ResultHandle;
-import io.quarkus.qson.util.Types;
 import io.quarkus.qson.serializer.CollectionWriter;
 import io.quarkus.qson.serializer.GenericObjectWriter;
 import io.quarkus.qson.serializer.JsonWriter;
 import io.quarkus.qson.serializer.MapWriter;
 import io.quarkus.qson.serializer.QsonObjectWriter;
+import io.quarkus.qson.util.Types;
 
 import java.lang.reflect.Method;
 import java.lang.reflect.ParameterizedType;
@@ -25,8 +25,10 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
-import static org.objectweb.asm.Opcodes.*;
 import static org.objectweb.asm.Opcodes.ACC_FINAL;
+import static org.objectweb.asm.Opcodes.ACC_PRIVATE;
+import static org.objectweb.asm.Opcodes.ACC_PUBLIC;
+import static org.objectweb.asm.Opcodes.ACC_STATIC;
 
 public class Serializer {
 
@@ -48,7 +50,7 @@ public class Serializer {
         Type targetGenericType;
         ClassOutput output;
         String className;
-        Map<Type, Class> referenced = new HashMap<>();
+        final Map<Type, Class> referenced = new HashMap<>();
         List<PropertyReference> properties;
 
         private Builder() {
@@ -154,12 +156,12 @@ public class Serializer {
         }
     }
 
-    ClassCreator creator;
+    final ClassCreator creator;
 
-    Class targetType;
-    Type targetGenericType;
+    final Class targetType;
+    final Type targetGenericType;
     List<PropertyReference> properties;
-    String className;
+    final String className;
     Method anyGetter;
 
     public static String name(Class clz, Type genericType) {
@@ -599,7 +601,7 @@ public class Serializer {
         if (Map.class.isAssignableFrom(type)
                 || List.class.isAssignableFrom(type)
                 || Set.class.isAssignableFrom(type)) {
-            return hasCollectionWriter(type, generic) == false;
+            return !hasCollectionWriter(type, generic);
         }
         return false;
     }

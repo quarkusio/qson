@@ -8,13 +8,13 @@ import java.time.OffsetDateTime;
 public interface ContextValue {
     Object value(ParserContext ctx);
 
-    ContextValue BYTE_VALUE = (ctx) -> ctx.popByteObjectToken();
-    ContextValue BOOLEAN_VALUE = (ctx) -> ctx.popBooleanObjectToken();
-    ContextValue INT_VALUE = (ctx) -> ctx.popIntObjectToken();
-    ContextValue SHORT_VALUE = (ctx) -> ctx.popShortObjectToken();
-    ContextValue LONG_VALUE = (ctx) -> ctx.popLongObjectToken();
-    ContextValue FLOAT_VALUE = (ctx) -> ctx.popFloatObjectToken();
-    ContextValue DOUBLE_VALUE = (ctx) -> ctx.popDoubleObjectToken();
+    ContextValue BYTE_VALUE = ParserContext::popByteObjectToken;
+    ContextValue BOOLEAN_VALUE = ParserContext::popBooleanObjectToken;
+    ContextValue INT_VALUE = ParserContext::popIntObjectToken;
+    ContextValue SHORT_VALUE = ParserContext::popShortObjectToken;
+    ContextValue LONG_VALUE = ParserContext::popLongObjectToken;
+    ContextValue FLOAT_VALUE = ParserContext::popFloatObjectToken;
+    ContextValue DOUBLE_VALUE = ParserContext::popDoubleObjectToken;
     ContextValue OFFSET_DATETIME_VALUE = (ctx) -> {
         String token = ctx.popToken();
         if (token == null) return null;
@@ -25,8 +25,8 @@ public interface ContextValue {
         if (val == null) return null;
         return new BigDecimal(val);
     };
-    ContextValue STRING_VALUE = (ctx) -> ctx.popToken();
-    ContextValue OBJECT_VALUE = (ctx) -> ctx.popTarget();
+    ContextValue STRING_VALUE = ParserContext::popToken;
+    ContextValue OBJECT_VALUE = ParserContext::popTarget;
     ContextValue CHAR_VALUE = (ctx) -> {
         String val = ctx.popToken();
         if (val == null) return null;

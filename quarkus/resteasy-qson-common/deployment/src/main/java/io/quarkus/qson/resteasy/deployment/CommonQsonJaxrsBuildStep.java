@@ -1,14 +1,10 @@
 package io.quarkus.qson.resteasy.deployment;
 
 import io.quarkus.arc.deployment.BeanArchiveIndexBuildItem;
-import io.quarkus.deployment.Capability;
-import io.quarkus.deployment.Feature;
 import io.quarkus.deployment.annotations.BuildProducer;
 import io.quarkus.deployment.annotations.BuildStep;
-import io.quarkus.deployment.builditem.CapabilityBuildItem;
-import io.quarkus.deployment.builditem.FeatureBuildItem;
-import io.quarkus.qson.util.Types;
 import io.quarkus.qson.deployment.QsonBuildItem;
+import io.quarkus.qson.util.Types;
 import org.jboss.jandex.AnnotationInstance;
 import org.jboss.jandex.AnnotationValue;
 import org.jboss.jandex.ClassInfo;

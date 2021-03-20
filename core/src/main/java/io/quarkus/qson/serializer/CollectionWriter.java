@@ -3,7 +3,7 @@ package io.quarkus.qson.serializer;
 import java.util.Collection;
 
 public class CollectionWriter implements QsonObjectWriter {
-    private QsonObjectWriter elementWriter;
+    private final QsonObjectWriter elementWriter;
 
     public CollectionWriter(QsonObjectWriter elementWriter) {
         this.elementWriter = elementWriter;

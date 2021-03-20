@@ -73,7 +73,7 @@ public class GenericType<T> {
 
     static Type getTypeArgument(Class<?> clazz, Class<?> baseClass) {
         // collect superclasses
-        Stack<Type> superclasses = new Stack<Type>();
+        Stack<Type> superclasses = new Stack<>();
         Type currentType;
         Class<?> currentClass = clazz;
         do {

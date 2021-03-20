@@ -4,8 +4,8 @@ import io.quarkus.funqy.runtime.FunqyServerRequest;
 import io.quarkus.funqy.runtime.RequestContext;
 
 public class FunqyRequestImpl implements FunqyServerRequest {
-    protected RequestContext requestContext;
-    protected Object input;
+    protected final RequestContext requestContext;
+    protected final Object input;
 
     public FunqyRequestImpl(RequestContext requestContext, Object input) {
         this.requestContext = requestContext;

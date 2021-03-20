@@ -2,14 +2,13 @@ package io.quarkus.qson.serializer;
 
 import java.io.IOException;
 import java.io.OutputStream;
-import java.util.Arrays;
 
 /**
  * Writer that creates a byte array as a result
  */
 public class BufferedStreamJsonWriter extends JsonByteWriter {
 
-    byte[] buffer;
+    final byte[] buffer;
     int count;
     final OutputStream os;
 

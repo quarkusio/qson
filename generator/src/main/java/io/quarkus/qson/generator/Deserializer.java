@@ -13,27 +13,27 @@ import io.quarkus.gizmo.MethodDescriptor;
 import io.quarkus.gizmo.ResultHandle;
 import io.quarkus.qson.QsonException;
 import io.quarkus.qson.deserializer.AnySetter;
-import io.quarkus.qson.deserializer.EnumParser;
-import io.quarkus.qson.util.Types;
 import io.quarkus.qson.deserializer.BaseParser;
 import io.quarkus.qson.deserializer.BooleanParser;
 import io.quarkus.qson.deserializer.ByteParser;
-import io.quarkus.qson.deserializer.DoubleParser;
-import io.quarkus.qson.deserializer.FloatParser;
-import io.quarkus.qson.deserializer.IntegerParser;
-import io.quarkus.qson.deserializer.QsonParser;
-import io.quarkus.qson.deserializer.LongParser;
-import io.quarkus.qson.deserializer.ParserContext;
 import io.quarkus.qson.deserializer.ContextValue;
+import io.quarkus.qson.deserializer.DoubleParser;
+import io.quarkus.qson.deserializer.EnumParser;
+import io.quarkus.qson.deserializer.FloatParser;
 import io.quarkus.qson.deserializer.GenericParser;
 import io.quarkus.qson.deserializer.GenericSetParser;
+import io.quarkus.qson.deserializer.IntegerParser;
 import io.quarkus.qson.deserializer.ListParser;
+import io.quarkus.qson.deserializer.LongParser;
 import io.quarkus.qson.deserializer.MapParser;
 import io.quarkus.qson.deserializer.ObjectParser;
+import io.quarkus.qson.deserializer.ParserContext;
 import io.quarkus.qson.deserializer.ParserState;
+import io.quarkus.qson.deserializer.QsonParser;
 import io.quarkus.qson.deserializer.SetParser;
 import io.quarkus.qson.deserializer.ShortParser;
 import io.quarkus.qson.deserializer.StringParser;
+import io.quarkus.qson.util.Types;
 
 import java.lang.reflect.Method;
 import java.lang.reflect.ParameterizedType;
@@ -41,15 +41,15 @@ import java.lang.reflect.Type;
 import java.math.BigDecimal;
 import java.time.OffsetDateTime;
 import java.util.ArrayList;
-import java.util.Collections;
+import java.util.Comparator;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
-import static org.objectweb.asm.Opcodes.ACC_PUBLIC;
-import static org.objectweb.asm.Opcodes.ACC_PRIVATE;
 import static org.objectweb.asm.Opcodes.ACC_FINAL;
+import static org.objectweb.asm.Opcodes.ACC_PRIVATE;
+import static org.objectweb.asm.Opcodes.ACC_PUBLIC;
 import static org.objectweb.asm.Opcodes.ACC_STATIC;
 
 /**
@@ -77,7 +77,7 @@ public class Deserializer {
         ClassOutput output;
         String className;
         List<PropertyReference> properties;
-        Map<Type, Class> referenced = new HashMap<>();
+        final Map<Type, Class> referenced = new HashMap<>();
 
         private Builder() {
         }
@@ -222,7 +222,7 @@ public class Deserializer {
                 }
             }
             // make sure properties are sorted so key matching works.
-            Collections.sort(tmp, (ref, t1) -> ref.jsonName.compareTo(t1.jsonName));
+            tmp.sort(Comparator.comparing(ref -> ref.jsonName));
             Deserializer deserializer = new Deserializer(output, targetType, targetGenericType);
             deserializer.anyMethod = anySetter;
             // set properties list to setters only list
@@ -583,8 +583,7 @@ public class Deserializer {
     }
 
     private void anySetterFunction(MethodCreator staticConstructor) {
-        String endName = QSON_ANY_SETTER;
-        FieldCreator endField = creator.getFieldCreator(endName, AnySetter.class).setModifiers(ACC_STATIC | ACC_PRIVATE);
+        FieldCreator endField = creator.getFieldCreator(QSON_ANY_SETTER, AnySetter.class).setModifiers(ACC_STATIC | ACC_PRIVATE);
         FunctionCreator endFunction = staticConstructor.createFunction(AnySetter.class);
         BytecodeCreator ebc = endFunction.getBytecode();
         AssignableResultHandle target = ebc.createVariable(targetType);
@@ -670,7 +669,7 @@ public class Deserializer {
         _ParserContext ctx = new _ParserContext(method.getMethodParam(0));
 
         BytecodeCreator scope = method.createScope();
-        BytecodeCreator ifTrue = scope.ifIntegerEqual(ctx.skipToQuote(scope), scope.load((int)0)).trueBranch();
+        BytecodeCreator ifTrue = scope.ifIntegerEqual(ctx.skipToQuote(scope), scope.load(0)).trueBranch();
         ctx.pushState(ifTrue, ifTrue.readInstanceField(FieldDescriptor.of(fqn(), "continueKey", ParserState.class), ifTrue.getThis()));
         ifTrue.returnValue(ifTrue.load(false));
         ctx.endToken(method);
@@ -917,7 +916,7 @@ public class Deserializer {
     }
 
     static class _ParserContext {
-        ResultHandle ctx;
+        final ResultHandle ctx;
 
         public _ParserContext(ResultHandle ctx) {
             this.ctx = ctx;

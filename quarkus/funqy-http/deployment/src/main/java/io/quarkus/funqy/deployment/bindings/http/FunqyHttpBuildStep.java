@@ -132,14 +132,9 @@ public class FunqyHttpBuildStep {
                 executorBuildItem.getExecutorProxy());
 
         for (FunctionBuildItem function : functions) {
-            if (rootPath == null)
-                rootPath = "/";
-            else if (!rootPath.endsWith("/"))
-                rootPath += "/";
             String name = function.getFunctionName() == null ? function.getMethodName() : function.getFunctionName();
-            //String path = rootPath + name;
             String path = "/" + name;
-            routes.produce(new RouteBuildItem(path, handler, false));
+            routes.produce(RouteBuildItem.builder().route(path).handler(handler).build());
         }
     }
 }

@@ -26,10 +26,9 @@ import java.util.function.Supplier;
  */
 @Recorder
 public class FunqyHttpBindingRecorder {
-    private static QueryObjectMapper queryMapper;
 
     public void init() {
-        queryMapper = new QueryObjectMapper();
+        QueryObjectMapper queryMapper = new QueryObjectMapper();
         for (FunctionInvoker invoker : FunctionRecorder.registry.invokers()) {
             try {
                 if (invoker.hasInput()) {
@@ -65,12 +64,7 @@ public class FunqyHttpBindingRecorder {
             BeanContainer beanContainer,
             Executor executor) {
 
-        shutdown.addShutdownTask(new Runnable() {
-            @Override
-            public void run() {
-                FunctionConstructor.CONTAINER = null;
-            }
-        });
+        shutdown.addShutdownTask(() -> FunctionConstructor.CONTAINER = null);
         FunctionConstructor.CONTAINER = beanContainer;
 
         return new VertxRequestHandler(vertx.get(), beanContainer, contextPath, executor);

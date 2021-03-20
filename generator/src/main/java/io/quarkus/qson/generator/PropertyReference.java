@@ -79,7 +79,7 @@ public class PropertyReference {
                     ignored.add(javaName);
                     properties.remove(javaName);
                     continue;
-                };
+                }
                 Class paramType = m.getParameterTypes()[0];
                 Type paramGenericType = m.getGenericParameterTypes()[0];
                 PropertyReference ref = properties.get(javaName);
@@ -127,7 +127,7 @@ public class PropertyReference {
                     ignored.add(javaName);
                     properties.remove(javaName);
                     continue;
-                };
+                }
                 Class mType = m.getReturnType();
                 Type mGenericType = m.getGenericReturnType();
                 PropertyReference ref = properties.get(javaName);
@@ -167,8 +167,7 @@ public class PropertyReference {
                     continue;
                 }
                 if (field.isAnnotationPresent(QsonProperty.class)) {
-                    QsonProperty property = field.getAnnotation(QsonProperty.class);
-                    ref.fieldAnnotation = property;
+                    ref.fieldAnnotation = field.getAnnotation(QsonProperty.class);
                 }
                 if (field.isAnnotationPresent(QsonIgnoreRead.class)) {
                     ref.ignoreRead = true;

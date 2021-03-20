@@ -173,14 +173,7 @@ final class TypeUtil
          final Type componentType = resolveTypeVariables(root, arrayType.getGenericComponentType());
          if (componentType == null)
             return type;
-         return new GenericArrayType()
-         {
-            @Override
-            public Type getGenericComponentType()
-            {
-               return componentType;
-            }
-         };
+         return (GenericArrayType) () -> componentType;
       }
       else
       {
@@ -377,8 +370,7 @@ final class TypeUtil
          ParameterizedType param = (ParameterizedType) genericSub;
          Type[] types = param.getActualTypeArguments();
 
-         Type[] returnTypes = extractTypeVariables(typeVarMap, types);
-         return returnTypes;
+         return extractTypeVariables(typeVarMap, types);
       }
       else
       {
@@ -389,11 +381,11 @@ final class TypeUtil
    public static class ResteasyParameterizedType implements ParameterizedType
    {
 
-      private Type[] actuals;
+      private final Type[] actuals;
 
-      private Type rawType;
+      private final Type rawType;
 
-      private Type ownerType;
+      private final Type ownerType;
 
       public ResteasyParameterizedType(final Type[] actuals, final Type rawType, final Type ownerType)
       {
@@ -425,7 +417,7 @@ final class TypeUtil
       {
          if (other == null)
             return false;
-         if (other instanceof ParameterizedType == false)
+         if (!(other instanceof ParameterizedType))
             return false;
          ParameterizedType b = (ParameterizedType) other;
          // WARNING: contract defined by ParameterizedType

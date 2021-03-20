@@ -1,9 +1,5 @@
 package io.quarkus.qson.serializer;
 
-import io.quarkus.qson.QsonException;
-
-import java.io.ByteArrayOutputStream;
-import java.io.IOException;
 import java.util.Arrays;
 
 /**

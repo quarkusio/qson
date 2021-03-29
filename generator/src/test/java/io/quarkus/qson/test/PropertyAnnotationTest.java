@@ -78,13 +78,7 @@ public class PropertyAnnotationTest {
             this.ignoredField = ignoredField;
         }
     }
-
-    //@Test
-    public void testGenerate() {
-        Deserializer.create(Pojo.class).output(new TestClassOutput()).generate();
-
-    }
-
+    
     @Test
     public void testMappingAndIgnore() throws Exception {
         List<PropertyReference> properties = PropertyReference.getProperties(Pojo.class);

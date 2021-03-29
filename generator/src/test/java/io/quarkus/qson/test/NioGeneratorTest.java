@@ -3,6 +3,7 @@ package io.quarkus.qson.test;
 import io.quarkus.qson.GenericType;
 import io.quarkus.qson.deserializer.ByteArrayParserContext;
 import io.quarkus.qson.deserializer.QsonParser;
+import io.quarkus.qson.generator.Generator;
 import io.quarkus.qson.generator.QsonMapper;
 import io.quarkus.qson.generator.Serializer;
 import io.quarkus.qson.generator.Deserializer;
@@ -21,24 +22,26 @@ public class NioGeneratorTest {
 
     @Test
     public void testDeserializer() throws Exception {
-        Serializer.create(Color.class).output(new TestClassOutput()).generate();
-        Serializer.create(PojoEnum.class).output(new TestClassOutput()).generate();
-        Deserializer.create(Simple.class).output(new TestClassOutput()).generate();
-        Deserializer.create(Single.class).output(new TestClassOutput()).generate();
-        Deserializer.create(Person2.class).output(new TestClassOutput()).generate();
-        Deserializer.create(PersonAny.class).output(new TestClassOutput()).generate();
-        Serializer.create(Single.class).output(new TestClassOutput()).generate();
-        Serializer.create(Person2.class).output(new TestClassOutput()).generate();
-        Serializer.create(PersonAny.class).output(new TestClassOutput()).generate();
+        Generator generator = new Generator();
+        generator.serializer(Color.class).output(new TestClassOutput()).generate();
+        generator.serializer(PojoEnum.class).output(new TestClassOutput()).generate();
+        generator.deserializer(Simple.class).output(new TestClassOutput()).generate();
+        generator.deserializer(Single.class).output(new TestClassOutput()).generate();
+        generator.deserializer(Person2.class).output(new TestClassOutput()).generate();
+        generator.deserializer(PersonAny.class).output(new TestClassOutput()).generate();
+        generator.serializer(Single.class).output(new TestClassOutput()).generate();
+        generator.serializer(Person2.class).output(new TestClassOutput()).generate();
+        generator.serializer(PersonAny.class).output(new TestClassOutput()).generate();
     }
 
     @Test
     public void testRawCollection() throws Exception {
         GenericType<List<Person2>> type = new GenericType<List<Person2>>() {
         };
-        Deserializer.Builder builder = Deserializer.create(type.getRawType(), type.getType()).output(new TestClassOutput());
+        Generator generator = new Generator();
+        Deserializer.Builder builder = generator.deserializer(type.getRawType(), type.getType()).output(new TestClassOutput());
         builder.generate();
-        Serializer.Builder sBuilder = Serializer.create(type.getRawType(), type.getType()).output(new TestClassOutput());
+        Serializer.Builder sBuilder = generator.serializer(type.getRawType(), type.getType()).output(new TestClassOutput());
         sBuilder.generate();
     }
 

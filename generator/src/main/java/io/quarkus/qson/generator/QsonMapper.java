@@ -24,7 +24,7 @@ import java.util.concurrent.ConcurrentHashMap;
  * This will generate bytecode for serializers and deserializers and load them through a custom class loader
  *
  */
-public class QsonMapper {
+public class QsonMapper extends Generator {
     private ConcurrentHashMap<String, QsonParser> deserializers = new ConcurrentHashMap<>();
     private Map<String, String> generatedDeserializers = new HashMap<>();
     private ConcurrentHashMap<String, QsonObjectWriter> serializers = new ConcurrentHashMap<>();
@@ -228,7 +228,7 @@ public class QsonMapper {
     private String generateDeserializers(Class clz, Type genericType) {
         String key = key(clz, genericType);
         if (generatedDeserializers.containsKey(key)) return generatedDeserializers.get(key);
-        Deserializer.Builder builder = Deserializer.create(clz, genericType).output(cl).generate();
+        Deserializer.Builder builder = deserializer(clz, genericType).output(cl).generate();
         generatedDeserializers.put(key, builder.className());
         for (Map.Entry<Type, Class> entry : builder.referenced().entrySet()) {
             String refKey = key(entry.getValue(), entry.getKey());
@@ -447,7 +447,7 @@ public class QsonMapper {
     private String generateSerializers(Class clz, Type genericType) {
         String key = key(clz, genericType);
         if (generatedSerializers.containsKey(key)) return generatedSerializers.get(key);
-        Serializer.Builder builder = Serializer.create(clz, genericType).output(cl).generate();
+        Serializer.Builder builder = serializer(clz, genericType).output(cl).generate();
         generatedSerializers.put(key, builder.className());
         for (Map.Entry<Type, Class> entry : builder.referenced().entrySet()) {
             String refKey = key(entry.getValue(), entry.getKey());

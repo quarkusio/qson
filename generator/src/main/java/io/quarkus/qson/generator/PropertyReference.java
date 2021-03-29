@@ -13,8 +13,8 @@ import java.lang.reflect.Modifier;
 import java.lang.reflect.Type;
 import java.util.ArrayList;
 import java.util.Collections;
-import java.util.HashMap;
 import java.util.HashSet;
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -25,27 +25,40 @@ public class PropertyReference {
     public Type genericType;
     public Class type;
     /**
-     * Method/field name without get/set
+     * Java property name
      *
      */
-    public String javaName;
+    public String propertyName;
     /**
      * JSON property name
      *
      */
     public String jsonName;
 
+    public boolean isAny;
+
+    /**
+     * For properties that are java.util.Date or TemporalAccessor
+     * This allows you to override default date handling for this property
+     */
+    public DateHandler dateHandler;
+
     private QsonProperty fieldAnnotation;
     private QsonProperty getterAnnotation;
     private QsonProperty setterAnnotation;
     private boolean ignoreRead;
     private boolean ignoreWrite;
-    public boolean isAnySetter;
-    public boolean isAnyGetter;
+
 
     public static List<PropertyReference> getProperties(Class type) {
         if (type.equals(Object.class)) return Collections.emptyList();
-        Map<String, PropertyReference> properties = new HashMap<>();
+        LinkedHashMap<String, PropertyReference> properties = getPropertyMap(type);
+        return new ArrayList<>(properties.values());
+    }
+
+    public static LinkedHashMap<String, PropertyReference> getPropertyMap(Class type) {
+        if (type.equals(Object.class)) return new LinkedHashMap<>();
+        LinkedHashMap<String, PropertyReference> properties = new LinkedHashMap<>();
         Set<String> ignored = new HashSet<>();
         for (Method m : type.getMethods()) {
             if (m.isAnnotationPresent(QsonAny.class)) {
@@ -54,12 +67,12 @@ public class PropertyReference {
                         && m.getParameterTypes()[1].equals(Object.class)) {
                     PropertyReference ref = new PropertyReference();
                     ref.setter = m;
-                    ref.isAnySetter = true;
+                    ref.isAny = true;
                     properties.put("@QsonAnySetter", ref);
                 } else if (m.getParameterTypes().length == 0 && m.getReturnType().equals(Map.class)) {
                     PropertyReference ref = new PropertyReference();
                     ref.getter = m;
-                    ref.isAnyGetter = true;
+                    ref.isAny = true;
                     properties.put("@QsonAnyGetter", ref);
 
                 } else {
@@ -94,7 +107,7 @@ public class PropertyReference {
                     ref = new PropertyReference();
                     ref.type = paramType;
                     ref.genericType = paramGenericType;
-                    ref.javaName = javaName;
+                    ref.propertyName = javaName;
                     ref.jsonName = javaName;
                     properties.put(javaName, ref);
                 }
@@ -142,7 +155,7 @@ public class PropertyReference {
                     ref = new PropertyReference();
                     ref.type = mType;
                     ref.genericType = mGenericType;
-                    ref.javaName = javaName;
+                    ref.propertyName = javaName;
                     ref.jsonName = javaName;
                     properties.put(javaName, ref);
                 }
@@ -183,21 +196,21 @@ public class PropertyReference {
             QsonProperty property = null;
             if (ref.fieldAnnotation != null) {
                 if (property != null) {
-                    throw new QsonException("Conflicting @QsonProperty annotations between field and setter/getter methods: " + ref.javaName);
+                    throw new QsonException("Can only have one @QsonProperty annotation between field and setter/getter methods: " + ref.propertyName);
                 }
                 property = ref.fieldAnnotation;
 
             }
             if (ref.getterAnnotation != null) {
                 if (property != null) {
-                    throw new QsonException("Conflicting @QsonProperty annotations between field and setter/getter methods: " + ref.javaName);
+                    throw new QsonException("Can only have one @QsonProperty annotation between field and setter/getter methods: " + ref.propertyName);
                 }
                 property = ref.getterAnnotation;
 
             }
             if (ref.setterAnnotation != null) {
                 if (property != null) {
-                    throw new QsonException("Conflicting @QsonProperty annotations between field and setter/getter methods: " + ref.javaName);
+                    throw new QsonException("Can only have one @QsonProperty annotation between field and setter/getter methods: " + ref.propertyName);
                 }
                 property = ref.setterAnnotation;
 
@@ -208,7 +221,7 @@ public class PropertyReference {
                 if (!property.value().isEmpty()) ref.jsonName = property.value();
             }
         }
-        return new ArrayList<>(properties.values());
+        return properties;
     }
 
     static boolean isSetter(Method m) {

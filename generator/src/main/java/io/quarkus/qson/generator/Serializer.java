@@ -35,14 +35,6 @@ public class Serializer {
     // static initializer
     public static final String CLINIT = "<clinit>";
 
-    public static Builder create(Class targetType) {
-        return new Builder().type(targetType);
-    }
-
-    public static Builder create(Class targetType, Type genericType) {
-        return new Builder().type(targetType).generic(genericType);
-    }
-
     public static class Builder {
         Class targetType;
         Type targetGenericType;
@@ -50,8 +42,11 @@ public class Serializer {
         String className;
         Map<Type, Class> referenced = new HashMap<>();
         List<PropertyReference> properties;
+        Generator generator;
+        ClassGenerator classGen;
 
-        private Builder() {
+        Builder(Generator generator) {
+            this.generator = generator;
         }
 
         public Builder type(Class targetType) {
@@ -127,8 +122,14 @@ public class Serializer {
                 return this;
             } else {
                 Serializer s = new Serializer(output, targetType, targetGenericType);
-                if (properties == null) {
-                    properties = PropertyReference.getProperties(targetType);
+                classGen = generator.generatorFor(targetType);
+                if (classGen != null) {
+                    if (classGen.isValue) {
+
+                    } else {
+                        properties = classGen.getProperties();
+                    }
+
                 }
                 // NOTE: keep full property list around just in case we're doing serialization
                 // and somebody wants to reuse.
@@ -137,7 +138,7 @@ public class Serializer {
                 Method anyGetter = null;
                 for (PropertyReference ref : properties) {
                     if (ref.getter != null) {
-                        if (ref.isAnyGetter) {
+                        if (ref.isAny) {
                             anyGetter = ref.getter;
                             continue;
                         }
@@ -268,7 +269,7 @@ public class Serializer {
     private void collectionField(MethodCreator staticConstructor, PropertyReference getter) {
         Type genericType = getter.genericType;
         Class type = getter.type;
-        String property = getter.javaName;
+        String property = getter.propertyName;
         collectionProperty(staticConstructor, type, genericType, property);
     }
 
@@ -530,7 +531,7 @@ public class Serializer {
     }
 
     private ResultHandle getCollectionWriter(MethodCreator method, PropertyReference getter) {
-        String property = getter.javaName;
+        String property = getter.propertyName;
         Type genericType = getter.genericType;
         return getCollectionWriter(method, property, (ParameterizedType) genericType);
     }
@@ -551,7 +552,7 @@ public class Serializer {
     }
 
     private ResultHandle getMapWriter(MethodCreator method, PropertyReference getter) {
-        String property = getter.javaName;
+        String property = getter.propertyName;
         Type genericType = getter.genericType;
         return getMapWriter(method, property, (ParameterizedType) genericType);
     }

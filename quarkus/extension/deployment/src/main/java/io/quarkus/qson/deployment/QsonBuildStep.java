@@ -12,6 +12,7 @@ import io.quarkus.deployment.recording.RecorderContext;
 import io.quarkus.qson.Qson;
 import io.quarkus.qson.QsonIgnore;
 import io.quarkus.qson.QsonProperty;
+import io.quarkus.qson.generator.Generator;
 import io.quarkus.qson.runtime.QuarkusQsonMapper;
 import io.quarkus.qson.util.Types;
 import io.quarkus.qson.generator.Deserializer;
@@ -129,7 +130,8 @@ public class QsonBuildStep {
         for (Map.Entry<Type, Class> entry : parsers.entrySet()) {
             String key = Types.typename(entry.getKey());
             if (generatedParsers.containsKey(key)) continue;
-            Deserializer.Builder builder = Deserializer.create(entry.getValue(), entry.getKey());
+            Generator generator = new Generator();
+            Deserializer.Builder builder = generator.deserializer(entry.getValue(), entry.getKey());
             builder.output(adaptor).generate();
             generatedParsers.put(key, builder.className());
             generateParsers(builder.referenced(), generatedParsers, adaptor);
@@ -139,7 +141,8 @@ public class QsonBuildStep {
         for (Map.Entry<Type, Class> entry : parsers.entrySet()) {
             String key = Types.typename(entry.getKey());
             if (generatedWriters.containsKey(key)) continue;
-            Serializer.Builder builder = Serializer.create(entry.getValue(), entry.getKey());
+            Generator generator = new Generator();
+            Serializer.Builder builder = generator.serializer(entry.getValue(), entry.getKey());
             builder.output(adaptor).generate();
             generatedWriters.put(key, builder.className());
             generateWriters(builder.referenced(), generatedWriters, adaptor);

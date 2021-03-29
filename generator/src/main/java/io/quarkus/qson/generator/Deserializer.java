@@ -39,6 +39,9 @@ import java.lang.reflect.Method;
 import java.lang.reflect.ParameterizedType;
 import java.lang.reflect.Type;
 import java.math.BigDecimal;
+import java.time.LocalDate;
+import java.time.LocalDateTime;
+import java.time.LocalTime;
 import java.time.OffsetDateTime;
 import java.util.ArrayList;
 import java.util.Collections;
@@ -64,11 +67,11 @@ public class Deserializer {
     public static final String CLINIT = "<clinit>";
     public static final String QSON_ANY_SETTER = "_qson_any_setter";
 
-    public static Builder create(Class targetType) {
-        return new Builder().type(targetType);
-    }
-    public static Builder create(Class targetType, Type generic) {
-        return new Builder().type(targetType).generic(generic);
+    private boolean isDateTime() {
+        return targetType.equals(LocalDate.class)
+                || targetType.equals(LocalDateTime.class)
+                || targetType.equals(OffsetDateTime.class)
+                || targetType.equals(LocalTime.class);
     }
 
     public static class Builder {
@@ -78,17 +81,11 @@ public class Deserializer {
         String className;
         List<PropertyReference> properties;
         Map<Type, Class> referenced = new HashMap<>();
+        Generator generator;
+        ClassGenerator classGen;
 
-        private Builder() {
-        }
-
-        public Builder properties(List<PropertyReference> properties) {
-            this.properties = properties;
-            return this;
-        }
-
-        public List<PropertyReference> properties() {
-            return properties;
+        protected Builder(Generator generator) {
+            this.generator = generator;
         }
 
         public Builder type(Class targetType) {
@@ -203,8 +200,14 @@ public class Deserializer {
             }
             // user class parser generation
 
-            if (properties == null) {
-                properties = PropertyReference.getProperties(targetType);
+            classGen = generator.generatorFor(targetType);
+            if (classGen != null) {
+                if (classGen.isValue) {
+
+                } else {
+                    properties = classGen.getProperties();
+                }
+
             }
             // NOTE: keep full property list around just in case we're doing serialization
             // and somebody wants to reuse.
@@ -213,7 +216,7 @@ public class Deserializer {
             Method anySetter = null;
             for (PropertyReference ref : properties) {
                 if (ref.setter != null) {
-                    if (ref.isAnySetter) {
+                    if (ref.isAny) {
                         anySetter = ref.setter;
                         continue;
                     }
@@ -349,7 +352,7 @@ public class Deserializer {
     private void collectionField(MethodCreator staticConstructor, PropertyReference ref) {
         Type genericType = ref.genericType;
         Class type = ref.type;
-        String property = ref.javaName;
+        String property = ref.propertyName;
         collectionField(staticConstructor, type, genericType, property);
 
     }
@@ -662,7 +665,7 @@ public class Deserializer {
     }
 
     private String endProperty(PropertyReference setter) {
-        return setter.javaName + "End";
+        return setter.propertyName + "End";
     }
 
     private void key() {
@@ -781,10 +784,10 @@ public class Deserializer {
             ResultHandle PARSER = scope.readStaticField(parserField);
             return scope.readInstanceField(FieldDescriptor.of(ObjectParser.class, "continueStartBooleanValue", ParserState.class), PARSER);
         } else if (List.class.isAssignableFrom(setter.type)) {
-            if (!List.class.equals(setter.type)) throw new QsonException("Cannot use concrete list.  Must use java.util.List for property: " + setter.javaName);
+            if (!List.class.equals(setter.type)) throw new QsonException("Cannot use concrete list.  Must use java.util.List for property: " + setter.propertyName);
             if (setter.genericType instanceof ParameterizedType) {
                 // continue is on static field
-                FieldDescriptor mapFieldDesc = FieldDescriptor.of(fqn(), setter.javaName, ListParser.class);
+                FieldDescriptor mapFieldDesc = FieldDescriptor.of(fqn(), setter.propertyName, ListParser.class);
                 ResultHandle mapField = scope.readStaticField(mapFieldDesc);
                 return scope.readInstanceField(FieldDescriptor.of(ListParser.class, "continueStart", ParserState.class), mapField);
             } else {
@@ -793,10 +796,10 @@ public class Deserializer {
                 return scope.readInstanceField(FieldDescriptor.of(GenericParser.class, "continueStartObject", ParserState.class), PARSER);
             }
         } else if (Set.class.isAssignableFrom(setter.type)) {
-            if (!Set.class.equals(setter.type)) throw new QsonException("Cannot use concrete set.  Must use java.util.Set for property: " + setter.javaName);
+            if (!Set.class.equals(setter.type)) throw new QsonException("Cannot use concrete set.  Must use java.util.Set for property: " + setter.propertyName);
             if (setter.genericType instanceof ParameterizedType) {
                 // continue is on static field
-                FieldDescriptor mapFieldDesc = FieldDescriptor.of(fqn(), setter.javaName, SetParser.class);
+                FieldDescriptor mapFieldDesc = FieldDescriptor.of(fqn(), setter.propertyName, SetParser.class);
                 ResultHandle mapField = scope.readStaticField(mapFieldDesc);
                 return scope.readInstanceField(FieldDescriptor.of(SetParser.class, "continueStart", ParserState.class), mapField);
             } else {
@@ -805,9 +808,9 @@ public class Deserializer {
                 return scope.readInstanceField(FieldDescriptor.of(GenericSetParser.class, "continueStartObject", ParserState.class), PARSER);
             }
         } else if (Map.class.isAssignableFrom(setter.type)) {
-            if (!Map.class.equals(setter.type)) throw new QsonException("Cannot use concrete map.  Must use java.util.Map for property: " + setter.javaName);
+            if (!Map.class.equals(setter.type)) throw new QsonException("Cannot use concrete map.  Must use java.util.Map for property: " + setter.propertyName);
             if (setter.genericType instanceof ParameterizedType) {
-                FieldDescriptor mapFieldDesc = FieldDescriptor.of(fqn(), setter.javaName, MapParser.class);
+                FieldDescriptor mapFieldDesc = FieldDescriptor.of(fqn(), setter.propertyName, MapParser.class);
                 ResultHandle mapField = scope.readStaticField(mapFieldDesc);
                 return scope.readInstanceField(FieldDescriptor.of(MapParser.class, "continueStart", ParserState.class), mapField);
             } else {
@@ -853,12 +856,12 @@ public class Deserializer {
             MethodDescriptor descriptor = MethodDescriptor.ofMethod(fqn(), "startBooleanValue", boolean.class.getName(), ParserContext.class.getName());
             return scope.invokeVirtualMethod(descriptor, scope.getThis(), ctx.ctx);
         } else if (List.class.isAssignableFrom(setter.type)) {
-            if (!List.class.equals(setter.type)) throw new QsonException("Cannot use concrete list.  Must use java.util.List for property: " + setter.javaName);
+            if (!List.class.equals(setter.type)) throw new QsonException("Cannot use concrete list.  Must use java.util.List for property: " + setter.propertyName);
             if (setter.genericType instanceof ParameterizedType) {
                 // invoke static field for property
                 MethodDescriptor descriptor = MethodDescriptor.ofMethod(ListParser.class, "start", boolean.class, ParserContext.class);
                 return scope.invokeVirtualMethod(descriptor,
-                        scope.readStaticField(FieldDescriptor.of(fqn(), setter.javaName, ListParser.class)),
+                        scope.readStaticField(FieldDescriptor.of(fqn(), setter.propertyName, ListParser.class)),
                         ctx.ctx);
             } else {
                 FieldDescriptor parserField = FieldDescriptor.of(GenericParser.class, "PARSER", GenericParser.class);
@@ -867,12 +870,12 @@ public class Deserializer {
                 return scope.invokeVirtualMethod(descriptor, PARSER, ctx.ctx);
             }
         } else if (Set.class.isAssignableFrom(setter.type)) {
-            if (!Set.class.equals(setter.type)) throw new QsonException("Cannot use concrete set.  Must use java.util.Set for property: " + setter.javaName);
+            if (!Set.class.equals(setter.type)) throw new QsonException("Cannot use concrete set.  Must use java.util.Set for property: " + setter.propertyName);
             if (setter.genericType instanceof ParameterizedType) {
                 // invoke static field for property
                 MethodDescriptor descriptor = MethodDescriptor.ofMethod(SetParser.class, "start", boolean.class, ParserContext.class);
                 return scope.invokeVirtualMethod(descriptor,
-                        scope.readStaticField(FieldDescriptor.of(fqn(), setter.javaName, SetParser.class)),
+                        scope.readStaticField(FieldDescriptor.of(fqn(), setter.propertyName, SetParser.class)),
                         ctx.ctx);
             } else {
                 FieldDescriptor parserField = FieldDescriptor.of(GenericSetParser.class, "PARSER", GenericParser.class);
@@ -881,12 +884,12 @@ public class Deserializer {
                 return scope.invokeVirtualMethod(descriptor, PARSER, ctx.ctx);
             }
         } else if (Map.class.isAssignableFrom(setter.type)) {
-            if (!Map.class.equals(setter.type)) throw new QsonException("Cannot use concrete map.  Must use java.util.Map for property: " + setter.javaName);
+            if (!Map.class.equals(setter.type)) throw new QsonException("Cannot use concrete map.  Must use java.util.Map for property: " + setter.propertyName);
             if (setter.genericType instanceof ParameterizedType) {
                 // invoke static field for property
                 MethodDescriptor descriptor = MethodDescriptor.ofMethod(MapParser.class, "start", boolean.class, ParserContext.class);
                 return scope.invokeVirtualMethod(descriptor,
-                        scope.readStaticField(FieldDescriptor.of(fqn(), setter.javaName, MapParser.class)),
+                        scope.readStaticField(FieldDescriptor.of(fqn(), setter.propertyName, MapParser.class)),
                         ctx.ctx);
             } else {
                 FieldDescriptor parserField = FieldDescriptor.of(GenericParser.class, "PARSER", GenericParser.class);

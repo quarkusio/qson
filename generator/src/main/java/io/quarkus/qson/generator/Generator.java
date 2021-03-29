@@ -11,15 +11,16 @@ import java.time.format.DateTimeFormatter;
 import java.util.HashMap;
 import java.util.Map;
 
-public class Generator {
+public class Generator implements GeneratorMetadata {
 
-    Map<Class, ClassGenerator> classGenerators = new HashMap<>();
+    Map<Class, ClassMetadata> classGenerators = new HashMap<>();
     DateHandler defaultDate = DateHandler.DEFAULT;
 
     /**
      * Set default for java.util.Date marshalling to be
      * number of milliseconds since epoch.
      */
+    @Override
     public Generator millisecondsDateFormat() {
         defaultDate = DateHandler.MILLISECONDS;
         return this;
@@ -29,6 +30,7 @@ public class Generator {
      * Set default for java.util.Date marshalling to be
      * number of seconds since epoch.
      */
+    @Override
     public Generator secondsDateFormat() {
         defaultDate = DateHandler.SECONDS;
         return this;
@@ -38,6 +40,7 @@ public class Generator {
      * Set default for java.util.Date marshalling to be
      * a String formatted by DateTimeFormatter parameter
      */
+    @Override
     public Generator dateFormat(DateTimeFormatter formatter, DateFormat format) {
         defaultDate = new DateHandler(format, formatter);
         defaultDate.formatter = formatter;
@@ -50,17 +53,18 @@ public class Generator {
      * @param type
      * @return
      */
-    public ClassGenerator generatorFor(Class type) {
-        ClassGenerator generator = classGenerators.get(type);
+    @Override
+    public ClassMetadata metadataFor(Class type) {
+        ClassMetadata generator = classGenerators.get(type);
         if (generator == null) {
-            generator = new ClassGenerator(this, type);
+            generator = new ClassMetadata(this, type);
             scanQsonValue(generator);
             classGenerators.put(type, generator);
         }
         return generator;
     }
 
-    private void scanQsonValue(ClassGenerator generator) {
+    private void scanQsonValue(ClassMetadata generator) {
         boolean hasConstructor = false;
         for (Constructor con : generator.type.getConstructors()) {
             if (con.getParameterCount() == 0) {
@@ -92,11 +96,13 @@ public class Generator {
         }
     }
 
-    public Map<Class, ClassGenerator> getClassGenerators() {
-        return classGenerators;
-    }
-
-    public DateHandler getDateHandler() {
+    /**
+     * Default way to handle dates for all parsers and writers
+     *
+     * @return
+     */
+    @Override
+    public DateHandler defaultDateHandler() {
         return defaultDate;
     }
 
@@ -114,8 +120,4 @@ public class Generator {
     public Serializer.Builder serializer(Class targetType, Type genericType) {
         return new Serializer.Builder(this).type(targetType).generic(genericType);
     }
-
-
-
-
 }

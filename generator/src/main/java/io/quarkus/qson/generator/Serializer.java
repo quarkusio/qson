@@ -42,10 +42,10 @@ public class Serializer {
         String className;
         Map<Type, Class> referenced = new HashMap<>();
         List<PropertyReference> properties;
-        Generator generator;
-        ClassGenerator classGen;
+        GeneratorMetadata generator;
+        ClassMetadata classGen;
 
-        Builder(Generator generator) {
+        Builder(GeneratorMetadata generator) {
             this.generator = generator;
         }
 
@@ -122,7 +122,7 @@ public class Serializer {
                 return this;
             } else {
                 Serializer s = new Serializer(output, targetType, targetGenericType);
-                classGen = generator.generatorFor(targetType);
+                classGen = generator.metadataFor(targetType);
                 if (classGen != null) {
                     if (classGen.isValue) {
 

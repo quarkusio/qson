@@ -6,12 +6,16 @@ import java.util.ArrayList;
 import java.util.LinkedHashMap;
 import java.util.List;
 
-public class ClassGenerator {
+/**
+ * Json class mapping metadata
+ *
+ */
+public class ClassMetadata {
     Class type;
     boolean isValue;
     Member valueSetter;
     Method valueGetter;
-    Generator generator;
+    GeneratorMetadata generator;
 
 
     boolean scanProperties = true;
@@ -20,12 +24,12 @@ public class ClassGenerator {
 
     DateHandler dateHandler;
 
-    public ClassGenerator(Generator gen, Class type) {
+    public ClassMetadata(GeneratorMetadata gen, Class type) {
         this.generator = gen;
         this.type = type;
     }
 
-    public ClassGenerator scanProperties() {
+    public ClassMetadata scanProperties() {
         if (propertiesScanned) return this;
         LinkedHashMap<String, PropertyReference> tmp = PropertyReference.getPropertyMap(type);
         tmp.putAll(properties);
@@ -39,34 +43,34 @@ public class ClassGenerator {
         return new ArrayList<>(properties.values());
     }
 
-    public ClassGenerator valueSetter(Member setter) {
+    public ClassMetadata valueSetter(Member setter) {
         isValue = true;
         this.valueSetter = setter;
         return this;
     }
 
-    public ClassGenerator valueGetter(Method getter) {
+    public ClassMetadata valueGetter(Method getter) {
         isValue = true;
         this.valueSetter = getter;
         return this;
     }
 
-    public ClassGenerator clearValueMapping() {
+    public ClassMetadata clearValueMapping() {
         isValue = false;
         this.valueSetter = this.valueGetter = null;
         return this;
     }
 
-    public ClassGenerator addProperty(PropertyReference ref) {
+    public ClassMetadata addProperty(PropertyReference ref) {
         properties.put(ref.propertyName, ref);
         return this;
     }
-    public ClassGenerator dateHandler(DateHandler dateHandler) {
+    public ClassMetadata dateHandler(DateHandler dateHandler) {
         this.dateHandler = dateHandler;
         return this;
     }
 
-    public ClassGenerator scanProperties(boolean scan) {
+    public ClassMetadata scanProperties(boolean scan) {
         this.scanProperties = scan;
         return this;
     }
@@ -87,12 +91,12 @@ public class ClassGenerator {
         return valueGetter;
     }
 
-    public Generator getGenerator() {
+    public GeneratorMetadata getGenerator() {
         return generator;
     }
 
     public DateHandler getDateHandler() {
-        if (dateHandler == null) return generator.getDateHandler();
+        if (dateHandler == null) return generator.defaultDateHandler();
         return dateHandler;
     }
 }

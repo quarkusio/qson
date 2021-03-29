@@ -19,29 +19,19 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
+/**
+ * Java mapping metadata for a json property.
+ *
+ */
 public class PropertyReference {
-    public Method getter;
-    public Method setter;
-    public Type genericType;
-    public Class type;
-    /**
-     * Java property name
-     *
-     */
-    public String propertyName;
-    /**
-     * JSON property name
-     *
-     */
-    public String jsonName;
-
-    public boolean isAny;
-
-    /**
-     * For properties that are java.util.Date or TemporalAccessor
-     * This allows you to override default date handling for this property
-     */
-    public DateHandler dateHandler;
+    Method getter;
+    Method setter;
+    Type genericType;
+    Class type;
+    String propertyName;
+    String jsonName;
+    boolean isAny;
+    DateHandler dateHandler;
 
     private QsonProperty fieldAnnotation;
     private QsonProperty getterAnnotation;
@@ -49,6 +39,82 @@ public class PropertyReference {
     private boolean ignoreRead;
     private boolean ignoreWrite;
 
+
+    public Method getGetter() {
+        return getter;
+    }
+
+    public void setGetter(Method getter) {
+        this.getter = getter;
+    }
+
+    public Method getSetter() {
+        return setter;
+    }
+
+    public void setSetter(Method setter) {
+        this.setter = setter;
+    }
+
+    public Type getGenericType() {
+        return genericType;
+    }
+
+    public void setGenericType(Type genericType) {
+        this.genericType = genericType;
+    }
+
+    public Class getType() {
+        return type;
+    }
+
+    public void setType(Class type) {
+        this.type = type;
+    }
+
+    /**
+     * Java property name
+     *
+     */
+    public String getPropertyName() {
+        return propertyName;
+    }
+
+    public void setPropertyName(String propertyName) {
+        this.propertyName = propertyName;
+    }
+
+    /**
+     * JSON property name
+     *
+     */
+    public String getJsonName() {
+        return jsonName;
+    }
+
+    public void setJsonName(String jsonName) {
+        this.jsonName = jsonName;
+    }
+
+    public boolean isAny() {
+        return isAny;
+    }
+
+    public void setAny(boolean any) {
+        isAny = any;
+    }
+
+    public DateHandler getDateHandler() {
+        return dateHandler;
+    }
+
+    /**
+     * For properties that are java.util.Date or TemporalAccessor
+     * This allows you to override default date handling for this property
+     */
+    public void setDateHandler(DateHandler dateHandler) {
+        this.dateHandler = dateHandler;
+    }
 
     public static List<PropertyReference> getProperties(Class type) {
         if (type.equals(Object.class)) return Collections.emptyList();

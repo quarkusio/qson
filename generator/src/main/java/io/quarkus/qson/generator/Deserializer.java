@@ -82,7 +82,7 @@ public class Deserializer {
         List<PropertyReference> properties;
         Map<Type, Class> referenced = new HashMap<>();
         Generator generator;
-        ClassMetadata classGen;
+        ClassMapping classGen;
 
         protected Builder(Generator generator) {
             this.generator = generator;
@@ -200,7 +200,7 @@ public class Deserializer {
             }
             // user class parser generation
 
-            classGen = generator.metadataFor(targetType);
+            classGen = generator.mappingFor(targetType);
             if (classGen != null) {
                 if (classGen.isValue) {
 

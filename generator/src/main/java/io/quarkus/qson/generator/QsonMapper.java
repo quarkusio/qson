@@ -24,7 +24,7 @@ import java.util.concurrent.ConcurrentHashMap;
  * This will generate bytecode for serializers and deserializers and load them through a custom class loader
  *
  */
-public class QsonMapper extends Generator {
+public class QsonMapper extends Generator implements QsonGenerator {
     private ConcurrentHashMap<String, QsonParser> deserializers = new ConcurrentHashMap<>();
     private Map<String, String> generatedDeserializers = new HashMap<>();
     private ConcurrentHashMap<String, QsonObjectWriter> serializers = new ConcurrentHashMap<>();

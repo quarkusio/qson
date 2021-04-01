@@ -10,12 +10,12 @@ import java.util.List;
  * Json class mapping metadata
  *
  */
-public class ClassMetadata {
+public class ClassMapping {
     Class type;
     boolean isValue;
     Member valueSetter;
     Method valueGetter;
-    GeneratorMetadata generator;
+    QsonGenerator generator;
 
 
     boolean scanProperties = true;
@@ -24,12 +24,12 @@ public class ClassMetadata {
 
     DateHandler dateHandler;
 
-    public ClassMetadata(GeneratorMetadata gen, Class type) {
+    public ClassMapping(QsonGenerator gen, Class type) {
         this.generator = gen;
         this.type = type;
     }
 
-    public ClassMetadata scanProperties() {
+    public ClassMapping scanProperties() {
         if (propertiesScanned) return this;
         LinkedHashMap<String, PropertyReference> tmp = PropertyReference.getPropertyMap(type);
         tmp.putAll(properties);
@@ -43,34 +43,34 @@ public class ClassMetadata {
         return new ArrayList<>(properties.values());
     }
 
-    public ClassMetadata valueSetter(Member setter) {
+    public ClassMapping valueSetter(Member setter) {
         isValue = true;
         this.valueSetter = setter;
         return this;
     }
 
-    public ClassMetadata valueGetter(Method getter) {
+    public ClassMapping valueGetter(Method getter) {
         isValue = true;
         this.valueSetter = getter;
         return this;
     }
 
-    public ClassMetadata clearValueMapping() {
+    public ClassMapping clearValueMapping() {
         isValue = false;
         this.valueSetter = this.valueGetter = null;
         return this;
     }
 
-    public ClassMetadata addProperty(PropertyReference ref) {
+    public ClassMapping addProperty(PropertyReference ref) {
         properties.put(ref.propertyName, ref);
         return this;
     }
-    public ClassMetadata dateHandler(DateHandler dateHandler) {
+    public ClassMapping dateHandler(DateHandler dateHandler) {
         this.dateHandler = dateHandler;
         return this;
     }
 
-    public ClassMetadata scanProperties(boolean scan) {
+    public ClassMapping scanProperties(boolean scan) {
         this.scanProperties = scan;
         return this;
     }
@@ -91,7 +91,7 @@ public class ClassMetadata {
         return valueGetter;
     }
 
-    public GeneratorMetadata getGenerator() {
+    public QsonGenerator getGenerator() {
         return generator;
     }
 

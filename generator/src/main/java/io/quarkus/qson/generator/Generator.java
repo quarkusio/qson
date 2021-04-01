@@ -11,9 +11,9 @@ import java.time.format.DateTimeFormatter;
 import java.util.HashMap;
 import java.util.Map;
 
-public class Generator implements GeneratorMetadata {
+public class Generator implements QsonGenerator {
 
-    Map<Class, ClassMetadata> classGenerators = new HashMap<>();
+    Map<Class, ClassMapping> classGenerators = new HashMap<>();
     DateHandler defaultDate = DateHandler.DEFAULT;
 
     /**
@@ -54,17 +54,17 @@ public class Generator implements GeneratorMetadata {
      * @return
      */
     @Override
-    public ClassMetadata metadataFor(Class type) {
-        ClassMetadata generator = classGenerators.get(type);
+    public ClassMapping mappingFor(Class type) {
+        ClassMapping generator = classGenerators.get(type);
         if (generator == null) {
-            generator = new ClassMetadata(this, type);
+            generator = new ClassMapping(this, type);
             scanQsonValue(generator);
             classGenerators.put(type, generator);
         }
         return generator;
     }
 
-    private void scanQsonValue(ClassMetadata generator) {
+    private void scanQsonValue(ClassMapping generator) {
         boolean hasConstructor = false;
         for (Constructor con : generator.type.getConstructors()) {
             if (con.getParameterCount() == 0) {

@@ -20,7 +20,7 @@ public class DateHandler {
     public static final DateHandler SECONDS;
 
     /**
-     * Defaults to String ISO_OFFSET_DATE_TIME
+     * Defaults to JSON string with ISO_OFFSET_DATE_TIME format
      */
     public static final DateHandler DEFAULT;
 

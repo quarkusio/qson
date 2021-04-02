@@ -37,13 +37,12 @@ public class Generator implements QsonGenerator {
     }
 
     /**
-     * Set default for java.util.Date marshalling to be
-     * a String formatted by DateTimeFormatter parameter
+     * Set default for java.util.Date and java.time.OffsetDateTime marshalling to be
+     * a String formatted by string pattern.  Pattern corresponds to DatTimeFormatter configuration
      */
     @Override
-    public Generator dateFormat(DateTimeFormatter formatter, DateFormat format) {
-        defaultDate = new DateHandler(format, formatter);
-        defaultDate.formatter = formatter;
+    public Generator dateFormat(String pattern) {
+        defaultDate = new DateHandler(pattern);
         return this;
     }
 

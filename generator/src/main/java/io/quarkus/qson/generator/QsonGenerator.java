@@ -10,22 +10,22 @@ import java.time.format.DateTimeFormatter;
  */
 public interface QsonGenerator {
     /**
-     * Set default for java.util.Date and java.time.* (de)serialization to be
+     * Set default for java.util.Date and java.time.OffsetDateTime (de)serialization to be
      * number of milliseconds since epoch.
      */
     QsonGenerator millisecondsDateFormat();
 
     /**
-     * Set default for java.util.Date and java.time.* (de)serialization to be
+     * Set default for java.util.Date and java.time.OffsetDateTime (de)serialization to be
      * number of seconds since epoch.
      */
     QsonGenerator secondsDateFormat();
 
     /**
-     * Set default for java.util.Date (de)serialization to be
-     * a String formatted by DateTimeFormatter parameter
+     * Set default for java.util.Date  and java.time.OffsetDateTime(de)serialization to be
+     * a String with the specified pattern.  Pattern corresponds to DatTimeFormatter configuration
      */
-    QsonGenerator dateFormat(DateTimeFormatter formatter, DateFormat format);
+    QsonGenerator dateFormat(String pattern);
 
     /**
      * Default mapping for date and time classes for all parsers and writers
@@ -36,7 +36,7 @@ public interface QsonGenerator {
     DateHandler defaultDateHandler();
 
     /**
-     * Fine tune generator class mappings for a specific type
+     * Fine tune the class mappings for a specific type
      *
      * @param type
      * @return

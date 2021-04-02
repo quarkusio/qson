@@ -65,8 +65,30 @@ public class ClassMapping {
         properties.put(ref.propertyName, ref);
         return this;
     }
-    public ClassMapping dateHandler(DateHandler dateHandler) {
-        this.dateHandler = dateHandler;
+    /**
+     * Set default for java.util.Date and java.time.OffsetDateTime marshalling to be
+     * number of milliseconds since epoch.
+     */
+    public ClassMapping millisecondsDateFormat() {
+        dateHandler = DateHandler.MILLISECONDS;
+        return this;
+    }
+
+    /**
+     * Set default for java.util.Date and java.time.OffsetDateTime marshalling to be
+     * number of seconds since epoch.
+     */
+    public ClassMapping secondsDateFormat() {
+        dateHandler = DateHandler.SECONDS;
+        return this;
+    }
+
+    /**
+     * Set default for java.util.Date and java.time.OffsetDateTime marshalling to be
+     * a String formatted by string pattern.  Pattern corresponds to DatTimeFormatter configuration
+     */
+    public ClassMapping dateFormat(String pattern) {
+        dateHandler = new DateHandler(pattern);
         return this;
     }
 

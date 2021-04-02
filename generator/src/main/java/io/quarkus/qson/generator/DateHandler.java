@@ -11,8 +11,7 @@ import java.time.format.DateTimeFormatter;
  *
  */
 public class DateHandler {
-    DateFormat format;
-    DateTimeFormatter formatter;
+    String format;
     boolean isMilliseconds;
     boolean isSeconds;
 
@@ -32,14 +31,12 @@ public class DateHandler {
         SECONDS.isSeconds = true;
 
         DEFAULT = new DateHandler();
-        DEFAULT.formatter = DateTimeFormatter.ISO_OFFSET_DATE_TIME;
-        DEFAULT.format = new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss.SSSXXX");
+        DEFAULT.format = "yyyy-MM-dd'T'HH:mm:ss.SSSXXX";
     }
 
     private DateHandler() {}
 
-    public DateHandler(DateFormat format, DateTimeFormatter formatter) {
+    public DateHandler(String format) {
         this.format = format;
-        this.formatter = formatter;
     }
 }

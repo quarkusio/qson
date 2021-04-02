@@ -67,8 +67,7 @@ public class FunqyHttpBuildStep {
                         continue;
                     }
                     Type type = method.getGenericParameterTypes()[i];
-                    Class clz = method.getParameterTypes()[i];
-                    qson.produce(new QsonBuildItem(clz, type, true, false));
+                    qson.produce(new QsonBuildItem(type, true, false));
                 }
             }
             Class<?> returnType = method.getReturnType();
@@ -80,7 +79,7 @@ public class FunqyHttpBuildStep {
                     type = pt.getActualTypeArguments()[0];
                 }
                 if (!void.class.equals(returnType) && !Void.class.equals(returnType)) {
-                    qson.produce(new QsonBuildItem(returnType, type, false, true));
+                    qson.produce(new QsonBuildItem(type, false, true));
                 }
             }
         }

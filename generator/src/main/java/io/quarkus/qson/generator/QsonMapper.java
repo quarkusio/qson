@@ -192,8 +192,8 @@ public class QsonMapper extends Generator implements QsonGenerator {
      *
      * @param classes
      */
-    public void writersFor(Class... classes) {
-        for (Class clz : classes) writerFor(clz);
+    public void writersFor(Type... classes) {
+        for (Type clz : classes) writerFor(clz);
     }
 
     /**
@@ -209,39 +209,27 @@ public class QsonMapper extends Generator implements QsonGenerator {
     /**
      * Create ObjectWriter for specified type
      *
-     *
-     * @param clz
-     * @return
-     */
-    public QsonObjectWriter writerFor(Class clz) {
-        return writerFor(clz, clz);
-    }
-
-    /**
-     * Create ObjectWriter for specified type
-     *
      * @param type
      * @return
      */
     public QsonObjectWriter writerFor(GenericType type) {
-        return writerFor(type.getRawType(), type.getType());
+        return writerFor(type.getType());
     }
 
     /**
      * Create ObjectWriter for specified type
      *
-     * @param clz
      * @param genericType
      * @return
      */
-    public QsonObjectWriter writerFor(Class clz, Type genericType) {
+    public QsonObjectWriter writerFor(Type genericType) {
         String key = key(genericType);
         QsonObjectWriter writer = serializers.get(key);
         if (writer != null) return writer;
         synchronized(serializers) {
             writer = serializers.get(key);
             if (writer != null) return writer;
-            String className = generateSerializers(clz, genericType);
+            String className = generateSerializers(genericType);
             try {
                 Class serializer = cl.loadClass(className);
                 writer = (QsonObjectWriter) serializer.newInstance();
@@ -256,13 +244,12 @@ public class QsonMapper extends Generator implements QsonGenerator {
     /**
      * Write target object to OutputStream.  Uses UTF-8 encoding.
      *
-     * @param type
      * @param genericType
      * @param target
      * @param stream
      */
-    public void writeStream(Class type, Type genericType, Object target, OutputStream stream) {
-        QsonObjectWriter objectWriter = writerFor(type, genericType);
+    public void writeStream(Type genericType, Object target, OutputStream stream) {
+        QsonObjectWriter objectWriter = writerFor(genericType);
         objectWriter.writeValue(stream, target);
     }
 
@@ -273,19 +260,8 @@ public class QsonMapper extends Generator implements QsonGenerator {
      * @param target
      * @param stream
      */
-    public void writeStream(Class type, Object target, OutputStream stream) {
-        writeStream(type, type, target, stream);
-    }
-
-    /**
-     * Write target object to OutputStream.  Uses UTF-8 encoding.
-     *
-     * @param type
-     * @param target
-     * @param stream
-     */
     public void writeStream(GenericType type, Object target, OutputStream stream) {
-        writeStream(type.getRawType(), type.getType(), target, stream);
+        writeStream(type.getType(), target, stream);
     }
 
     /**
@@ -297,19 +273,18 @@ public class QsonMapper extends Generator implements QsonGenerator {
      * @param stream
      */
     public void writeStream(Object target, OutputStream stream) {
-        writeStream(target.getClass(), target.getClass(), stream);
+        writeStream(target.getClass(), target, stream);
     }
 
     /**
      * Serialize target object to a byte array. Uses UTF-8 encoding.
      *
-     * @param type
      * @param genericType
      * @param target
      * @return
      */
-    public byte[] writeBytes(Class type, Type genericType, Object target) {
-        QsonObjectWriter objectWriter = writerFor(type, genericType);
+    public byte[] writeBytes(Type genericType, Object target) {
+        QsonObjectWriter objectWriter = writerFor(genericType);
         return objectWriter.writeValueAsBytes(target);
     }
 
@@ -320,19 +295,8 @@ public class QsonMapper extends Generator implements QsonGenerator {
      * @param target
      * @return
      */
-    public byte[] writeBytes(Class type, Object target) {
-        return writeBytes(type, type, target);
-    }
-
-    /**
-     * Serialize target object to a byte array. Uses UTF-8 encoding.
-     *
-     * @param type
-     * @param target
-     * @return
-     */
     public byte[] writeBytes(GenericType type, Object target) {
-        return writeBytes(type.getRawType(), type.getType(), target);
+        return writeBytes(type.getType(), target);
     }
 
     /**
@@ -351,13 +315,12 @@ public class QsonMapper extends Generator implements QsonGenerator {
     /**
      * Serialize target to a json string. Uses UTF-8 encoding.
      *
-     * @param type
      * @param genericType
      * @param target
      * @return
      */
-    public String writeString(Class type, Type genericType, Object target) {
-        QsonObjectWriter objectWriter = writerFor(type, genericType);
+    public String writeString(Type genericType, Object target) {
+        QsonObjectWriter objectWriter = writerFor(genericType);
         return objectWriter.writeValueAsString(target);
     }
 
@@ -368,19 +331,8 @@ public class QsonMapper extends Generator implements QsonGenerator {
      * @param target
      * @return
      */
-    public String writeString(Class type, Object target) {
-        return writeString(type, type, target);
-    }
-
-    /**
-     * Serialize target to a json string. Uses UTF-8 encoding.
-     *
-     * @param type
-     * @param target
-     * @return
-     */
     public String writeString(GenericType type, Object target) {
-        return writeString(type.getRawType(), type.getType(), target);
+        return writeString(type.getType(), target);
     }
 
     /**
@@ -393,15 +345,15 @@ public class QsonMapper extends Generator implements QsonGenerator {
         return writeString(target.getClass(), target);
     }
 
-    private String generateSerializers(Class clz, Type genericType) {
+    private String generateSerializers(Type genericType) {
         String key = key(genericType);
         if (generatedSerializers.containsKey(key)) return generatedSerializers.get(key);
-        Serializer.Builder builder = serializer(clz, genericType).output(cl).generate();
+        Serializer.Builder builder = serializer(genericType).output(cl).generate();
         generatedSerializers.put(key, builder.className());
-        for (Map.Entry<Type, Class> entry : builder.referenced().entrySet()) {
-            String refKey = key(entry.getKey());
+        for (Type entry : builder.referenced()) {
+            String refKey = key(entry);
             if (generatedSerializers.containsKey(refKey)) continue;
-            generateSerializers(entry.getValue(), entry.getKey());
+            generateSerializers(entry);
         }
         return builder.className();
     }

@@ -108,18 +108,6 @@ public class Deserializer {
         }
 
         /**
-         * If generating a collection class deserializer, use this name instead
-         * of the hardcoded name generated.
-         *
-         * @param name
-         * @return
-         */
-        public Builder collectionClassName(String name) {
-            this.className = name;
-            return this;
-        }
-
-        /**
          * Nested types that will need a parser generated for.
          *
          * @return

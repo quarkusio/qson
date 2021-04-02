@@ -77,7 +77,7 @@ public class QsonBuildStep {
             boolean writer = generateWriter == null || generateWriter.asBoolean();
             if (!classes.contains(className)) {
                 Class clz = Thread.currentThread().getContextClassLoader().loadClass(className);
-                qson.produce(new QsonBuildItem(clz, clz, parser, writer));
+                qson.produce(new QsonBuildItem(clz, parser, writer));
                 classes.add(className);
             }
         }
@@ -96,7 +96,7 @@ public class QsonBuildStep {
             }
             if (!classes.contains(className)) {
                 Class clz = Thread.currentThread().getContextClassLoader().loadClass(className);
-                qson.produce(new QsonBuildItem(clz, clz, true, true));
+                qson.produce(new QsonBuildItem(clz, true, true));
                 classes.add(className);
             }
         }
@@ -107,12 +107,12 @@ public class QsonBuildStep {
                          List<QsonBuildItem> classes) {
         if (classes == null || classes.isEmpty()) return null;
         Set<Type> parsers = new HashSet<>();
-        Map<Type, Class> writers = new HashMap<>();
+        Set<Type> writers = new HashSet<>();
 
         // squeeze duplicate entries
         for (QsonBuildItem item : classes) {
             if(item.isGenerateParser()) parsers.add(item.getGenericType());
-            if(item.isGenerateWriter()) writers.put(item.getGenericType(), item.getType());
+            if(item.isGenerateWriter()) writers.add(item.getGenericType());
         }
 
         Map<String, String> generatedParsers = new HashMap<>();
@@ -137,12 +137,12 @@ public class QsonBuildStep {
             generateParsers(builder.referenced(), generatedParsers, adaptor);
         }
     }
-    public void generateWriters(Map<Type, Class> parsers, Map<String, String> generatedWriters, GeneratedClassGizmoAdaptor adaptor) {
-        for (Map.Entry<Type, Class> entry : parsers.entrySet()) {
-            String key = Types.typename(entry.getKey());
+    public void generateWriters(Set<Type> writers, Map<String, String> generatedWriters, GeneratedClassGizmoAdaptor adaptor) {
+        for (Type entry : writers) {
+            String key = Types.typename(entry);
             if (generatedWriters.containsKey(key)) continue;
             Generator generator = new Generator();
-            Serializer.Builder builder = generator.serializer(entry.getValue(), entry.getKey());
+            Serializer.Builder builder = generator.serializer(entry);
             builder.output(adaptor).generate();
             generatedWriters.put(key, builder.className());
             generateWriters(builder.referenced(), generatedWriters, adaptor);

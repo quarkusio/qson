@@ -8,6 +8,7 @@ import io.quarkus.gizmo.FieldDescriptor;
 import io.quarkus.gizmo.MethodCreator;
 import io.quarkus.gizmo.MethodDescriptor;
 import io.quarkus.gizmo.ResultHandle;
+import io.quarkus.qson.QsonException;
 import io.quarkus.qson.util.Types;
 import io.quarkus.qson.serializer.CollectionWriter;
 import io.quarkus.qson.serializer.GenericObjectWriter;
@@ -21,6 +22,7 @@ import java.lang.reflect.Type;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -36,11 +38,10 @@ public class Serializer {
     public static final String CLINIT = "<clinit>";
 
     public static class Builder {
-        Class targetType;
-        Type targetGenericType;
+        Type type;
         ClassOutput output;
         String className;
-        Map<Type, Class> referenced = new HashMap<>();
+        Set<Type> referenced = new HashSet<>();
         List<PropertyReference> properties;
         QsonGenerator generator;
         ClassMapping classGen;
@@ -49,13 +50,8 @@ public class Serializer {
             this.generator = generator;
         }
 
-        public Builder type(Class targetType) {
-            this.targetType = targetType;
-            return this;
-        }
-
-        public Builder generic(Type targetGenericType) {
-            this.targetGenericType = targetGenericType;
+        public Builder type(Type targetType) {
+            this.type = targetType;
             return this;
         }
 
@@ -63,23 +59,12 @@ public class Serializer {
             this.output = output;
             return this;
         }
-        /**
-         * If generating a collection class deserializer, use this name instead
-         * of the hardcoded name generated.
-         *
-         * @param name
-         * @return
-         */
-        public Builder collectionClassName(String name) {
-            this.className = name;
-            return this;
-        }
 
         public String className() {
             return className;
         }
 
-        public Map<Type, Class> referenced() {
+        public Set<Type> referenced() {
             return referenced;
         }
 
@@ -93,65 +78,70 @@ public class Serializer {
         }
 
         public Builder generate() {
-            if (Map.class.equals(targetType)
-                    || List.class.equals(targetType)
-                    || Set.class.equals(targetType)) {
+            if (type instanceof Class) {
+                Class targetType = (Class) type;
+                if (isGeneric(targetType, type)) {
+                    className = GenericObjectWriter.class.getName();
+                    return this;
+                } else if (targetType.isEnum()) {
+                    Serializer s = new Serializer(output, targetType, type);
+                    s.generateEnum();
+                    className = fqn(targetType, type);
+                    return this;
+                } else {
+                    Serializer s = new Serializer(output, targetType, type);
+                    classGen = generator.mappingFor(targetType);
+                    if (classGen != null) {
+                        if (classGen.isValue) {
 
-            }
-            if (targetGenericType == null) targetGenericType = targetType;
-            if (isGeneric(targetType, targetGenericType)) {
-                // use the generic object writer
-                className = GenericObjectWriter.class.getName();
-                return this;
-            } else if ((Map.class.isAssignableFrom(targetType)
-                    || List.class.isAssignableFrom(targetType)
-                    || Set.class.isAssignableFrom(targetType)) && hasCollectionWriter(targetType, targetGenericType)) {
-                // generate a writer for the collection
-                if (className == null) {
-                    className = Util.generatedClassName(targetGenericType);
-                    className += "__Serializer";
-                }
-                Serializer s = new Serializer(output, className, targetType, targetGenericType);
-                s.generateCollection();
-                Util.addReference(referenced, targetType, targetGenericType);
-                return this;
-            } else if (targetType.isEnum()) {
-                Serializer s = new Serializer(output, targetType, targetGenericType);
-                s.generateEnum();
-                className = fqn(targetType, targetGenericType);
-                return this;
-            } else {
-                Serializer s = new Serializer(output, targetType, targetGenericType);
-                classGen = generator.mappingFor(targetType);
-                if (classGen != null) {
-                    if (classGen.isValue) {
-
-                    } else {
-                        properties = classGen.getProperties();
-                    }
-
-                }
-                // NOTE: keep full property list around just in case we're doing serialization
-                // and somebody wants to reuse.
-                List<PropertyReference> tmp = new ArrayList<>();
-
-                Method anyGetter = null;
-                for (PropertyReference ref : properties) {
-                    if (ref.getter != null) {
-                        if (ref.isAny) {
-                            anyGetter = ref.getter;
-                            continue;
+                        } else {
+                            properties = classGen.getProperties();
                         }
-                        tmp.add(ref);
-                        Util.addReference(referenced, ref.type, ref.genericType);
+
+                    }
+                    // NOTE: keep full property list around just in case we're doing serialization
+                    // and somebody wants to reuse.
+                    List<PropertyReference> tmp = new ArrayList<>();
+
+                    Method anyGetter = null;
+                    for (PropertyReference ref : properties) {
+                        if (ref.getter != null) {
+                            if (ref.isAny) {
+                                anyGetter = ref.getter;
+                                continue;
+                            }
+                            tmp.add(ref);
+                            Util.addReference(referenced, ref.genericType);
+                        }
+                    }
+                    s.properties = tmp;
+                    s.anyGetter = anyGetter;
+                    s.generate();
+                    className = fqn(targetType, type);
+                    return this;
+                }
+            } else if (type instanceof ParameterizedType) {
+                Class targetType = Types.getRawType(type);
+                if (Map.class.isAssignableFrom(targetType)
+                        || List.class.isAssignableFrom(targetType)
+                        || Set.class.isAssignableFrom(targetType)) {
+                    if (hasCollectionWriter(targetType, type)) {
+                        // generate a writer for the collection
+                        if (className == null) {
+                            className = Util.generatedClassName(type);
+                            className += "__Serializer";
+                        }
+                        Serializer s = new Serializer(output, className, targetType, type);
+                        s.generateCollection();
+                        Util.addReference(referenced, type);
+                        return this;
+                    } else {
+                        className = GenericObjectWriter.class.getName();
+                        return this;
                     }
                 }
-                s.properties = tmp;
-                s.anyGetter = anyGetter;
-                s.generate();
-                className = fqn(targetType, targetGenericType);
-                return this;
             }
+            throw new QsonException("Unsupported generic type for serializer generation: " + type.getTypeName());
         }
     }
 

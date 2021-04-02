@@ -86,11 +86,11 @@ public class CommonQsonJaxrsBuildStep {
                 Class sub = Thread.currentThread().getContextClassLoader().loadClass(ci.name().toString());
                 genericType = TypeUtil.resolveTypeVariables(sub, genericType);
                 if (!Types.containsTypeVariable(genericType)) {
-                    qson.produce(new QsonBuildItem(Types.getRawType(genericType), genericType, parser, writer));
+                    qson.produce(new QsonBuildItem(genericType, parser, writer));
                 }
             }
         } else {
-            qson.produce(new QsonBuildItem(Types.getRawType(genericType), genericType, parser, writer));
+            qson.produce(new QsonBuildItem(genericType, parser, writer));
         }
     }
 

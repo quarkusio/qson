@@ -114,11 +114,10 @@ public class Generator implements QsonGenerator {
         return new Deserializer.Builder(this).type(generic.getType());
     }
 
-    public Serializer.Builder serializer(Class targetType) {
-        return new Serializer.Builder(this).type(targetType);
+    public Serializer.Builder serializer(Type genericType) {
+        return new Serializer.Builder(this).type(genericType);
     }
-
-    public Serializer.Builder serializer(Class targetType, Type genericType) {
-        return new Serializer.Builder(this).type(targetType).generic(genericType);
+    public Serializer.Builder serializer(GenericType genericType) {
+        return new Serializer.Builder(this).type(genericType.getType());
     }
 }

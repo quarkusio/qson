@@ -33,6 +33,9 @@ public class Types {
      * @return
      */
     public static String typename(Type type) {
+        if (type instanceof Class) {
+            return ((Class)type).getName();
+        }
         StringBuilder sb = new StringBuilder();
         Type ownerType = null;
         Type rawType = type;

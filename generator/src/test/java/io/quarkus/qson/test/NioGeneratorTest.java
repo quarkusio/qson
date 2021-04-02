@@ -39,7 +39,7 @@ public class NioGeneratorTest {
         GenericType<List<Person2>> type = new GenericType<List<Person2>>() {
         };
         Generator generator = new Generator();
-        Deserializer.Builder builder = generator.deserializer(type.getRawType(), type.getType()).output(new TestClassOutput());
+        Deserializer.Builder builder = generator.deserializer(type).output(new TestClassOutput());
         builder.generate();
         Serializer.Builder sBuilder = generator.serializer(type.getRawType(), type.getType()).output(new TestClassOutput());
         sBuilder.generate();

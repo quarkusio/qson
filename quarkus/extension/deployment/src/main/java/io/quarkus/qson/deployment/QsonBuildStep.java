@@ -106,12 +106,12 @@ public class QsonBuildStep {
     public GeneratedQsonClassesBuildItem generate(BuildProducer<GeneratedClassBuildItem> toGenerate,
                          List<QsonBuildItem> classes) {
         if (classes == null || classes.isEmpty()) return null;
-        Map<Type, Class> parsers = new HashMap<>();
+        Set<Type> parsers = new HashSet<>();
         Map<Type, Class> writers = new HashMap<>();
 
         // squeeze duplicate entries
         for (QsonBuildItem item : classes) {
-            if(item.isGenerateParser()) parsers.put(item.getGenericType(), item.getType());
+            if(item.isGenerateParser()) parsers.add(item.getGenericType());
             if(item.isGenerateWriter()) writers.put(item.getGenericType(), item.getType());
         }
 
@@ -126,12 +126,12 @@ public class QsonBuildStep {
         return new GeneratedQsonClassesBuildItem(generatedParsers, generatedWriters);
     }
 
-    public void generateParsers(Map<Type, Class> parsers, Map<String, String> generatedParsers, GeneratedClassGizmoAdaptor adaptor) {
-        for (Map.Entry<Type, Class> entry : parsers.entrySet()) {
-            String key = Types.typename(entry.getKey());
+    public void generateParsers(Set<Type> parsers, Map<String, String> generatedParsers, GeneratedClassGizmoAdaptor adaptor) {
+        for (Type entry : parsers) {
+            String key = Types.typename(entry);
             if (generatedParsers.containsKey(key)) continue;
             Generator generator = new Generator();
-            Deserializer.Builder builder = generator.deserializer(entry.getValue(), entry.getKey());
+            Deserializer.Builder builder = generator.deserializer(entry);
             builder.output(adaptor).generate();
             generatedParsers.put(key, builder.className());
             generateParsers(builder.referenced(), generatedParsers, adaptor);

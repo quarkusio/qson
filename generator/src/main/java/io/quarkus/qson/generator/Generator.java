@@ -1,5 +1,6 @@
 package io.quarkus.qson.generator;
 
+import io.quarkus.qson.GenericType;
 import io.quarkus.qson.QsonException;
 import io.quarkus.qson.QsonValue;
 
@@ -105,11 +106,12 @@ public class Generator implements QsonGenerator {
         return defaultDate;
     }
 
-    public Deserializer.Builder deserializer(Class targetType) {
-        return new Deserializer.Builder(this).type(targetType);
+    public Deserializer.Builder deserializer(Type generic) {
+        return new Deserializer.Builder(this).type(generic);
     }
-    public Deserializer.Builder deserializer(Class targetType, Type generic) {
-        return new Deserializer.Builder(this).type(targetType).generic(generic);
+
+    public Deserializer.Builder deserializer(GenericType generic) {
+        return new Deserializer.Builder(this).type(generic.getType());
     }
 
     public Serializer.Builder serializer(Class targetType) {

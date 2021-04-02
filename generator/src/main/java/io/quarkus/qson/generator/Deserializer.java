@@ -46,6 +46,7 @@ import java.time.OffsetDateTime;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -75,12 +76,11 @@ public class Deserializer {
     }
 
     public static class Builder {
-        Class targetType;
-        Type targetGenericType;
+        Type type;
         ClassOutput output;
         String className;
         List<PropertyReference> properties;
-        Map<Type, Class> referenced = new HashMap<>();
+        Set<Type> referenced = new HashSet<>();
         Generator generator;
         ClassMapping classGen;
 
@@ -88,13 +88,8 @@ public class Deserializer {
             this.generator = generator;
         }
 
-        public Builder type(Class targetType) {
-            this.targetType = targetType;
-            return this;
-        }
-
-        public Builder generic(Type targetGenericType) {
-            this.targetGenericType = targetGenericType;
+        public Builder type(Type targetType) {
+            this.type = targetType;
             return this;
         }
 
@@ -129,110 +124,120 @@ public class Deserializer {
          *
          * @return
          */
-        public Map<Type, Class> referenced() {
+        public Set<Type> referenced() {
             return referenced;
         }
         public Builder generate() {
-            if (targetGenericType == null) targetGenericType = targetType;
-            if (int.class.equals(targetType)
-                    || Integer.class.equals(targetType)) {
-                className = IntegerParser.class.getName();
+            if (type instanceof Class) {
+                if (int.class.equals(type)
+                        || Integer.class.equals(type)) {
+                    className = IntegerParser.class.getName();
+                    return this;
+                }
+                if (short.class.equals(type)
+                        || Short.class.equals(type)) {
+                    className = ShortParser.class.getName();
+                    return this;
+                }
+                if (long.class.equals(type)
+                        || Long.class.equals(type)) {
+                    className = LongParser.class.getName();
+                    return this;
+                }
+                if (byte.class.equals(type)
+                        || Byte.class.equals(type)) {
+                    className = ByteParser.class.getName();
+                    return this;
+                }
+                if (float.class.equals(type)
+                        || Float.class.equals(type)
+                ) {
+                    className = FloatParser.class.getName();
+                    return this;
+                }
+                if (double.class.equals(type)
+                        || Double.class.equals(type)
+                ) {
+                    className = DoubleParser.class.getName();
+                    return this;
+                }
+                if (boolean.class.equals(type)
+                        || Boolean.class.equals(type)
+                ) {
+                    className = BooleanParser.class.getName();
+                    return this;
+                }
+                if (String.class.equals(type)) {
+                    className = StringParser.class.getName();
+                    return this;
+                }
+                if (Map.class.equals(type) || List.class.equals(type)) {
+                    className = GenericParser.class.getName();
+                    return this;
+                }
+                if (Set.class.equals(type)) {
+                    className = GenericSetParser.class.getName();
+                    return this;
+                }
+                Class targetType = (Class)type;
+                if (targetType.isEnum()) {
+                    Deserializer deserializer = new Deserializer(output, targetType, type);
+                    deserializer.generateEnum();
+                    className = fqn(targetType);
+                    return this;
+                }
+                // user class parser generation
+
+                classGen = generator.mappingFor(targetType);
+                if (classGen != null) {
+                    if (classGen.isValue) {
+
+                    } else {
+                        properties = classGen.getProperties();
+                    }
+
+                }
+                // NOTE: keep full property list around just in case we're doing serialization
+                // and somebody wants to reuse.
+                List<PropertyReference> tmp = new ArrayList<>();
+
+                Method anySetter = null;
+                for (PropertyReference ref : properties) {
+                    if (ref.setter != null) {
+                        if (ref.isAny) {
+                            anySetter = ref.setter;
+                            continue;
+                        }
+                        tmp.add(ref);
+                        Util.addReference(referenced, ref.genericType);
+                    }
+                }
+                // make sure properties are sorted so key matching works.
+                Collections.sort(tmp, (ref, t1) -> ref.jsonName.compareTo(t1.jsonName));
+                Deserializer deserializer = new Deserializer(output, targetType, type);
+                deserializer.anyMethod = anySetter;
+                // set properties list to setters only list
+                deserializer.properties = tmp;
+                deserializer.generate();
+                className = fqn(targetType);
                 return this;
-            }
-            if (short.class.equals(targetType)
-                    || Short.class.equals(targetType)) {
-                className = ShortParser.class.getName();
-                return this;
-            }
-            if (long.class.equals(targetType)
-                    || Long.class.equals(targetType)) {
-                className = LongParser.class.getName();
-                return this;
-            }
-            if (byte.class.equals(targetType)
-                    || Byte.class.equals(targetType)) {
-                className = ByteParser.class.getName();
-                return this;
-            }
-            if (float.class.equals(targetType)
-                    || Float.class.equals(targetType)
-            ) {
-                className = FloatParser.class.getName();
-                return this;
-            }
-            if (double.class.equals(targetType)
-                    || Double.class.equals(targetType)
-            ) {
-                className = DoubleParser.class.getName();
-                return this;
-            }
-            if (boolean.class.equals(targetType)
-                    || Boolean.class.equals(targetType)
-            ) {
-                className = BooleanParser.class.getName();
-                return this;
-            }
-            if (String.class.equals(targetType)) {
-                className = StringParser.class.getName();
-                return this;
-            }
-            if (Map.class.equals(targetType)
-                || List.class.equals(targetType)
-                || Set.class.equals(targetType)) {
-                if (targetGenericType instanceof ParameterizedType) {
+            } else if (type instanceof ParameterizedType) {
+                Class rawType = Types.getRawType(type);
+                if (Map.class.equals(rawType)
+                        || List.class.equals(rawType)
+                        || Set.class.equals(rawType)) {
                     if (className == null) {
-                        className = Util.generatedClassName(targetGenericType);
+                        className = Util.generatedClassName(type);
                         className += "__Parser";
                     }
-                    Deserializer deserializer = new Deserializer(output, className, targetType, targetGenericType);
+                    Deserializer deserializer = new Deserializer(output, className, Types.getRawType(type), type);
                     deserializer.generateCollection();
-                    Util.addReference(referenced, targetType, targetGenericType);
-                } else {
-                    className = GenericParser.class.getName();
-                }
-                return this;
-            }
-            if (targetType.isEnum()) {
-                Deserializer deserializer = new Deserializer(output, targetType, targetGenericType);
-                deserializer.generateEnum();
-                className = fqn(targetType, targetGenericType);
-                return this;
-            }
-            // user class parser generation
-
-            classGen = generator.mappingFor(targetType);
-            if (classGen != null) {
-                if (classGen.isValue) {
-
-                } else {
-                    properties = classGen.getProperties();
-                }
-
-            }
-            // NOTE: keep full property list around just in case we're doing serialization
-            // and somebody wants to reuse.
-            List<PropertyReference> tmp = new ArrayList<>();
-
-            Method anySetter = null;
-            for (PropertyReference ref : properties) {
-                if (ref.setter != null) {
-                    if (ref.isAny) {
-                        anySetter = ref.setter;
-                        continue;
-                    }
-                    tmp.add(ref);
-                    Util.addReference(referenced, ref.type, ref.genericType);
+                    Util.addReference(referenced, type);
+                    return this;
                 }
             }
-            // make sure properties are sorted so key matching works.
-            Collections.sort(tmp, (ref, t1) -> ref.jsonName.compareTo(t1.jsonName));
-            Deserializer deserializer = new Deserializer(output, targetType, targetGenericType);
-            deserializer.anyMethod = anySetter;
-            // set properties list to setters only list
-            deserializer.properties = tmp;
-            deserializer.generate();
-            className = fqn(targetType, targetGenericType);
-            return this;
+            throw new QsonException("Deserializer generation unsupported for generic type: " + type.getTypeName());
+
         }
     }
 
@@ -245,12 +250,12 @@ public class Deserializer {
     final String className;
     Method anyMethod;
 
-    private static String fqn(Class clz, Type genericType) {
+    private static String fqn(Class clz) {
         return clz.getName() + "__Parser";
     }
 
     Deserializer(ClassOutput classOutput, Class targetType, Type targetGenericType) {
-        this(classOutput, fqn(targetType, targetGenericType), targetType, targetGenericType);
+        this(classOutput, fqn(targetType), targetType, targetGenericType);
     }
 
     Deserializer(ClassOutput classOutput, String className, Class targetType, Type targetGenericType) {
@@ -515,7 +520,7 @@ public class Deserializer {
                 return scope.readInstanceField(FieldDescriptor.of(GenericSetParser.class, "startList", ParserState.class), PARSER);
             }
         } else {
-            FieldDescriptor parserField = FieldDescriptor.of(fqn(type, genericType), "PARSER", fqn(type, genericType));
+            FieldDescriptor parserField = FieldDescriptor.of(fqn(type), "PARSER", fqn(type));
             ResultHandle PARSER = scope.readStaticField(parserField);
             return scope.readInstanceField(FieldDescriptor.of(ObjectParser.class, "start", ParserState.class), PARSER);
         }
@@ -579,7 +584,7 @@ public class Deserializer {
                 return scope.readInstanceField(FieldDescriptor.of(GenericSetParser.class, "continueStartList", ParserState.class), PARSER);
             }
         } else {
-            FieldDescriptor parserField = FieldDescriptor.of(fqn(type, genericType), "PARSER", fqn(type, genericType));
+            FieldDescriptor parserField = FieldDescriptor.of(fqn(type), "PARSER", fqn(type));
             ResultHandle PARSER = scope.readStaticField(parserField);
             return scope.readInstanceField(FieldDescriptor.of(ObjectParser.class, "continueStart", ParserState.class), PARSER);
         }
@@ -824,7 +829,7 @@ public class Deserializer {
             return scope.readInstanceField(FieldDescriptor.of(GenericParser.class, "continueStart", ParserState.class), PARSER);
         } else {
             // todo handle nested collections and maps
-            FieldDescriptor parserField = FieldDescriptor.of(fqn(type, genericType), "PARSER", fqn(type, genericType));
+            FieldDescriptor parserField = FieldDescriptor.of(fqn(type), "PARSER", fqn(type));
             ResultHandle PARSER = scope.readStaticField(parserField);
             return scope.readInstanceField(FieldDescriptor.of(ObjectParser.class, "continueStart", ParserState.class), PARSER);
         }
@@ -903,9 +908,9 @@ public class Deserializer {
             MethodDescriptor descriptor = MethodDescriptor.ofMethod(GenericParser.class, "start", boolean.class, ParserContext.class);
             return scope.invokeVirtualMethod(descriptor, PARSER, ctx.ctx);
         } else {
-            FieldDescriptor parserField = FieldDescriptor.of(fqn(type, genericType), "PARSER", fqn(type, genericType));
+            FieldDescriptor parserField = FieldDescriptor.of(fqn(type), "PARSER", fqn(type));
             ResultHandle PARSER = scope.readStaticField(parserField);
-            MethodDescriptor descriptor = MethodDescriptor.ofMethod(fqn(type, genericType), "start", boolean.class.getName(), ParserContext.class.getName());
+            MethodDescriptor descriptor = MethodDescriptor.ofMethod(fqn(type), "start", boolean.class.getName(), ParserContext.class.getName());
             return scope.invokeVirtualMethod(descriptor, PARSER, ctx.ctx);
         }
     }

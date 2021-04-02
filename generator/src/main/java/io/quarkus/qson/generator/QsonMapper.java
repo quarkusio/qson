@@ -58,16 +58,6 @@ public class QsonMapper extends Generator implements QsonGenerator {
     }
 
     /**
-     * Generate a parser for specific class and caches it for future lookup.
-     *
-     * @param clz
-     * @return
-     */
-    public QsonParser parserFor(Class clz) {
-       return parserFor(clz, clz);
-    }
-
-    /**
      * Generate a parser for the specified GenericType.  Useful to bypass type erasure.
      *
      * For example:
@@ -80,24 +70,23 @@ public class QsonMapper extends Generator implements QsonGenerator {
      * @return
      */
     public QsonParser parserFor(GenericType type) {
-        return parserFor(type.getRawType(), type.getType());
+        return parserFor(type.getType());
     }
 
     /**
      * Generate parser based on class and generic type parameters.
      *
-     * @param clz
      * @param genericType
      * @return
      */
-    public QsonParser parserFor(Class clz, Type genericType) {
-        String key = key(clz, genericType);
+    public QsonParser parserFor(Type genericType) {
+        String key = key(genericType);
         QsonParser parser = deserializers.get(key);
         if (parser != null) return parser;
         synchronized(deserializers) {
             parser = deserializers.get(key);
             if (parser != null) return parser;
-            String className = generateDeserializers(clz, genericType);
+            String className = generateDeserializers(genericType);
             try {
                 Class deserializer = cl.loadClass(className);
                 parser = (QsonParser) deserializer.newInstance();
@@ -113,13 +102,12 @@ public class QsonMapper extends Generator implements QsonGenerator {
      * Deserialize a complete byte buffer into the specified type.
      *
      * @param fullBuffer
-     * @param type
      * @param genericType
      * @param <T>
      * @return
      */
-    public <T> T read(byte[] fullBuffer, Class<T> type, Type genericType) {
-        QsonParser parser = parserFor(type, genericType);
+    public <T> T read(byte[] fullBuffer, Type genericType) {
+        QsonParser parser = parserFor(genericType);
         return parser.readFrom(fullBuffer);
     }
 
@@ -131,45 +119,20 @@ public class QsonMapper extends Generator implements QsonGenerator {
      * @param <T>
      * @return
      */
-    public <T> T read(byte[] fullBuffer, Class<T> type) {
-        return read(fullBuffer, type, type);
-    }
-
-    /**
-     * Deserialize a complete byte buffer into the specified type.
-     *
-     * @param fullBuffer
-     * @param type
-     * @param <T>
-     * @return
-     */
     public <T> T read(byte[] fullBuffer, GenericType<T> type) {
-        return (T)read(fullBuffer, type.getRawType(), type.getType());
+        return (T)read(fullBuffer, type.getType());
     }
 
     /**
      * Deserialize a complete json string into the specified type
      *
      * @param json
-     * @param type
      * @param genericType
      * @param <T>
      * @return
      */
-    public <T> T read(String json, Class<T> type, Type genericType) {
-        return read(json.getBytes(JsonByteWriter.UTF8), type, genericType);
-    }
-
-    /**
-     * Deserialize a complete json string into the specified type
-     *
-     * @param json
-     * @param type
-     * @param <T>
-     * @return
-     */
-    public <T> T read(String json, Class<T> type) {
-        return read(json, type, type);
+    public <T> T read(String json, Type genericType) {
+        return read(json.getBytes(JsonByteWriter.UTF8), genericType);
     }
 
     /**
@@ -181,21 +144,20 @@ public class QsonMapper extends Generator implements QsonGenerator {
      * @return
      */
     public <T> T read(String json, GenericType<T> type) {
-        return (T)read(json, type.getRawType(), type.getType());
+        return (T)read(json, type.getType());
     }
 
     /**
      * Deserialize the specified type from an InputStream
      *
      * @param is
-     * @param type
      * @param genericType
      * @param <T>
      * @return
      * @throws IOException
      */
-    public <T> T read(InputStream is, Class<T> type, Type genericType) throws IOException {
-        QsonParser parser = parserFor(type, genericType);
+    public <T> T read(InputStream is, Type genericType) throws IOException {
+        QsonParser parser = parserFor(genericType);
         return parser.readFrom(is);
     }
 
@@ -208,32 +170,19 @@ public class QsonMapper extends Generator implements QsonGenerator {
      * @return
      * @throws IOException
      */
-    public <T> T read(InputStream is, Class<T> type) throws IOException {
-        return read(is, type, type);
-    }
-
-    /**
-     * Deserialize the specified type from an InputStream
-     *
-     * @param is
-     * @param type
-     * @param <T>
-     * @return
-     * @throws IOException
-     */
     public <T> T read(InputStream is, GenericType<T> type) throws IOException {
-        return (T)read(is, type.getRawType(), type.getType());
+        return (T)read(is, type.getType());
     }
 
-    private String generateDeserializers(Class clz, Type genericType) {
-        String key = key(clz, genericType);
+    private String generateDeserializers(Type genericType) {
+        String key = key(genericType);
         if (generatedDeserializers.containsKey(key)) return generatedDeserializers.get(key);
-        Deserializer.Builder builder = deserializer(clz, genericType).output(cl).generate();
+        Deserializer.Builder builder = deserializer(genericType).output(cl).generate();
         generatedDeserializers.put(key, builder.className());
-        for (Map.Entry<Type, Class> entry : builder.referenced().entrySet()) {
-            String refKey = key(entry.getValue(), entry.getKey());
+        for (Type entry : builder.referenced()) {
+            String refKey = key(entry);
             if (generatedDeserializers.containsKey(refKey)) continue;
-            generateDeserializers(entry.getValue(), entry.getKey());
+            generateDeserializers(entry);
         }
         return builder.className();
     }
@@ -286,7 +235,7 @@ public class QsonMapper extends Generator implements QsonGenerator {
      * @return
      */
     public QsonObjectWriter writerFor(Class clz, Type genericType) {
-        String key = key(clz, genericType);
+        String key = key(genericType);
         QsonObjectWriter writer = serializers.get(key);
         if (writer != null) return writer;
         synchronized(serializers) {
@@ -445,19 +394,19 @@ public class QsonMapper extends Generator implements QsonGenerator {
     }
 
     private String generateSerializers(Class clz, Type genericType) {
-        String key = key(clz, genericType);
+        String key = key(genericType);
         if (generatedSerializers.containsKey(key)) return generatedSerializers.get(key);
         Serializer.Builder builder = serializer(clz, genericType).output(cl).generate();
         generatedSerializers.put(key, builder.className());
         for (Map.Entry<Type, Class> entry : builder.referenced().entrySet()) {
-            String refKey = key(entry.getValue(), entry.getKey());
+            String refKey = key(entry.getKey());
             if (generatedSerializers.containsKey(refKey)) continue;
             generateSerializers(entry.getValue(), entry.getKey());
         }
         return builder.className();
     }
 
-    private String key(Class clz, Type genericType) {
-        return genericType == null ? Types.typename(clz) : Types.typename(genericType);
+    private String key(Type genericType) {
+        return Types.typename(genericType);
     }
 }

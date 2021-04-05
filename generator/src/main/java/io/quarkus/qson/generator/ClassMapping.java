@@ -1,7 +1,13 @@
 package io.quarkus.qson.generator;
 
+import io.quarkus.gizmo.MethodDescriptor;
+import io.quarkus.gizmo.ResultHandle;
+import io.quarkus.qson.QsonException;
+
+import java.lang.reflect.Constructor;
 import java.lang.reflect.Member;
 import java.lang.reflect.Method;
+import java.lang.reflect.Modifier;
 import java.util.ArrayList;
 import java.util.LinkedHashMap;
 import java.util.List;
@@ -51,7 +57,7 @@ public class ClassMapping {
 
     public ClassMapping valueGetter(Method getter) {
         isValue = true;
-        this.valueSetter = getter;
+        this.valueGetter = getter;
         return this;
     }
 
@@ -107,6 +113,19 @@ public class ClassMapping {
 
     public Member getValueSetter() {
         return valueSetter;
+    }
+
+    public Class getValueSetterType() {
+        if (getValueSetter() == null) {
+            throw new QsonException("There is no value setter for value class: " + getType().getName());
+        }
+        if (getValueSetter() instanceof Method) {
+            Method setter = (Method)getValueSetter();
+            return setter.getParameterTypes()[0];
+        } else {
+            Constructor setter = (Constructor)getValueSetter();
+            return setter.getParameterTypes()[0];
+        }
     }
 
     public Method getValueGetter() {

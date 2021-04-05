@@ -14,6 +14,7 @@ import io.quarkus.gizmo.ResultHandle;
 import io.quarkus.qson.QsonException;
 import io.quarkus.qson.deserializer.AnySetter;
 import io.quarkus.qson.deserializer.EnumParser;
+import io.quarkus.qson.deserializer.ValueParser;
 import io.quarkus.qson.util.Types;
 import io.quarkus.qson.deserializer.BaseParser;
 import io.quarkus.qson.deserializer.BooleanParser;
@@ -35,7 +36,9 @@ import io.quarkus.qson.deserializer.SetParser;
 import io.quarkus.qson.deserializer.ShortParser;
 import io.quarkus.qson.deserializer.StringParser;
 
+import java.lang.reflect.Constructor;
 import java.lang.reflect.Method;
+import java.lang.reflect.Modifier;
 import java.lang.reflect.ParameterizedType;
 import java.lang.reflect.Type;
 import java.math.BigDecimal;
@@ -179,7 +182,11 @@ public class Deserializer {
                 classGen = generator.mappingFor(targetType);
                 if (classGen != null) {
                     if (classGen.isValue) {
-
+                        Deserializer deserializer = new Deserializer(output, targetType, type);
+                        deserializer.mapping = classGen;
+                        deserializer.generateValueClass();
+                        className = fqn(targetType);
+                        return this;
                     } else {
                         properties = classGen.getProperties();
                     }
@@ -204,6 +211,8 @@ public class Deserializer {
                 Collections.sort(tmp, (ref, t1) -> ref.jsonName.compareTo(t1.jsonName));
                 Deserializer deserializer = new Deserializer(output, targetType, type);
                 deserializer.anyMethod = anySetter;
+                deserializer.mapping = classGen;
+                deserializer.generator = generator;
                 // set properties list to setters only list
                 deserializer.properties = tmp;
                 deserializer.generate();
@@ -219,6 +228,7 @@ public class Deserializer {
                         className += "__Parser";
                     }
                     Deserializer deserializer = new Deserializer(output, className, Types.getRawType(type), type);
+                    deserializer.generator = generator;
                     deserializer.generateCollection();
                     Util.addReference(referenced, type);
                     return this;
@@ -237,6 +247,8 @@ public class Deserializer {
     final ClassOutput classOutput;
     final String className;
     Method anyMethod;
+    ClassMapping mapping;
+    QsonGenerator generator;
 
     private static String fqn(Class clz) {
         return clz.getName() + "__Parser";
@@ -251,6 +263,95 @@ public class Deserializer {
         this.targetGenericType = targetGenericType;
         this.classOutput = classOutput;
         this.className = className;
+    }
+
+    ResultHandle parseValueClass(ClassMapping mapper, BytecodeCreator scope, _ParserContext ctx) {
+        if (mapper.getValueSetter() == null) {
+            throw new QsonException("There is no value setter for value class: " + mapper.getType().getName());
+        }
+        if (mapper.getValueSetter() instanceof Method) {
+            Method setter = (Method)mapper.getValueSetter();
+            if (Modifier.isStatic(setter.getModifiers())) {
+                return scope.invokeStaticMethod(MethodDescriptor.ofMethod(setter), popValue(ctx, scope, setter.getParameterTypes()[0]));
+            } else {
+                ResultHandle instance = scope.newInstance(MethodDescriptor.ofConstructor(mapper.getType()));
+                scope.invokeVirtualMethod(MethodDescriptor.ofMethod(setter), instance, popValue(ctx, scope, setter.getParameterTypes()[0]));
+                return instance;
+            }
+        } else {
+            Constructor setter = (Constructor)mapper.getValueSetter();
+            return scope.newInstance(MethodDescriptor.ofConstructor(mapper.getType(), setter.getParameterTypes()[0]), popValue(ctx, scope, setter.getParameterTypes()[0]));
+        }
+    }
+
+    ResultHandle callValueClassStartState(_ParserContext ctx, BytecodeCreator scope, ClassMapping mapper) {
+        Class type = mapper.getValueSetterType();
+        if (type.equals(String.class)) {
+            FieldDescriptor parserField = FieldDescriptor.of(ObjectParser.class, "PARSER", ObjectParser.class);
+            ResultHandle PARSER = scope.readStaticField(parserField);
+            MethodDescriptor descriptor = MethodDescriptor.ofMethod(ObjectParser.class, "startStringValue", boolean.class.getName(), ParserContext.class.getName());
+            return scope.invokeVirtualMethod(descriptor, PARSER, ctx.ctx);
+        } else if (type.equals(short.class) || type.equals(Short.class)
+                || type.equals(byte.class) || type.equals(Byte.class)
+                || type.equals(int.class) || type.equals(Integer.class)
+                || type.equals(long.class) || type.equals(Long.class)
+        ) {
+            FieldDescriptor parserField = FieldDescriptor.of(ObjectParser.class, "PARSER", ObjectParser.class);
+            ResultHandle PARSER = scope.readStaticField(parserField);
+            MethodDescriptor descriptor = MethodDescriptor.ofMethod(ObjectParser.class, "startIntegerValue", boolean.class.getName(), ParserContext.class.getName());
+            return scope.invokeVirtualMethod(descriptor, PARSER, ctx.ctx);
+        } else if (type.equals(float.class) || type.equals(Float.class)
+                || type.equals(double.class) || type.equals(Double.class)
+                || type.equals(BigDecimal.class)
+        ) {
+            FieldDescriptor parserField = FieldDescriptor.of(ObjectParser.class, "PARSER", ObjectParser.class);
+            ResultHandle PARSER = scope.readStaticField(parserField);
+            MethodDescriptor descriptor = MethodDescriptor.ofMethod(ObjectParser.class, "startNumberValue", boolean.class.getName(), ParserContext.class.getName());
+            return scope.invokeVirtualMethod(descriptor, PARSER, ctx.ctx);
+        } else if (type.equals(boolean.class) || type.equals(Boolean.class)) {
+            FieldDescriptor parserField = FieldDescriptor.of(ObjectParser.class, "PARSER", ObjectParser.class);
+            ResultHandle PARSER = scope.readStaticField(parserField);
+            MethodDescriptor descriptor = MethodDescriptor.ofMethod(ObjectParser.class, "startBooleanValue", boolean.class.getName(), ParserContext.class.getName());
+            return scope.invokeVirtualMethod(descriptor, PARSER, ctx.ctx);
+        } else {
+            throw new QsonException("Invalid value type for class: " + mapper.getType().getName());
+        }
+    }
+
+    void generateValueClass() {
+        creator = ClassCreator.builder().classOutput(classOutput)
+                .className(className)
+                .superClass(ValueParser.class).build();
+        FieldCreator PARSER = creator.getFieldCreator("PARSER", fqn()).setModifiers(ACC_STATIC | ACC_PUBLIC);
+        MethodCreator staticConstructor = creator.getMethodCreator(CLINIT, void.class);
+        staticConstructor.setModifiers(ACC_STATIC);
+        ResultHandle instance = staticConstructor.newInstance(MethodDescriptor.ofConstructor(fqn()));
+        staticConstructor.writeStaticField(PARSER.getFieldDescriptor(), instance);
+        staticConstructor.returnValue(null);
+
+        {
+            MethodCreator method = creator.getMethodCreator("value", Object.class, ParserContext.class);
+            _ParserContext ctx = new _ParserContext(method.getMethodParam(0));
+            method.returnValue(parseValueClass(mapping, method, ctx));
+        }
+
+
+        {
+            MethodCreator method = creator.getMethodCreator("start", boolean.class, ParserContext.class);
+            _ParserContext ctx = new _ParserContext(method.getMethodParam(0));
+            ResultHandle stateIndex = ctx.stateIndex(method);
+            BytecodeCreator ifScope = method.createScope();
+            ResultHandle passed = callValueClassStartState(ctx, ifScope, mapping);
+            ifScope = ifScope.ifZero(passed).trueBranch();
+            ctx.pushState(ifScope,
+                    ifScope.readInstanceField(FieldDescriptor.of(fqn(), "continueEndValue", ParserState.class), ifScope.getThis()),
+                    stateIndex);
+
+            ifScope.returnValue(ifScope.load(false));
+            method.invokeVirtualMethod(MethodDescriptor.ofMethod(fqn(), "endValue", void.class, ParserContext.class), method.getThis(), ctx.ctx);
+            method.returnValue(method.load(true));
+        }
+        creator.close();
     }
 
     void generateCollection() {
@@ -510,8 +611,14 @@ public class Deserializer {
         } else {
             FieldDescriptor parserField = FieldDescriptor.of(fqn(type), "PARSER", fqn(type));
             ResultHandle PARSER = scope.readStaticField(parserField);
-            return scope.readInstanceField(FieldDescriptor.of(ObjectParser.class, "start", ParserState.class), PARSER);
-        }
+            ClassMapping mapping = generator.mappingFor(type);
+            if (mapping.isValue()) {
+                return scope.readInstanceField(FieldDescriptor.of(ValueParser.class, "start", ParserState.class), PARSER);
+            } else {
+
+                return scope.readInstanceField(FieldDescriptor.of(ObjectParser.class, "start", ParserState.class), PARSER);
+            }
+         }
     }
 
     private ResultHandle continueValueState(Class type, Type genericType, BytecodeCreator scope, String property) {
@@ -574,7 +681,13 @@ public class Deserializer {
         } else {
             FieldDescriptor parserField = FieldDescriptor.of(fqn(type), "PARSER", fqn(type));
             ResultHandle PARSER = scope.readStaticField(parserField);
-            return scope.readInstanceField(FieldDescriptor.of(ObjectParser.class, "continueStart", ParserState.class), PARSER);
+            ClassMapping mapping = generator.mappingFor(type);
+            if (mapping.isValue()) {
+                return scope.readInstanceField(FieldDescriptor.of(ValueParser.class, "continueStart", ParserState.class), PARSER);
+            } else {
+
+                return scope.readInstanceField(FieldDescriptor.of(ObjectParser.class, "continueStart", ParserState.class), PARSER);
+            }
         }
     }
 
@@ -816,10 +929,15 @@ public class Deserializer {
             ResultHandle PARSER = scope.readStaticField(parserField);
             return scope.readInstanceField(FieldDescriptor.of(GenericParser.class, "continueStart", ParserState.class), PARSER);
         } else {
-            // todo handle nested collections and maps
             FieldDescriptor parserField = FieldDescriptor.of(fqn(type), "PARSER", fqn(type));
             ResultHandle PARSER = scope.readStaticField(parserField);
-            return scope.readInstanceField(FieldDescriptor.of(ObjectParser.class, "continueStart", ParserState.class), PARSER);
+            ClassMapping mapping = generator.mappingFor(type);
+            if (mapping.isValue()) {
+                return scope.readInstanceField(FieldDescriptor.of(ValueParser.class, "continueStart", ParserState.class), PARSER);
+            } else {
+
+                return scope.readInstanceField(FieldDescriptor.of(ObjectParser.class, "continueStart", ParserState.class), PARSER);
+            }
         }
     }
 
@@ -827,9 +945,7 @@ public class Deserializer {
         Class type = setter.type;
         Type genericType = setter.genericType;
         if (type.equals(String.class)
-                || type.equals(char.class) || type.equals(Character.class)
-                || type.equals(OffsetDateTime.class)
-        ) {
+                || type.equals(char.class) || type.equals(Character.class)) {
             MethodDescriptor descriptor = MethodDescriptor.ofMethod(fqn(), "startStringValue", boolean.class.getName(), ParserContext.class.getName());
             return scope.invokeVirtualMethod(descriptor, scope.getThis(), ctx.ctx);
         } else if (type.equals(short.class) || type.equals(Short.class)

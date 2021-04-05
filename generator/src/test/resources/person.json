@@ -1,0 +1,8 @@
+{
+  "methodString": "methodString",
+  "constructorString": "constructorString",
+  "listMethodString" : [
+    "mOne",
+    "mTwo"
+  ]
+}

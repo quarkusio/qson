@@ -40,44 +40,6 @@ public class Util {
     }
 
     /**
-     * Checks to see if clz is a user object or contains one (i.e. List&lt;UserObject&gt;)
-     * If it does, it adds the class and generic type to the referenceMap
-     *
-     * @param referenceMap
-     * @param clz
-     * @param genericType
-     */
-    public static void addReference(Map<Type, Class> referenceMap, Class clz, Type genericType) {
-        if (clz.isPrimitive()) return;
-        if (clz.equals(String.class)
-                || clz.equals(Integer.class)
-                || clz.equals(Short.class)
-                || clz.equals(Long.class)
-                || clz.equals(Byte.class)
-                || clz.equals(Boolean.class)
-                || clz.equals(Double.class)
-                || clz.equals(Float.class)
-                || clz.equals(Character.class)) {
-            return;
-        }
-        if (Map.class.isAssignableFrom(clz)
-                || List.class.isAssignableFrom(clz)
-                || Set.class.isAssignableFrom(clz)) {
-            if (genericType != null && genericType instanceof ParameterizedType) {
-                ParameterizedType pt = (ParameterizedType)genericType;
-                if (Map.class.isAssignableFrom(clz)) {
-                    addReference(referenceMap, Types.getRawType(pt.getActualTypeArguments()[1]), pt.getActualTypeArguments()[1]);
-                } else {
-                    addReference(referenceMap, Types.getRawType(pt.getActualTypeArguments()[0]), pt.getActualTypeArguments()[0]);
-                }
-
-            }
-        } else {
-            referenceMap.put(genericType, clz);
-        }
-    }
-
-    /**
      * Checks to see if clz is a user object or is a collection that contains one (i.e. List&lt;UserObject&gt;)
      * If it does, it adds the class and generic type to the referenceMap
      *

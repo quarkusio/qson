@@ -4,6 +4,7 @@ import io.quarkus.qson.GenericType;
 import io.quarkus.qson.QsonValue;
 import io.quarkus.qson.generator.ClassMapping;
 import io.quarkus.qson.generator.Generator;
+import io.quarkus.qson.generator.QsonGenerator;
 import io.quarkus.qson.generator.QsonMapper;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
@@ -20,7 +21,7 @@ public class ValueClassTest {
         }
 
         @QsonValue
-        public String getString() {
+        public String value() {
             return string;
         }
     }
@@ -33,7 +34,7 @@ public class ValueClassTest {
         }
 
         @QsonValue
-        public String getString() {
+        public String value() {
             return string;
         }
     }
@@ -41,7 +42,7 @@ public class ValueClassTest {
     public static class MyStringValue {
         private String string;
 
-        public String getString() {
+        public String stringValue() {
             return string;
         }
 
@@ -67,12 +68,12 @@ public class ValueClassTest {
         private int val;
 
         @QsonValue
-        public void setVal(int val) {
+        public void value(int val) {
             this.val = val;
         }
 
         @QsonValue
-        public int getVal() {
+        public int value() {
             return val;
         }
     }
@@ -80,7 +81,7 @@ public class ValueClassTest {
     public static class MyIntValue {
         private int val;
 
-        public int getVal() {
+        public int value() {
             return val;
         }
 
@@ -95,10 +96,18 @@ public class ValueClassTest {
         return val;
     }
 
+    public static String writeMyStringValue(MyStringValue val) {
+        return val.stringValue();
+    }
+
     public static MyIntValue createMyIntValue(int val) {
         MyIntValue obj = new MyIntValue();
         obj.create(val);
         return obj;
+    }
+
+    public static int writeMyIntValue(MyIntValue val) {
+        return val.value();
     }
 
     public static class ContainsValue {
@@ -177,11 +186,13 @@ public class ValueClassTest {
     }
 
     @Test
-    public void generateClass() {
+    public void generateClass() throws Exception {
         Generator generator = new Generator();
+        myStringValueMapping(generator);
         generator.deserializer(MyConstructorStringValue.class).output(new TestClassOutput()).generate();
         generator.deserializer(MyMethodStringValue.class).output(new TestClassOutput()).generate();
         generator.deserializer(MyStringValue.class).output(new TestClassOutput()).generate();
+        generator.serializer(MyStringValue.class).output(new TestClassOutput()).generate();
         generator.deserializer(MyMethodIntValue.class).output(new TestClassOutput()).generate();
         generator.deserializer(ContainsValue.class).output(new TestClassOutput()).generate();
         generator.deserializer(new GenericType<List<MyMethodStringValue>>() {}).output(new TestClassOutput()).generate();
@@ -190,33 +201,55 @@ public class ValueClassTest {
     @Test
     public void staticStringTest() throws Exception {
         QsonMapper mapper = new QsonMapper();
+        myStringValueMapping(mapper);
+        MyStringValue val = new MyStringValue();
+        val.create("hello");
+        String json = mapper.writeString(val);
+        Assertions.assertEquals("\"hello\"", json);
+        val = mapper.read(json, MyStringValue.class);
+        Assertions.assertEquals("hello", val.stringValue());
+    }
+
+    private void myStringValueMapping(QsonGenerator mapper) throws NoSuchMethodException {
         ClassMapping mapping = mapper.mappingFor(MyStringValue.class);
         mapping.valueSetter(ValueClassTest.class.getMethod("createMyStringValue", String.class));
-        MyStringValue val = mapper.read("\"hello\"", MyStringValue.class);
-        Assertions.assertEquals("hello", val.getString());
+        mapping.valueGetter(ValueClassTest.class.getMethod("writeMyStringValue", MyStringValue.class));
     }
 
     @Test
     public void constructorStringTest() {
         QsonMapper mapper = new QsonMapper();
         MyConstructorStringValue val = mapper.read("\"hello\"", MyConstructorStringValue.class);
-        Assertions.assertEquals("hello", val.getString());
+        Assertions.assertEquals("hello", val.value());
+        String json = mapper.writeString(val);
+        Assertions.assertEquals("\"hello\"", json);
+
     }
 
     @Test
     public void methodStringTest() {
         QsonMapper mapper = new QsonMapper();
         MyMethodStringValue val = mapper.read("\"hello\"", MyMethodStringValue.class);
-        Assertions.assertEquals("hello", val.getString());
+        Assertions.assertEquals("hello", val.value());
+        String json = mapper.writeString(val);
+        Assertions.assertEquals("\"hello\"", json);
     }
 
     @Test
     public void staticIntTest() throws Exception {
         QsonMapper mapper = new QsonMapper();
+        mapMyIntValue(mapper);
+        MyIntValue val = mapper.read("42", MyIntValue.class);
+        Assertions.assertEquals(42, val.value());
+        String json = mapper.writeString(val);
+        Assertions.assertEquals("42", json);
+
+    }
+
+    private void mapMyIntValue(QsonGenerator mapper) throws NoSuchMethodException {
         ClassMapping mapping = mapper.mappingFor(MyIntValue.class);
         mapping.valueSetter(ValueClassTest.class.getMethod("createMyIntValue", int.class));
-        MyIntValue val = mapper.read("42", MyIntValue.class);
-        Assertions.assertEquals(42, val.getVal());
+        mapping.valueGetter(ValueClassTest.class.getMethod("writeMyIntValue", MyIntValue.class));
     }
 
     @Test
@@ -230,7 +263,7 @@ public class ValueClassTest {
     public void methodIntTest() {
         QsonMapper mapper = new QsonMapper();
         MyMethodIntValue val = mapper.read("42", MyMethodIntValue.class);
-        Assertions.assertEquals(42, val.getVal());
+        Assertions.assertEquals(42, val.value());
     }
 
 
@@ -253,27 +286,30 @@ public class ValueClassTest {
                 "  ]\n" +
                 "}";
         QsonMapper mapper = new QsonMapper();
-        ClassMapping mapping = mapper.mappingFor(MyStringValue.class);
-        mapping.valueSetter(ValueClassTest.class.getMethod("createMyStringValue", String.class));
-        mapping = mapper.mappingFor(MyIntValue.class);
-        mapping.valueSetter(ValueClassTest.class.getMethod("createMyIntValue", int.class));
+        myStringValueMapping(mapper);
+        mapMyIntValue(mapper);
         ContainsValue val = mapper.read(json, ContainsValue.class);
-        Assertions.assertEquals("methodString", val.getMethodString().getString());
-        Assertions.assertEquals("constructorString", val.getConstructorString().getString());
-        Assertions.assertEquals("valueString", val.getValueString().getString());
-        Assertions.assertEquals("mOne", val.getListMethodString().get(0).getString());
-        Assertions.assertEquals("mTwo", val.getListMethodString().get(1).getString());
-
-        Assertions.assertEquals(1, val.getMethodInt().getVal());
-        Assertions.assertEquals(2, val.getConstructorInt().getVal());
-        Assertions.assertEquals(3, val.getValueInt().getVal());
-        Assertions.assertEquals(4, val.getListMethodInt().get(0).getVal());
-        Assertions.assertEquals(5, val.getListMethodInt().get(1).getVal());
-
+        test(val);
+        json = mapper.writeString(val);
+        val = mapper.read(json, ContainsValue.class);
+        test(val);
 
 
     }
 
+    private void test(ContainsValue val) {
+        Assertions.assertEquals("methodString", val.getMethodString().value());
+        Assertions.assertEquals("constructorString", val.getConstructorString().value());
+        Assertions.assertEquals("valueString", val.getValueString().stringValue());
+        Assertions.assertEquals("mOne", val.getListMethodString().get(0).value());
+        Assertions.assertEquals("mTwo", val.getListMethodString().get(1).value());
+
+        Assertions.assertEquals(1, val.getMethodInt().value());
+        Assertions.assertEquals(2, val.getConstructorInt().getVal());
+        Assertions.assertEquals(3, val.getValueInt().value());
+        Assertions.assertEquals(4, val.getListMethodInt().get(0).value());
+        Assertions.assertEquals(5, val.getListMethodInt().get(1).value());
+    }
 
 
 }

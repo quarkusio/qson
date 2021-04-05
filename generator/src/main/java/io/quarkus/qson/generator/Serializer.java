@@ -17,6 +17,7 @@ import io.quarkus.qson.serializer.MapWriter;
 import io.quarkus.qson.serializer.QsonObjectWriter;
 
 import java.lang.reflect.Method;
+import java.lang.reflect.Modifier;
 import java.lang.reflect.ParameterizedType;
 import java.lang.reflect.Type;
 import java.util.ArrayList;
@@ -92,8 +93,10 @@ public class Serializer {
                     Serializer s = new Serializer(output, targetType, type);
                     classGen = generator.mappingFor(targetType);
                     if (classGen != null) {
-                        if (classGen.isValue) {
-
+                        if (classGen.isValue()) {
+                            s.generateValueClass(classGen);
+                            className = fqn(targetType, type);
+                            return this;
                         } else {
                             properties = classGen.getProperties();
                         }
@@ -190,6 +193,35 @@ public class Serializer {
                 writer,
                 target
         );
+        method.returnValue(null);
+        creator.close();
+    }
+
+    void generateValueClass(ClassMapping mapping) {
+        FieldCreator SERIALIZER = creator.getFieldCreator("SERIALIZER", fqn()).setModifiers(ACC_STATIC | ACC_PUBLIC);
+        MethodCreator staticConstructor = creator.getMethodCreator(CLINIT, void.class);
+        staticConstructor.setModifiers(ACC_STATIC);
+        ResultHandle instance = staticConstructor.newInstance(MethodDescriptor.ofConstructor(fqn()));
+        staticConstructor.writeStaticField(SERIALIZER.getFieldDescriptor(), instance);
+        staticConstructor.returnValue(null);
+
+        MethodCreator method = creator.getMethodCreator("write", void.class, JsonWriter.class, Object.class);
+        ResultHandle jsonWriter = method.getMethodParam(0);
+        AssignableResultHandle target = method.createVariable(targetType);
+        method.assign(target, method.getMethodParam(1));
+        Method valueGetter = mapping.getValueGetter();
+        Class type = valueGetter.getReturnType();
+        boolean isStatic = Modifier.isStatic(valueGetter.getModifiers());
+
+        ResultHandle val;
+        if (isStatic) {
+            val = method.invokeStaticMethod(MethodDescriptor.ofMethod(valueGetter), target);
+        } else {
+            val = method.invokeVirtualMethod(MethodDescriptor.ofMethod(valueGetter), target);
+        }
+        method.invokeInterfaceMethod(MethodDescriptor.ofMethod(JsonWriter.class, "write", void.class, type),
+                jsonWriter,
+                val);
         method.returnValue(null);
         creator.close();
     }

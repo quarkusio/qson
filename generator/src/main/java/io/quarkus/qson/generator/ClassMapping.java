@@ -1,13 +1,11 @@
 package io.quarkus.qson.generator;
 
-import io.quarkus.gizmo.MethodDescriptor;
-import io.quarkus.gizmo.ResultHandle;
+import io.quarkus.qson.QsonDate;
 import io.quarkus.qson.QsonException;
 
 import java.lang.reflect.Constructor;
 import java.lang.reflect.Member;
 import java.lang.reflect.Method;
-import java.lang.reflect.Modifier;
 import java.util.ArrayList;
 import java.util.LinkedHashMap;
 import java.util.List;
@@ -24,11 +22,10 @@ public class ClassMapping {
     QsonGenerator generator;
 
 
+
     boolean scanProperties = true;
     boolean propertiesScanned;
     LinkedHashMap<String, PropertyReference> properties = new LinkedHashMap<>();
-
-    DateHandler dateHandler;
 
     public ClassMapping(QsonGenerator gen, Class type) {
         this.generator = gen;
@@ -71,32 +68,6 @@ public class ClassMapping {
         properties.put(ref.propertyName, ref);
         return this;
     }
-    /**
-     * Set default for java.util.Date and java.time.OffsetDateTime marshalling to be
-     * number of milliseconds since epoch.
-     */
-    public ClassMapping millisecondsDateFormat() {
-        dateHandler = DateHandler.MILLISECONDS;
-        return this;
-    }
-
-    /**
-     * Set default for java.util.Date and java.time.OffsetDateTime marshalling to be
-     * number of seconds since epoch.
-     */
-    public ClassMapping secondsDateFormat() {
-        dateHandler = DateHandler.SECONDS;
-        return this;
-    }
-
-    /**
-     * Set default for java.util.Date and java.time.OffsetDateTime marshalling to be
-     * a String formatted by string pattern.  Pattern corresponds to DatTimeFormatter configuration
-     */
-    public ClassMapping dateFormat(String pattern) {
-        dateHandler = new DateHandler(pattern);
-        return this;
-    }
 
     public ClassMapping scanProperties(boolean scan) {
         this.scanProperties = scan;
@@ -134,10 +105,5 @@ public class ClassMapping {
 
     public QsonGenerator getGenerator() {
         return generator;
-    }
-
-    public DateHandler getDateHandler() {
-        if (dateHandler == null) return generator.defaultDateHandler();
-        return dateHandler;
     }
 }

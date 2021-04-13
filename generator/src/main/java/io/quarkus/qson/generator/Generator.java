@@ -1,51 +1,21 @@
 package io.quarkus.qson.generator;
 
 import io.quarkus.qson.GenericType;
+import io.quarkus.qson.QsonDate;
 import io.quarkus.qson.QsonException;
 import io.quarkus.qson.QsonValue;
 
 import java.lang.reflect.Constructor;
 import java.lang.reflect.Method;
 import java.lang.reflect.Type;
-import java.text.DateFormat;
-import java.time.format.DateTimeFormatter;
 import java.util.HashMap;
 import java.util.Map;
 
 public class Generator implements QsonGenerator {
 
+    QsonDate.Format dateFormat = QsonDate.Format.ISO_8601_OFFSET_DATE_TIME;
+
     Map<Class, ClassMapping> classGenerators = new HashMap<>();
-    DateHandler defaultDate = DateHandler.DEFAULT;
-
-    /**
-     * Set default for java.util.Date marshalling to be
-     * number of milliseconds since epoch.
-     */
-    @Override
-    public Generator millisecondsDateFormat() {
-        defaultDate = DateHandler.MILLISECONDS;
-        return this;
-    }
-
-    /**
-     * Set default for java.util.Date marshalling to be
-     * number of seconds since epoch.
-     */
-    @Override
-    public Generator secondsDateFormat() {
-        defaultDate = DateHandler.SECONDS;
-        return this;
-    }
-
-    /**
-     * Set default for java.util.Date and java.time.OffsetDateTime marshalling to be
-     * a String formatted by string pattern.  Pattern corresponds to DatTimeFormatter configuration
-     */
-    @Override
-    public Generator dateFormat(String pattern) {
-        defaultDate = new DateHandler(pattern);
-        return this;
-    }
 
     /**
      * Fine tune generator settings for a specific type
@@ -65,6 +35,7 @@ public class Generator implements QsonGenerator {
     }
 
     private void scanQsonValue(ClassMapping generator) {
+        if (generator.type.isEnum()) return;
         boolean hasConstructor = false;
         for (Constructor con : generator.type.getConstructors()) {
             if (con.getParameterCount() == 0) {
@@ -96,14 +67,15 @@ public class Generator implements QsonGenerator {
         }
     }
 
-    /**
-     * Default way to handle dates for all parsers and writers
-     *
-     * @return
-     */
     @Override
-    public DateHandler defaultDateHandler() {
-        return defaultDate;
+    public QsonGenerator dateFormat(QsonDate.Format format) {
+        this.dateFormat = format;
+        return this;
+    }
+
+    @Override
+    public QsonDate.Format getDateFormat() {
+        return dateFormat;
     }
 
     public Deserializer.Builder deserializer(Type generic) {

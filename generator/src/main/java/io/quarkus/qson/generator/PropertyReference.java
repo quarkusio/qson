@@ -1,6 +1,7 @@
 package io.quarkus.qson.generator;
 
 import io.quarkus.qson.QsonAny;
+import io.quarkus.qson.QsonDate;
 import io.quarkus.qson.QsonException;
 import io.quarkus.qson.QsonIgnore;
 import io.quarkus.qson.QsonIgnoreRead;
@@ -31,7 +32,8 @@ public class PropertyReference {
     String propertyName;
     String jsonName;
     boolean isAny;
-    DateHandler dateHandler;
+    QsonDate.Format dateFormat;
+    String datePattern;
 
     private QsonProperty fieldAnnotation;
     private QsonProperty getterAnnotation;
@@ -104,16 +106,21 @@ public class PropertyReference {
         isAny = any;
     }
 
-    public DateHandler getDateHandler() {
-        return dateHandler;
+    public QsonDate.Format getDateFormat() {
+        return dateFormat;
     }
 
-    /**
-     * For properties that are java.util.Date or TemporalAccessor
-     * This allows you to override default date handling for this property
-     */
-    public void setDateHandler(DateHandler dateHandler) {
-        this.dateHandler = dateHandler;
+    public void setDateFormat(QsonDate.Format dateFormat) {
+        this.dateFormat = dateFormat;
+    }
+
+    public String getDatePattern() {
+        return datePattern;
+    }
+
+    public void setDatePattern(String datePattern) {
+        this.dateFormat = QsonDate.Format.PATTERN;
+        this.datePattern = datePattern;
     }
 
     public static List<PropertyReference> getProperties(Class type) {
@@ -183,6 +190,11 @@ public class PropertyReference {
                 if (m.isAnnotationPresent(QsonIgnoreWrite.class)) {
                     ref.ignoreWrite = true;
                 }
+                if (m.isAnnotationPresent(QsonDate.class)) {
+                    QsonDate date = m.getAnnotation(QsonDate.class);
+                    ref.dateFormat = date.format();
+                    if (!date.pattern().isEmpty()) ref.datePattern = date.pattern();
+                }
                 ref.setter = m;
                 ref.setterAnnotation = m.getAnnotation(QsonProperty.class);
             } else if (isGetter(m)) {
@@ -230,6 +242,11 @@ public class PropertyReference {
                 }
                 if (m.isAnnotationPresent(QsonIgnoreWrite.class)) {
                     ref.ignoreWrite = true;
+                }
+                if (m.isAnnotationPresent(QsonDate.class)) {
+                    QsonDate date = m.getAnnotation(QsonDate.class);
+                    ref.dateFormat = date.format();
+                    if (!date.pattern().isEmpty()) ref.datePattern = date.pattern();
                 }
                 ref.getter = m;
                 ref.getterAnnotation = m.getAnnotation(QsonProperty.class);

@@ -45,19 +45,19 @@ public abstract class JsonByteWriter implements JsonWriter {
 
     @Override
     public void write(long x) {
-        int places = 1;
+        long places = 1;
         long n = x / 10;
-        for (; n != 0; n /= 10) places *= 10;
+        for (; n != 0; n /= 10l) places *= 10l;
 
         if (x < 0) {
             writeByte('-');
-            for (int place = places; place >=1; place /= 10) {
+            for (long place = places; place >=1; place /= 10l) {
                 int i = (int)(x / place);
                 writeByte('0' - i);
                 x -= i * place;
             }
         } else {
-            for (int place = places; place >=1; place /= 10) {
+            for (long place = places; place >=1; place /= 10l) {
                 int i = (int)(x / place);
                 writeByte('0' + i);
                 x -= i * place;

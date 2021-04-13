@@ -12,6 +12,26 @@ import java.util.Set;
 
 public class Types {
 
+    /**
+     * Search generic type arguments for target class type.
+     *
+     * @param type
+     * @param target
+     * @return
+     */
+    public static boolean typeContainsType(Type type, Class target) {
+        if (type.equals(target)) return true;
+        if (type instanceof ParameterizedType) {
+            for (Type param : ((ParameterizedType)type).getActualTypeArguments()) {
+                if (typeContainsType(param, target)) return true;
+            }
+        } else if (type instanceof GenericArrayType) {
+            GenericArrayType arrayType = (GenericArrayType) type;
+            return typeContainsType(arrayType.getGenericComponentType(), target);
+        }
+        return false;
+    }
+
     public static boolean containsTypeVariable(Type type) {
         if (type instanceof TypeVariable) return true;
         if (type instanceof ParameterizedType) {

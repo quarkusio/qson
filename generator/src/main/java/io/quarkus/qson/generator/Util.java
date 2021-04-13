@@ -4,6 +4,8 @@ import io.quarkus.qson.util.Types;
 
 import java.lang.reflect.ParameterizedType;
 import java.lang.reflect.Type;
+import java.time.OffsetDateTime;
+import java.util.Date;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -58,6 +60,8 @@ public class Util {
                     || clz.equals(Boolean.class)
                     || clz.equals(Double.class)
                     || clz.equals(Float.class)
+                    || clz.equals(OffsetDateTime.class)
+                    || clz.equals(Date.class)
                     || clz.equals(Character.class)
                     || Map.class.isAssignableFrom(clz)
                     || List.class.isAssignableFrom(clz)

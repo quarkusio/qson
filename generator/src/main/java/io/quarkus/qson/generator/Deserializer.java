@@ -11,9 +11,15 @@ import io.quarkus.gizmo.FunctionCreator;
 import io.quarkus.gizmo.MethodCreator;
 import io.quarkus.gizmo.MethodDescriptor;
 import io.quarkus.gizmo.ResultHandle;
+import io.quarkus.qson.QsonDate;
 import io.quarkus.qson.QsonException;
 import io.quarkus.qson.deserializer.AnySetter;
+import io.quarkus.qson.deserializer.DateTimeNumberParser;
+import io.quarkus.qson.deserializer.DateUtilNumberParser;
+import io.quarkus.qson.deserializer.DateUtilStringParser;
 import io.quarkus.qson.deserializer.EnumParser;
+import io.quarkus.qson.deserializer.OffsetDateTimeNumberParser;
+import io.quarkus.qson.deserializer.OffsetDateTimeStringParser;
 import io.quarkus.qson.deserializer.ValueParser;
 import io.quarkus.qson.util.Types;
 import io.quarkus.qson.deserializer.BaseParser;
@@ -48,6 +54,7 @@ import java.time.LocalTime;
 import java.time.OffsetDateTime;
 import java.util.ArrayList;
 import java.util.Collections;
+import java.util.Date;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
@@ -70,6 +77,8 @@ public class Deserializer {
     // static initializer
     public static final String CLINIT = "<clinit>";
     public static final String QSON_ANY_SETTER = "_qson_any_setter";
+    public static final String DEFAULT_DATE_UTIL = "_defaultDateUtil";
+    public static final String DEFAULT_OFFSET_DATE_TIME = "_defaultOffsetDateTime";
 
     private boolean isDateTime() {
         return targetType.equals(LocalDate.class)
@@ -360,7 +369,7 @@ public class Deserializer {
                 .interfaces(QsonParser.class).build();
         MethodCreator staticConstructor = creator.getMethodCreator(CLINIT, void.class);
         staticConstructor.setModifiers(ACC_STATIC);
-        collectionField(staticConstructor, targetType, targetGenericType, "collection");
+        collectionField(staticConstructor, null, targetType, targetGenericType, "collection");
         staticConstructor.returnValue(null);
         MethodCreator startState = creator.getMethodCreator("startState", ParserState.class);
         Class collectionParser;
@@ -432,6 +441,7 @@ public class Deserializer {
         ResultHandle instance = staticConstructor.newInstance(MethodDescriptor.ofConstructor(fqn()));
         staticConstructor.writeStaticField(PARSER.getFieldDescriptor(), instance);
 
+        processDateProperties(staticConstructor);
         for (PropertyReference ref : properties) {
             collectionField(staticConstructor, ref);
             MethodCreator method = propertyEndMethod(ref);
@@ -443,15 +453,80 @@ public class Deserializer {
         staticConstructor.returnValue(null);
     }
 
+    private ResultHandle allocateDateUtilParser(BytecodeCreator scope, QsonDate.Format format, String pattern) {
+        if (pattern != null) {
+            return scope.newInstance(MethodDescriptor.ofConstructor(DateUtilStringParser.class, String.class), scope.load(pattern));
+        } else if (format == QsonDate.Format.MILLISECONDS) {
+            return scope.readStaticField(FieldDescriptor.of(DateUtilNumberParser.class, "MILLIS_UTC", DateTimeNumberParser.class));
+        } else if (format == QsonDate.Format.SECONDS) {
+            return scope.readStaticField(FieldDescriptor.of(DateUtilNumberParser.class, "SECONDS_UTC", DateTimeNumberParser.class));
+        } else if (format == QsonDate.Format.ISO_8601_OFFSET_DATE_TIME) {
+            return scope.readStaticField(FieldDescriptor.of(DateUtilStringParser.class, "ISO_8601_OFFSET_DATE_TIME", DateUtilStringParser.class));
+        } else if (format == QsonDate.Format.RFC_1123_DATE_TIME) {
+            return scope.readStaticField(FieldDescriptor.of(DateUtilStringParser.class, "RFC_1123_DATE_TIME", DateUtilStringParser.class));
+        } else {
+            throw new QsonException("Unsupported");
+        }
+    }
+
+    private ResultHandle allocateOffsetDateTimeParser(BytecodeCreator scope, QsonDate.Format format, String pattern) {
+        if (pattern != null) {
+            return scope.newInstance(MethodDescriptor.ofConstructor(OffsetDateTimeStringParser.class, String.class), scope.load(pattern));
+        } else if (format == QsonDate.Format.MILLISECONDS) {
+            return scope.readStaticField(FieldDescriptor.of(OffsetDateTimeNumberParser.class, "MILLIS_UTC", DateTimeNumberParser.class));
+        } else if (format == QsonDate.Format.SECONDS) {
+            return scope.readStaticField(FieldDescriptor.of(OffsetDateTimeNumberParser.class, "SECONDS_UTC", DateTimeNumberParser.class));
+        } else if (format == QsonDate.Format.ISO_8601_OFFSET_DATE_TIME) {
+            return scope.readStaticField(FieldDescriptor.of(OffsetDateTimeStringParser.class, "ISO_8601_OFFSET_DATE_TIME", OffsetDateTimeStringParser.class));
+        } else if (format == QsonDate.Format.RFC_1123_DATE_TIME) {
+            return scope.readStaticField(FieldDescriptor.of(OffsetDateTimeStringParser.class, "RFC_1123_DATE_TIME", OffsetDateTimeStringParser.class));
+        } else {
+            throw new QsonException("Unsupported");
+        }
+    }
+
+    private void processDateProperties(MethodCreator staticConstructor) {
+        FieldCreator defaultDateUtil = null;
+        FieldCreator defaultOffsetDateTime = null;
+        for (PropertyReference ref : properties) {
+            if (Types.typeContainsType(ref.genericType, Date.class)) {
+                if (ref.dateFormat == null) {
+                    if (defaultDateUtil == null) {
+                        defaultDateUtil = creator.getFieldCreator(DEFAULT_DATE_UTIL, ValueParser.class).setModifiers(ACC_STATIC | ACC_PRIVATE | ACC_FINAL);
+                        staticConstructor.writeStaticField(defaultDateUtil.getFieldDescriptor(), allocateDateUtilParser(staticConstructor, generator.getDateFormat(), null));
+                    }
+                } else {
+                    FieldCreator dateProperty = creator.getFieldCreator(getPropertyDateParser(ref), ValueParser.class).setModifiers(ACC_STATIC | ACC_PRIVATE | ACC_FINAL);
+                    staticConstructor.writeStaticField(dateProperty.getFieldDescriptor(), allocateDateUtilParser(staticConstructor, ref.getDateFormat(), ref.getDatePattern()));
+                }
+            } else if (Types.typeContainsType(ref.genericType, OffsetDateTime.class)) {
+                if (ref.dateFormat == null) {
+                    if (defaultOffsetDateTime == null) {
+                        defaultOffsetDateTime = creator.getFieldCreator(DEFAULT_OFFSET_DATE_TIME, ValueParser.class).setModifiers(ACC_STATIC | ACC_PRIVATE | ACC_FINAL);
+                        staticConstructor.writeStaticField(defaultOffsetDateTime.getFieldDescriptor(), allocateOffsetDateTimeParser(staticConstructor, generator.getDateFormat(), null));
+                    }
+                } else {
+                    FieldCreator dateProperty = creator.getFieldCreator(getPropertyDateParser(ref), ValueParser.class).setModifiers(ACC_STATIC | ACC_PRIVATE | ACC_FINAL);
+                    staticConstructor.writeStaticField(dateProperty.getFieldDescriptor(), allocateOffsetDateTimeParser(staticConstructor, ref.getDateFormat(), ref.getDatePattern()));
+                }
+            }
+        }
+    }
+
+    private String getPropertyDateParser(PropertyReference ref) {
+        return ref.getPropertyName() + "_dateParser";
+    }
+
+
     private void collectionField(MethodCreator staticConstructor, PropertyReference ref) {
         Type genericType = ref.genericType;
         Class type = ref.type;
         String property = ref.propertyName;
-        collectionField(staticConstructor, type, genericType, property);
+        collectionField(staticConstructor, ref, type, genericType, property);
 
     }
 
-    private void collectionField(MethodCreator staticConstructor, Class type, Type genericType, String property) {
+    private void collectionField(MethodCreator staticConstructor, PropertyReference ref, Class type, Type genericType, String property) {
         if (genericType instanceof ParameterizedType) {
             if (Map.class.isAssignableFrom(type)) {
                 ParameterizedType pt = (ParameterizedType) genericType;
@@ -465,13 +540,13 @@ public class Deserializer {
                 if (Set.class.isAssignableFrom(valueClass) && !valueClass.equals(Set.class)) throw new QsonException("Must use java.util.Set for: " + property);
 
                 if (valueClass.equals(Map.class) || valueClass.equals(List.class) || valueClass.equals(Set.class)) {
-                    collectionField(staticConstructor, valueClass, valueType, property + "_n");
+                    collectionField(staticConstructor, ref, valueClass, valueType, property + "_n");
                 }
 
                 ResultHandle keyContextValue = contextValue(keyClass, keyType, staticConstructor);
                 ResultHandle valueContextValue = contextValue(valueClass, valueType, staticConstructor);
-                ResultHandle valueState = collectionValueState(valueClass, valueType, staticConstructor, property);
-                ResultHandle continueValueState = continueValueState(valueClass, valueType, staticConstructor, property);
+                ResultHandle valueState = collectionValueState(ref, valueClass, valueType, staticConstructor, property);
+                ResultHandle continueValueState = continueValueState(ref, valueClass, valueType, staticConstructor, property);
                 FieldCreator mapParser = creator.getFieldCreator(property, MapParser.class).setModifiers(ACC_STATIC | ACC_PRIVATE | ACC_FINAL);
                 ResultHandle instance = staticConstructor.newInstance(MethodDescriptor.ofConstructor(MapParser.class, ContextValue.class, ContextValue.class, ParserState.class, ParserState.class),
                         keyContextValue, valueContextValue, valueState, continueValueState);
@@ -486,12 +561,12 @@ public class Deserializer {
                 if (Set.class.isAssignableFrom(valueClass) && !valueClass.equals(Set.class)) throw new QsonException("Must use java.util.Set for property: " + property);
 
                 if (valueClass.equals(Map.class) || valueClass.equals(List.class) || valueClass.equals(Set.class)) {
-                    collectionField(staticConstructor, valueClass, valueType, property + "_n");
+                    collectionField(staticConstructor, ref, valueClass, valueType, property + "_n");
                 }
 
 
                 ResultHandle valueContextValue = contextValue(valueClass, valueType, staticConstructor);
-                ResultHandle valueState = collectionValueState(valueClass, valueType, staticConstructor, property);
+                ResultHandle valueState = collectionValueState(ref, valueClass, valueType, staticConstructor, property);
                 FieldCreator collectionParser = creator.getFieldCreator(property, ListParser.class).setModifiers(ACC_STATIC | ACC_PRIVATE | ACC_FINAL);
                 ResultHandle instance = staticConstructor.newInstance(MethodDescriptor.ofConstructor(ListParser.class, ContextValue.class, ParserState.class),
                         valueContextValue, valueState);
@@ -507,11 +582,11 @@ public class Deserializer {
                 if (Set.class.isAssignableFrom(valueClass) && !valueClass.equals(Set.class)) throw new QsonException("Must use java.util.Set for property: " + property);
 
                 if (valueClass.equals(Map.class) || valueClass.equals(List.class) || valueClass.equals(Set.class)) {
-                    collectionField(staticConstructor, valueClass, valueType, property + "_n");
+                    collectionField(staticConstructor, ref, valueClass, valueType, property + "_n");
                 }
 
                 ResultHandle valueContextValue = contextValue(valueClass, valueType, staticConstructor);
-                ResultHandle valueState = collectionValueState(valueClass, valueType, staticConstructor, property);
+                ResultHandle valueState = collectionValueState(ref, valueClass, valueType, staticConstructor, property);
                 FieldCreator collectionParser = creator.getFieldCreator(property, SetParser.class).setModifiers(ACC_STATIC | ACC_PRIVATE | ACC_FINAL);
                 ResultHandle instance = staticConstructor.newInstance(MethodDescriptor.ofConstructor(SetParser.class, ContextValue.class, ParserState.class),
                         valueContextValue, valueState);
@@ -542,8 +617,6 @@ public class Deserializer {
             return scope.readStaticField(FieldDescriptor.of(ContextValue.class, "BOOLEAN_VALUE", ContextValue.class));
         } else if (type.equals(char.class) || type.equals(Character.class)) {
             return scope.readStaticField(FieldDescriptor.of(ContextValue.class, "CHAR_VALUE", ContextValue.class));
-        } else if (type.equals(OffsetDateTime.class)) {
-            return scope.readStaticField(FieldDescriptor.of(ContextValue.class, "OFFSET_DATETIME_VALUE", ContextValue.class));
         } else if (type.equals(BigDecimal.class)) {
             return scope.readStaticField(FieldDescriptor.of(ContextValue.class, "BIGDECIMAL_VALUE", ContextValue.class));
         } else {
@@ -551,10 +624,9 @@ public class Deserializer {
         }
     }
 
-    private ResultHandle collectionValueState(Class type, Type genericType, BytecodeCreator scope, String property) {
+    private ResultHandle collectionValueState(PropertyReference ref, Class type, Type genericType, BytecodeCreator scope, String property) {
         if (type.equals(String.class)
                 || type.equals(char.class) || type.equals(Character.class)
-                || type.equals(OffsetDateTime.class)
         ) {
             FieldDescriptor parserField = FieldDescriptor.of(ObjectParser.class, "PARSER", ObjectParser.class);
             ResultHandle PARSER = scope.readStaticField(parserField);
@@ -608,6 +680,12 @@ public class Deserializer {
                 ResultHandle PARSER = scope.readStaticField(parserField);
                 return scope.readInstanceField(FieldDescriptor.of(GenericSetParser.class, "startList", ParserState.class), PARSER);
             }
+        } else if (type.equals(OffsetDateTime.class)) {
+            ResultHandle PARSER = getOffsetDateTimeParser(ref, scope);
+            return scope.readInstanceField(FieldDescriptor.of(ValueParser.class, "start", ParserState.class), PARSER);
+        } else if (type.equals(Date.class)) {
+            ResultHandle PARSER = getDateUtilParser(ref, scope);
+            return scope.readInstanceField(FieldDescriptor.of(ValueParser.class, "start", ParserState.class), PARSER);
         } else {
             FieldDescriptor parserField = FieldDescriptor.of(fqn(type), "PARSER", fqn(type));
             ResultHandle PARSER = scope.readStaticField(parserField);
@@ -621,10 +699,18 @@ public class Deserializer {
          }
     }
 
-    private ResultHandle continueValueState(Class type, Type genericType, BytecodeCreator scope, String property) {
+    private ResultHandle getDateUtilParser(PropertyReference ref, BytecodeCreator scope) {
+        String field = DEFAULT_DATE_UTIL;
+        if (ref != null && ref.getDateFormat() != null) {
+            field = getPropertyDateParser(ref);
+        }
+        FieldDescriptor parserField = FieldDescriptor.of(fqn(), field, ValueParser.class);
+        return scope.readStaticField(parserField);
+    }
+
+    private ResultHandle continueValueState(PropertyReference ref, Class type, Type genericType, BytecodeCreator scope, String property) {
         if (type.equals(String.class)
                 || type.equals(char.class) || type.equals(Character.class)
-                || type.equals(OffsetDateTime.class)
         ) {
             FieldDescriptor parserField = FieldDescriptor.of(ObjectParser.class, "PARSER", ObjectParser.class);
             ResultHandle PARSER = scope.readStaticField(parserField);
@@ -678,6 +764,12 @@ public class Deserializer {
                 ResultHandle PARSER = scope.readStaticField(parserField);
                 return scope.readInstanceField(FieldDescriptor.of(GenericSetParser.class, "continueStartList", ParserState.class), PARSER);
             }
+        } else if (type.equals(OffsetDateTime.class)) {
+            ResultHandle PARSER = getOffsetDateTimeParser(ref, scope);
+            return scope.readInstanceField(FieldDescriptor.of(ValueParser.class, "continueStart", ParserState.class), PARSER);
+        } else if (type.equals(Date.class)) {
+            ResultHandle PARSER = getDateUtilParser(ref, scope);
+            return scope.readInstanceField(FieldDescriptor.of(ValueParser.class, "continueStart", ParserState.class), PARSER);
         } else {
             FieldDescriptor parserField = FieldDescriptor.of(fqn(type), "PARSER", fqn(type));
             ResultHandle PARSER = scope.readStaticField(parserField);
@@ -689,6 +781,15 @@ public class Deserializer {
                 return scope.readInstanceField(FieldDescriptor.of(ObjectParser.class, "continueStart", ParserState.class), PARSER);
             }
         }
+    }
+
+    private ResultHandle getOffsetDateTimeParser(PropertyReference ref, BytecodeCreator scope) {
+        String field = DEFAULT_OFFSET_DATE_TIME;
+        if (ref != null && ref.getDateFormat() != null) {
+            field = getPropertyDateParser(ref);
+        }
+        FieldDescriptor parserField = FieldDescriptor.of(fqn(), field, ValueParser.class);
+        return scope.readStaticField(parserField);
     }
 
     private void anySetterFunction(MethodCreator staticConstructor) {
@@ -865,7 +966,6 @@ public class Deserializer {
         Type genericType = setter.genericType;
         if (type.equals(String.class)
                 || type.equals(char.class) || type.equals(Character.class)
-                || type.equals(OffsetDateTime.class)
         ) {
             FieldDescriptor parserField = FieldDescriptor.of(ObjectParser.class, "PARSER", ObjectParser.class);
             ResultHandle PARSER = scope.readStaticField(parserField);
@@ -928,6 +1028,12 @@ public class Deserializer {
             FieldDescriptor parserField = FieldDescriptor.of(GenericParser.class, "PARSER", GenericParser.class);
             ResultHandle PARSER = scope.readStaticField(parserField);
             return scope.readInstanceField(FieldDescriptor.of(GenericParser.class, "continueStart", ParserState.class), PARSER);
+        } else if (type.equals(OffsetDateTime.class)) {
+            ResultHandle PARSER = getOffsetDateTimeParser(setter, scope);
+            return scope.readInstanceField(FieldDescriptor.of(ValueParser.class, "continueStart", ParserState.class), PARSER);
+        } else if (type.equals(Date.class)) {
+            ResultHandle PARSER = getDateUtilParser(setter, scope);
+            return scope.readInstanceField(FieldDescriptor.of(ValueParser.class, "continueStart", ParserState.class), PARSER);
         } else {
             FieldDescriptor parserField = FieldDescriptor.of(fqn(type), "PARSER", fqn(type));
             ResultHandle PARSER = scope.readStaticField(parserField);
@@ -1010,6 +1116,14 @@ public class Deserializer {
             FieldDescriptor parserField = FieldDescriptor.of(GenericParser.class, "PARSER", GenericParser.class);
             ResultHandle PARSER = scope.readStaticField(parserField);
             MethodDescriptor descriptor = MethodDescriptor.ofMethod(GenericParser.class, "start", boolean.class, ParserContext.class);
+            return scope.invokeVirtualMethod(descriptor, PARSER, ctx.ctx);
+        } else if (type.equals(OffsetDateTime.class)) {
+            ResultHandle PARSER = getOffsetDateTimeParser(setter, scope);
+            MethodDescriptor descriptor = MethodDescriptor.ofMethod(ValueParser.class, "start", boolean.class.getName(), ParserContext.class.getName());
+            return scope.invokeVirtualMethod(descriptor, PARSER, ctx.ctx);
+        } else if (type.equals(Date.class)) {
+            ResultHandle PARSER = getDateUtilParser(setter, scope);
+            MethodDescriptor descriptor = MethodDescriptor.ofMethod(ValueParser.class, "start", boolean.class.getName(), ParserContext.class.getName());
             return scope.invokeVirtualMethod(descriptor, PARSER, ctx.ctx);
         } else {
             FieldDescriptor parserField = FieldDescriptor.of(fqn(type), "PARSER", fqn(type));

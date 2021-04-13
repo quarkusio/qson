@@ -9,7 +9,7 @@ import java.lang.annotation.Target;
  * Annotation that provides finer grain mapping for the specific property it annotates.
  *
  */
-@Target({ElementType.ANNOTATION_TYPE, ElementType.FIELD, ElementType.METHOD})
+@Target({ElementType.FIELD, ElementType.METHOD})
 @Retention(RetentionPolicy.RUNTIME)
 public @interface QsonProperty {
     /**

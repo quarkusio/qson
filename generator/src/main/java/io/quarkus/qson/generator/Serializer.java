@@ -11,8 +11,6 @@ import io.quarkus.gizmo.MethodDescriptor;
 import io.quarkus.gizmo.ResultHandle;
 import io.quarkus.qson.QsonDate;
 import io.quarkus.qson.QsonException;
-import io.quarkus.qson.deserializer.DateUtilNumberParser;
-import io.quarkus.qson.deserializer.OffsetDateTimeNumberParser;
 import io.quarkus.qson.serializer.DateNumberWriter;
 import io.quarkus.qson.serializer.DateUtilStringWriter;
 import io.quarkus.qson.serializer.OffsetDateTimeStringWriter;
@@ -408,7 +406,7 @@ public class Serializer {
     }
 
     private ResultHandle getNestedValueWriter(PropertyReference ref, MethodCreator staticConstructor, Class type, Type genericType, String property) {
-        if (isDateObject(type)) {
+        if (Util.isDateType(type)) {
             if (type.equals(OffsetDateTime.class)) {
                 return getOffsetDateTimeWriter(ref, staticConstructor);
             } else if (type.equals(Date.class)) {
@@ -416,7 +414,7 @@ public class Serializer {
             }
         }
         if (!hasNestedWriter(type, genericType)) return null;
-        if (isUserObject(type)) {
+        if (Util.isUserType(type)) {
             return staticConstructor.readStaticField(FieldDescriptor.of(fqn(type, genericType), "SERIALIZER", fqn(type, genericType)));
         }
         collectionField(ref, staticConstructor, type, genericType, property);
@@ -698,7 +696,7 @@ public class Serializer {
     }
 
     private ResultHandle getWriter(PropertyReference ref, MethodCreator method, String property, Class valueClass, Type valueType) {
-        if (isDateObject(valueClass)) {
+        if (Util.isDateType(valueClass)) {
             if (valueClass.equals(OffsetDateTime.class)) {
                 return getOffsetDateTimeWriter(ref, method);
             } else if (valueClass.equals(Date.class)) {
@@ -706,7 +704,7 @@ public class Serializer {
             } else {
                 throw new QsonException("Should be unreachable");
             }
-        } else if (isUserObject(valueClass)) {
+        } else if (Util.isUserType(valueClass)) {
             return method.readStaticField(FieldDescriptor.of(fqn(valueClass, valueType), "SERIALIZER", fqn(valueClass, valueType)));
         } else {
             return method.readStaticField(FieldDescriptor.of(fqn(), property + "_n", QsonObjectWriter.class));
@@ -724,31 +722,6 @@ public class Serializer {
         Class valueClass = Types.getRawType(pt.getActualTypeArguments()[1]);
         Type valueType = pt.getActualTypeArguments()[1];
         return getWriter(ref, method, property, valueClass, valueType);
-    }
-
-    private static boolean isDateObject(Class type) {
-        return OffsetDateTime.class.equals(type) || Date.class.equals(type);
-    }
-
-    private static boolean isUserObject(Class type) {
-        if (type.isPrimitive()) return false;
-        if (type.equals(String.class)
-                || type.equals(Integer.class)
-                || type.equals(Short.class)
-                || type.equals(Long.class)
-                || type.equals(Byte.class)
-                || type.equals(Boolean.class)
-                || type.equals(Double.class)
-                || type.equals(Float.class)
-                || type.equals(Character.class)
-                || isDateObject(type)
-                || Map.class.isAssignableFrom(type)
-                || List.class.isAssignableFrom(type)
-                || Set.class.isAssignableFrom(type)
-        ) {
-            return false;
-        }
-        return true;
     }
 
     private static boolean isGeneric(Class type, Type generic) {
@@ -796,8 +769,8 @@ public class Serializer {
     }
 
     private static boolean hasNestedWriter(Class type, Type genericType) {
-        if (isDateObject(type)) return true;
-        if (isUserObject(type)) return true;
+        if (Util.isDateType(type)) return true;
+        if (Util.isUserType(type)) return true;
         if (!Map.class.isAssignableFrom(type)
                 && !List.class.isAssignableFrom(type)
                 && !Set.class.isAssignableFrom(type)

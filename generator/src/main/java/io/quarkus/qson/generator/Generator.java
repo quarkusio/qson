@@ -2,11 +2,6 @@ package io.quarkus.qson.generator;
 
 import io.quarkus.qson.GenericType;
 import io.quarkus.qson.QsonDate;
-import io.quarkus.qson.QsonException;
-import io.quarkus.qson.QsonValue;
-
-import java.lang.reflect.Constructor;
-import java.lang.reflect.Method;
 import java.lang.reflect.Type;
 import java.util.HashMap;
 import java.util.Map;
@@ -18,53 +13,44 @@ public class Generator implements QsonGenerator {
     Map<Class, ClassMapping> classGenerators = new HashMap<>();
 
     /**
-     * Fine tune generator settings for a specific type
+     * Fine tune generator settings for a specific type.
+     * This will scan for annotations and allocate default metadata for ClassMapping
      *
      * @param type
      * @return
      */
     @Override
     public ClassMapping mappingFor(Class type) {
-        ClassMapping generator = classGenerators.get(type);
-        if (generator == null) {
-            generator = new ClassMapping(this, type);
-            scanQsonValue(generator);
-            classGenerators.put(type, generator);
+        ClassMapping mapping = classGenerators.get(type);
+        if (mapping == null) {
+            mapping = new ClassMapping(this, type);
+            mapping.scan();
+            classGenerators.put(type, mapping);
         }
-        return generator;
+        return mapping;
     }
 
-    private void scanQsonValue(ClassMapping generator) {
-        if (generator.type.isEnum()) return;
-        boolean hasConstructor = false;
-        for (Constructor con : generator.type.getConstructors()) {
-            if (con.getParameterCount() == 0) {
-                hasConstructor = true;
-            } else if (con.getParameterCount() == 1 && con.isAnnotationPresent(QsonValue.class)) {
-                if (generator.valueSetter != null) {
-                    throw new QsonException("Cannot have two constructors with @QsonValue on it for class: " + generator.type.getName());
-                }
-                hasConstructor = true;
-                generator.valueSetter(con);
-            }
+    /**
+     * Fine tune generator settings for a specific type.
+     * This will NOT SCAN for annotations or default setter/getter methods.
+     * You will have to do this manually by calling methods on ClassMapping.
+     *
+     * @param type
+     * @return
+     */
+    @Override
+    public ClassMapping overrideMappingFor(Class type) {
+        ClassMapping mapping = classGenerators.get(type);
+        if (mapping == null) {
+            mapping = new ClassMapping(this, type);
+            classGenerators.put(type, mapping);
         }
-        if (!hasConstructor) throw new QsonException(generator.type.getName() + " does not have a default or noarg public constructor");
+        return mapping;
+    }
 
-        for (Method method : generator.type.getMethods()) {
-            if (method.isAnnotationPresent(QsonValue.class)) {
-               if (method.getParameterCount() == 0) {
-                   if (generator.valueGetter != null) {
-                       throw new QsonException("Cannot have multiple @QsonValue annotations for write value for class: " + generator.type.getName());
-                   }
-                   generator.valueGetter(method);
-               } else if (method.getParameterCount() == 1) {
-                   if (generator.valueSetter != null) {
-                       throw new QsonException("Cannot have multiple @QsonValue annotations for read value for class: " + generator.type.getName());
-                   }
-                   generator.valueSetter(method);
-               }
-            }
-        }
+    @Override
+    public boolean hasMappingFor(Class type) {
+        return classGenerators.containsKey(type);
     }
 
     @Override

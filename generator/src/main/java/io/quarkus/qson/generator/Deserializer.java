@@ -94,7 +94,6 @@ public class Deserializer {
         List<PropertyReference> properties;
         Set<Type> referenced = new HashSet<>();
         Generator generator;
-        ClassMapping classGen;
 
         protected Builder(Generator generator) {
             this.generator = generator;
@@ -188,16 +187,16 @@ public class Deserializer {
                 }
                 // user class parser generation
 
-                classGen = generator.mappingFor(targetType);
-                if (classGen != null) {
-                    if (classGen.isValue) {
+                ClassMapping mapping = generator.mappingFor(targetType);
+                if (mapping != null) {
+                    if (mapping.isValue) {
                         Deserializer deserializer = new Deserializer(output, targetType, type);
-                        deserializer.mapping = classGen;
+                        deserializer.mapping = mapping;
                         deserializer.generateValueClass();
                         className = fqn(targetType);
                         return this;
                     } else {
-                        properties = classGen.getProperties();
+                        properties = mapping.getProperties();
                     }
 
                 }
@@ -220,7 +219,7 @@ public class Deserializer {
                 Collections.sort(tmp, (ref, t1) -> ref.jsonName.compareTo(t1.jsonName));
                 Deserializer deserializer = new Deserializer(output, targetType, type);
                 deserializer.anyMethod = anySetter;
-                deserializer.mapping = classGen;
+                deserializer.mapping = mapping;
                 deserializer.generator = generator;
                 // set properties list to setters only list
                 deserializer.properties = tmp;

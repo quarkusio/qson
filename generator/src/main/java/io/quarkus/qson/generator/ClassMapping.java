@@ -2,6 +2,7 @@ package io.quarkus.qson.generator;
 
 import io.quarkus.qson.QsonDate;
 import io.quarkus.qson.QsonException;
+import io.quarkus.qson.QsonValue;
 
 import java.lang.reflect.Constructor;
 import java.lang.reflect.Member;
@@ -25,13 +26,30 @@ public class ClassMapping {
 
     boolean scanProperties = true;
     boolean propertiesScanned;
+    boolean qsonValueScanned;
     LinkedHashMap<String, PropertyReference> properties = new LinkedHashMap<>();
 
-    public ClassMapping(QsonGenerator gen, Class type) {
+    ClassMapping(QsonGenerator gen, Class type) {
         this.generator = gen;
         this.type = type;
     }
 
+    /**
+     * Helper method that calls scanQsonvalue() and scanProperties()
+     *
+     * @return
+     */
+    public ClassMapping scan() {
+        scanQsonValue();
+        scanProperties();
+        return this;
+    }
+
+    /**
+     * Scan for and set up properties for ClassMapping
+     *
+     * @return
+     */
     public ClassMapping scanProperties() {
         if (propertiesScanned) return this;
         LinkedHashMap<String, PropertyReference> tmp = PropertyReference.getPropertyMap(type);
@@ -41,8 +59,48 @@ public class ClassMapping {
         return this;
     }
 
+    /**
+     * Scan for @QsonValue annotation and set appropriate ClassMapping metadata
+     * @return
+     */
+    public ClassMapping scanQsonValue() {
+        if (qsonValueScanned) return this;
+        if (type.isEnum()) return this;
+        boolean hasConstructor = false;
+        for (Constructor con : type.getConstructors()) {
+            if (con.getParameterCount() == 0) {
+                hasConstructor = true;
+            } else if (con.getParameterCount() == 1 && con.isAnnotationPresent(QsonValue.class)) {
+                if (valueSetter != null) {
+                    throw new QsonException("Cannot have two constructors with @QsonValue on it for class: " + type.getName());
+                }
+                hasConstructor = true;
+                valueSetter(con);
+            }
+        }
+        if (!hasConstructor) throw new QsonException(type.getName() + " does not have a default or noarg public constructor");
+
+        for (Method method : type.getMethods()) {
+            if (method.isAnnotationPresent(QsonValue.class)) {
+                if (method.getParameterCount() == 0) {
+                    if (valueGetter != null) {
+                        throw new QsonException("Cannot have multiple @QsonValue annotations for write value for class: " + type.getName());
+                    }
+                    valueGetter(method);
+                } else if (method.getParameterCount() == 1) {
+                    if (valueSetter != null) {
+                        throw new QsonException("Cannot have multiple @QsonValue annotations for read value for class: " + type.getName());
+                    }
+                    valueSetter(method);
+                }
+            }
+        }
+        qsonValueScanned = true;
+        return this;
+    }
+
+
     public List<PropertyReference> getProperties() {
-        if (scanProperties) scanProperties();
         return new ArrayList<>(properties.values());
     }
 

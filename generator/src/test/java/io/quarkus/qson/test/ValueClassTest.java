@@ -211,7 +211,7 @@ public class ValueClassTest {
     }
 
     private void myStringValueMapping(QsonGenerator mapper) throws NoSuchMethodException {
-        ClassMapping mapping = mapper.mappingFor(MyStringValue.class);
+        ClassMapping mapping = mapper.overrideMappingFor(MyStringValue.class);
         mapping.valueSetter(ValueClassTest.class.getMethod("createMyStringValue", String.class));
         mapping.valueGetter(ValueClassTest.class.getMethod("writeMyStringValue", MyStringValue.class));
     }
@@ -247,7 +247,7 @@ public class ValueClassTest {
     }
 
     private void mapMyIntValue(QsonGenerator mapper) throws NoSuchMethodException {
-        ClassMapping mapping = mapper.mappingFor(MyIntValue.class);
+        ClassMapping mapping = mapper.overrideMappingFor(MyIntValue.class);
         mapping.valueSetter(ValueClassTest.class.getMethod("createMyIntValue", int.class));
         mapping.valueGetter(ValueClassTest.class.getMethod("writeMyIntValue", MyIntValue.class));
     }

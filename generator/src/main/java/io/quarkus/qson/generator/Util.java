@@ -51,24 +51,9 @@ public class Util {
     public static void addReference(Set<Type> referenceSet, Type type) {
         if (type instanceof Class) {
             Class clz = (Class)type;
-            if (clz.isPrimitive()) return;
-            if (clz.equals(String.class)
-                    || clz.equals(Integer.class)
-                    || clz.equals(Short.class)
-                    || clz.equals(Long.class)
-                    || clz.equals(Byte.class)
-                    || clz.equals(Boolean.class)
-                    || clz.equals(Double.class)
-                    || clz.equals(Float.class)
-                    || clz.equals(OffsetDateTime.class)
-                    || clz.equals(Date.class)
-                    || clz.equals(Character.class)
-                    || Map.class.isAssignableFrom(clz)
-                    || List.class.isAssignableFrom(clz)
-                    || Set.class.isAssignableFrom(clz)) {
-                return;
+            if (isUserType(clz)) {
+                referenceSet.add(type);
             }
-            referenceSet.add(type);
         } else if (type instanceof ParameterizedType) {
             ParameterizedType pt = (ParameterizedType)type;
             if (Map.class.isAssignableFrom(Types.getRawType(type))) {
@@ -76,7 +61,37 @@ public class Util {
             } else {
                 addReference(referenceSet, pt.getActualTypeArguments()[0]);
             }
-
         }
+    }
+
+    /**
+     * Is supported date type
+     *
+     * @param type
+     * @return
+     */
+    public static boolean isDateType(Class type) {
+        return OffsetDateTime.class.equals(type) || Date.class.equals(type);
+    }
+
+    public static boolean isUserType(Class type) {
+        if (type.isPrimitive()) return false;
+        if (type.equals(String.class)
+                || type.equals(Integer.class)
+                || type.equals(Short.class)
+                || type.equals(Long.class)
+                || type.equals(Byte.class)
+                || type.equals(Boolean.class)
+                || type.equals(Double.class)
+                || type.equals(Float.class)
+                || type.equals(Character.class)
+                || isDateType(type)
+                || Map.class.isAssignableFrom(type)
+                || List.class.isAssignableFrom(type)
+                || Set.class.isAssignableFrom(type)
+        ) {
+            return false;
+        }
+        return true;
     }
 }

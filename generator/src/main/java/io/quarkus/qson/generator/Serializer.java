@@ -49,7 +49,7 @@ public class Serializer {
         ClassOutput output;
         String className;
         Set<Type> referenced = new HashSet<>();
-        List<PropertyReference> properties;
+        List<PropertyMapping> properties;
         QsonGenerator generator;
         ClassMapping classGen;
 
@@ -75,19 +75,19 @@ public class Serializer {
             return referenced;
         }
 
-        public Builder properties(List<PropertyReference> properties) {
+        public Builder properties(List<PropertyMapping> properties) {
             this.properties = properties;
             return this;
         }
 
-        public List<PropertyReference> properties() {
+        public List<PropertyMapping> properties() {
             return properties;
         }
 
         public Builder generate() {
             if (type instanceof Class) {
                 Class targetType = (Class) type;
-                if (isGeneric(targetType, type)) {
+                if (isGeneric(generator, targetType, type)) {
                     className = GenericObjectWriter.class.getName();
                     return this;
                 } else if (targetType.isEnum()) {
@@ -110,12 +110,11 @@ public class Serializer {
                         }
 
                     }
-                    // NOTE: keep full property list around just in case we're doing serialization
-                    // and somebody wants to reuse.
-                    List<PropertyReference> tmp = new ArrayList<>();
+                    // remove any's from property list
+                    List<PropertyMapping> tmp = new ArrayList<>();
 
                     Method anyGetter = null;
-                    for (PropertyReference ref : properties) {
+                    for (PropertyMapping ref : properties) {
                         if (ref.getter != null) {
                             if (ref.isAny) {
                                 anyGetter = ref.getter;
@@ -136,7 +135,7 @@ public class Serializer {
                 if (Map.class.isAssignableFrom(targetType)
                         || List.class.isAssignableFrom(targetType)
                         || Set.class.isAssignableFrom(targetType)) {
-                    if (hasCollectionWriter(targetType, type)) {
+                    if (hasCollectionWriter(generator, targetType, type)) {
                         // generate a writer for the collection
                         if (className == null) {
                             className = Util.generatedClassName(type);
@@ -160,7 +159,7 @@ public class Serializer {
 
     Class targetType;
     Type targetGenericType;
-    List<PropertyReference> properties;
+    List<PropertyMapping> properties;
     String className;
     Method anyGetter;
     ClassMapping mapping;
@@ -171,7 +170,11 @@ public class Serializer {
     }
 
     public static String fqn(Class clz, Type genericType) {
-        return clz.getName() + "__Serializer";
+        String prefix = "";
+        if (clz.getName().startsWith("java")) {
+            prefix = "io.quarkus.qson.";
+        }
+        return prefix + clz.getName() + "__Serializer";
     }
 
     Serializer(ClassOutput classOutput, Class targetType, Type targetGenericType) {
@@ -190,7 +193,7 @@ public class Serializer {
     public static final String DEFAULT_OFFSET_DATE_TIME = "_defaultOffsetDateTime";
     public static final String DEFAULT_DATE_UTIL = "_defaultDateUtil";
 
-    private String getPropertyDateWriter(PropertyReference ref) {
+    private String getPropertyDateWriter(PropertyMapping ref) {
         return ref.getPropertyName() + "_dateParser";
     }
 
@@ -230,10 +233,10 @@ public class Serializer {
     private void processDateProperties(MethodCreator staticConstructor) {
         FieldCreator defaultDateUtil = null;
         FieldCreator defaultOffsetDateTime = null;
-        for (PropertyReference ref : properties) {
+        for (PropertyMapping ref : properties) {
             if (Types.typeContainsType(ref.genericType, Date.class)) {
                 if (ref.dateFormat == null) {
-                    if (defaultDateUtil == null) {
+                    if (defaultDateUtil == null && !generator.hasMappingFor(Date.class)) {
                         defaultDateUtil = creator.getFieldCreator(DEFAULT_DATE_UTIL, QsonObjectWriter.class).setModifiers(ACC_STATIC | ACC_PRIVATE | ACC_FINAL);
                         staticConstructor.writeStaticField(defaultDateUtil.getFieldDescriptor(), allocateDateUtilWriter(staticConstructor, generator.getDateFormat(), null));
                     }
@@ -243,7 +246,7 @@ public class Serializer {
                 }
             } else if (Types.typeContainsType(ref.genericType, OffsetDateTime.class)) {
                 if (ref.dateFormat == null) {
-                    if (defaultOffsetDateTime == null) {
+                    if (defaultOffsetDateTime == null && !generator.hasMappingFor(OffsetDateTime.class)) {
                         defaultOffsetDateTime = creator.getFieldCreator(DEFAULT_OFFSET_DATE_TIME, QsonObjectWriter.class).setModifiers(ACC_STATIC | ACC_PRIVATE | ACC_FINAL);
                         staticConstructor.writeStaticField(defaultOffsetDateTime.getFieldDescriptor(), allocateOffsetDateTimeWriter(staticConstructor, generator.getDateFormat(), null));
                     }
@@ -288,7 +291,7 @@ public class Serializer {
         ResultHandle jsonWriter = method.getMethodParam(0);
         AssignableResultHandle target = method.createVariable(targetType);
         method.assign(target, method.getMethodParam(1));
-        Method valueGetter = mapping.getValueGetter();
+        Method valueGetter = mapping.getValueWriter();
         Class type = valueGetter.getReturnType();
         boolean isStatic = Modifier.isStatic(valueGetter.getModifiers());
 
@@ -315,10 +318,10 @@ public class Serializer {
 
 
         MethodCreator staticConstructor = creator.getMethodCreator(CLINIT, void.class);
-        if (Types.typeContainsType(targetGenericType, Date.class)) {
+        if (Types.typeContainsType(targetGenericType, Date.class) && !generator.hasMappingFor(Date.class)) {
             FieldCreator defaultDateUtil = creator.getFieldCreator(DEFAULT_DATE_UTIL, QsonObjectWriter.class).setModifiers(ACC_STATIC | ACC_PRIVATE | ACC_FINAL);
             staticConstructor.writeStaticField(defaultDateUtil.getFieldDescriptor(), allocateDateUtilWriter(staticConstructor, generator.getDateFormat(), null));
-        } else if (Types.typeContainsType(targetGenericType, OffsetDateTime.class)) {
+        } else if (Types.typeContainsType(targetGenericType, OffsetDateTime.class) && !generator.hasMappingFor(OffsetDateTime.class)) {
             FieldCreator defaultOffsetDateTime = creator.getFieldCreator(DEFAULT_OFFSET_DATE_TIME, QsonObjectWriter.class).setModifiers(ACC_STATIC | ACC_PRIVATE | ACC_FINAL);
             staticConstructor.writeStaticField(defaultOffsetDateTime.getFieldDescriptor(), allocateOffsetDateTimeWriter(staticConstructor, generator.getDateFormat(), null));
         }
@@ -333,7 +336,7 @@ public class Serializer {
         method.assign(target, method.getMethodParam(1));
 
         if (Map.class.isAssignableFrom(targetType)) {
-            if (hasCollectionWriter(targetType, targetGenericType)) {
+            if (hasCollectionWriter(generator, targetType, targetGenericType)) {
                 ResultHandle writer = getMapWriter(null, method, "collection", targetGenericType);
                 method.invokeInterfaceMethod(MethodDescriptor.ofMethod(JsonWriter.class, "write", void.class, Map.class, QsonObjectWriter.class), jsonWriter,
                         target,
@@ -344,7 +347,7 @@ public class Serializer {
                         target);
             }
         } else {
-            if (hasCollectionWriter(targetType, targetGenericType)) {
+            if (hasCollectionWriter(generator, targetType, targetGenericType)) {
                 ResultHandle writer = getCollectionWriter(null, method, "collection", targetGenericType);
                 method.invokeInterfaceMethod(MethodDescriptor.ofMethod(JsonWriter.class, "write", void.class, Collection.class, QsonObjectWriter.class), jsonWriter,
                         target,
@@ -369,34 +372,34 @@ public class Serializer {
         ResultHandle instance = staticConstructor.newInstance(MethodDescriptor.ofConstructor(fqn()));
         staticConstructor.writeStaticField(SERIALIZER.getFieldDescriptor(), instance);
         processDateProperties(staticConstructor);
-        for (PropertyReference getter : properties) {
+        for (PropertyMapping getter : properties) {
             collectionField(staticConstructor, getter);
         }
 
         staticConstructor.returnValue(null);
     }
 
-    private void collectionField(MethodCreator staticConstructor, PropertyReference getter) {
+    private void collectionField(MethodCreator staticConstructor, PropertyMapping getter) {
         Type genericType = getter.genericType;
         Class type = getter.type;
         String property = getter.propertyName;
         collectionProperty(getter, staticConstructor, type, genericType, property);
     }
 
-    private void collectionProperty(PropertyReference ref, MethodCreator staticConstructor, Class type, Type genericType, String property) {
+    private void collectionProperty(PropertyMapping ref, MethodCreator staticConstructor, Class type, Type genericType, String property) {
         if (genericType instanceof ParameterizedType) {
             if (Map.class.isAssignableFrom(type)) {
                 ParameterizedType pt = (ParameterizedType) genericType;
                 Type valueType = pt.getActualTypeArguments()[1];
                 Class valueClass = Types.getRawType(valueType);
-                if (hasNestedWriter(valueClass, valueType)) {
+                if (hasNestedWriter(generator, valueClass, valueType)) {
                     collectionField(ref, staticConstructor, valueClass, valueType, property + "_n");
                 }
             } else if (List.class.isAssignableFrom(type) || Set.class.isAssignableFrom(type)) {
                 ParameterizedType pt = (ParameterizedType) genericType;
                 Type valueType = pt.getActualTypeArguments()[0];
                 Class valueClass = Types.getRawType(valueType);
-                if (hasNestedWriter(valueClass, valueType)) {
+                if (hasNestedWriter(generator, valueClass, valueType)) {
                     collectionField(ref, staticConstructor, valueClass, valueType, property + "_n");
                 }
             } else {
@@ -405,23 +408,23 @@ public class Serializer {
         }
     }
 
-    private ResultHandle getNestedValueWriter(PropertyReference ref, MethodCreator staticConstructor, Class type, Type genericType, String property) {
-        if (Util.isDateType(type)) {
+    private ResultHandle getNestedValueWriter(PropertyMapping ref, MethodCreator staticConstructor, Class type, Type genericType, String property) {
+        if (Util.isDateType(type) && !generator.hasMappingFor(type)) {
             if (type.equals(OffsetDateTime.class)) {
                 return getOffsetDateTimeWriter(ref, staticConstructor);
             } else if (type.equals(Date.class)) {
                 return getDateUtilWriter(ref, staticConstructor);
             }
         }
-        if (!hasNestedWriter(type, genericType)) return null;
-        if (Util.isUserType(type)) {
+        if (!hasNestedWriter(generator, type, genericType)) return null;
+        if (Util.isUserType(generator, type)) {
             return staticConstructor.readStaticField(FieldDescriptor.of(fqn(type, genericType), "SERIALIZER", fqn(type, genericType)));
         }
         collectionField(ref, staticConstructor, type, genericType, property);
         return staticConstructor.readStaticField(FieldDescriptor.of(fqn(), property, QsonObjectWriter.class));
     }
 
-    private void collectionField(PropertyReference ref, MethodCreator staticConstructor, Class type, Type genericType, String property) {
+    private void collectionField(PropertyMapping ref, MethodCreator staticConstructor, Class type, Type genericType, String property) {
         if (genericType instanceof ParameterizedType) {
             if (Map.class.isAssignableFrom(type)) {
                 ParameterizedType pt = (ParameterizedType) genericType;
@@ -451,7 +454,7 @@ public class Serializer {
         }
     }
 
-    private ResultHandle getOffsetDateTimeWriter(PropertyReference ref, BytecodeCreator scope) {
+    private ResultHandle getOffsetDateTimeWriter(PropertyMapping ref, BytecodeCreator scope) {
         String field = DEFAULT_OFFSET_DATE_TIME;
         if (ref != null && ref.getDateFormat() != null) {
             field = getPropertyDateWriter(ref);
@@ -460,7 +463,7 @@ public class Serializer {
         return scope.readStaticField(parserField);
     }
 
-    private ResultHandle getDateUtilWriter(PropertyReference ref, BytecodeCreator scope) {
+    private ResultHandle getDateUtilWriter(PropertyMapping ref, BytecodeCreator scope) {
         String field = DEFAULT_DATE_UTIL;
         if (ref != null && ref.getDateFormat() != null) {
             field = getPropertyDateWriter(ref);
@@ -479,7 +482,7 @@ public class Serializer {
         boolean forceComma = false;
         method.invokeInterfaceMethod(MethodDescriptor.ofMethod(JsonWriter.class, "writeLCurley", void.class), jsonWriter);
         // todo support an interface as type
-        for (PropertyReference getter : properties) {
+        for (PropertyMapping getter : properties) {
             if (getter.type.equals(int.class)) {
                 method.invokeInterfaceMethod(MethodDescriptor.ofMethod(JsonWriter.class, "writeProperty", void.class, String.class, int.class, boolean.class), jsonWriter,
                         method.load(getter.jsonName),
@@ -607,7 +610,7 @@ public class Serializer {
                         comma);
                 if (!forceComma) method.assign(comma, result);
             } else if (Map.class.isAssignableFrom(getter.type)) {
-                if (hasCollectionWriter(getter)) {
+                if (hasCollectionWriter(generator, getter)) {
                     ResultHandle result = method.invokeInterfaceMethod(MethodDescriptor.ofMethod(JsonWriter.class, "writeProperty", boolean.class, String.class, Map.class, QsonObjectWriter.class, boolean.class), jsonWriter,
                             method.load(getter.jsonName),
                             method.invokeVirtualMethod(MethodDescriptor.ofMethod(targetType, getter.getter.getName(), getter.type), target),
@@ -623,7 +626,7 @@ public class Serializer {
                     if (!forceComma) method.assign(comma, result);
                 }
             } else if (Collection.class.isAssignableFrom(getter.type)) {
-                if (hasCollectionWriter(getter)) {
+                if (hasCollectionWriter(generator, getter)) {
                     ResultHandle result = method.invokeInterfaceMethod(MethodDescriptor.ofMethod(JsonWriter.class, "writeProperty", boolean.class, String.class, Collection.class, QsonObjectWriter.class, boolean.class), jsonWriter,
                             method.load(getter.jsonName),
                             method.invokeVirtualMethod(MethodDescriptor.ofMethod(targetType, getter.getter.getName(), getter.type), target),
@@ -644,7 +647,7 @@ public class Serializer {
                         method.invokeVirtualMethod(MethodDescriptor.ofMethod(targetType, getter.getter.getName(), getter.type), target),
                         comma);
                 if (!forceComma) method.assign(comma, result);
-            } else if (getter.type.equals(OffsetDateTime.class)) {
+            } else if (getter.type.equals(OffsetDateTime.class) && !generator.hasMappingFor(OffsetDateTime.class)) {
 
                 ResultHandle result = method.invokeInterfaceMethod(MethodDescriptor.ofMethod(JsonWriter.class, "writeObjectProperty", boolean.class, String.class, Object.class, QsonObjectWriter.class, boolean.class), jsonWriter,
                         method.load(getter.jsonName),
@@ -653,7 +656,7 @@ public class Serializer {
                         comma
                 );
                 if (!forceComma) method.assign(comma, result);
-            } else if (getter.type.equals(Date.class)) {
+            } else if (getter.type.equals(Date.class) && !generator.hasMappingFor(Date.class)) {
 
                 ResultHandle result = method.invokeInterfaceMethod(MethodDescriptor.ofMethod(JsonWriter.class, "writeObjectProperty", boolean.class, String.class, Object.class, QsonObjectWriter.class, boolean.class), jsonWriter,
                         method.load(getter.jsonName),
@@ -682,21 +685,21 @@ public class Serializer {
         method.returnValue(null);
     }
 
-    private ResultHandle getCollectionWriter(MethodCreator method, PropertyReference getter) {
+    private ResultHandle getCollectionWriter(MethodCreator method, PropertyMapping getter) {
         String property = getter.propertyName;
         Type genericType = getter.genericType;
         return getCollectionWriter(getter, method, property, (ParameterizedType) genericType);
     }
 
-    private ResultHandle getCollectionWriter(PropertyReference ref, MethodCreator method, String property, Type genericType) {
+    private ResultHandle getCollectionWriter(PropertyMapping ref, MethodCreator method, String property, Type genericType) {
         ParameterizedType pt = (ParameterizedType) genericType;
         Class valueClass = Types.getRawType(pt.getActualTypeArguments()[0]);
         Type valueType = pt.getActualTypeArguments()[0];
         return getWriter(ref, method, property, valueClass, valueType);
     }
 
-    private ResultHandle getWriter(PropertyReference ref, MethodCreator method, String property, Class valueClass, Type valueType) {
-        if (Util.isDateType(valueClass)) {
+    private ResultHandle getWriter(PropertyMapping ref, MethodCreator method, String property, Class valueClass, Type valueType) {
+        if (Util.isDateType(valueClass) && !generator.hasMappingFor(valueClass)) {
             if (valueClass.equals(OffsetDateTime.class)) {
                 return getOffsetDateTimeWriter(ref, method);
             } else if (valueClass.equals(Date.class)) {
@@ -704,27 +707,27 @@ public class Serializer {
             } else {
                 throw new QsonException("Should be unreachable");
             }
-        } else if (Util.isUserType(valueClass)) {
+        } else if (Util.isUserType(generator, valueClass)) {
             return method.readStaticField(FieldDescriptor.of(fqn(valueClass, valueType), "SERIALIZER", fqn(valueClass, valueType)));
         } else {
             return method.readStaticField(FieldDescriptor.of(fqn(), property + "_n", QsonObjectWriter.class));
         }
     }
 
-    private ResultHandle getMapWriter(MethodCreator method, PropertyReference getter) {
+    private ResultHandle getMapWriter(MethodCreator method, PropertyMapping getter) {
         String property = getter.propertyName;
         Type genericType = getter.genericType;
         return getMapWriter(getter, method, property, (ParameterizedType) genericType);
     }
 
-    private ResultHandle getMapWriter(PropertyReference ref, MethodCreator method, String property, Type genericType) {
+    private ResultHandle getMapWriter(PropertyMapping ref, MethodCreator method, String property, Type genericType) {
         ParameterizedType pt = (ParameterizedType) genericType;
         Class valueClass = Types.getRawType(pt.getActualTypeArguments()[1]);
         Type valueType = pt.getActualTypeArguments()[1];
         return getWriter(ref, method, property, valueClass, valueType);
     }
 
-    private static boolean isGeneric(Class type, Type generic) {
+    private static boolean isGeneric(QsonGenerator generator, Class type, Type generic) {
         if (type.isPrimitive()) return true;
         if (type.equals(String.class)
                 || type.equals(Integer.class)
@@ -740,37 +743,37 @@ public class Serializer {
         if (Map.class.isAssignableFrom(type)
                 || List.class.isAssignableFrom(type)
                 || Set.class.isAssignableFrom(type)) {
-            return hasCollectionWriter(type, generic) == false;
+            return hasCollectionWriter(generator, type, generic) == false;
         }
         return false;
     }
 
-    private boolean hasCollectionWriter(PropertyReference getter) {
+    private static boolean hasCollectionWriter(QsonGenerator generator, PropertyMapping getter) {
         Class type = getter.type;
         Type genericType = getter.genericType;
-        return hasCollectionWriter(type, genericType);
+        return hasCollectionWriter(generator, type, genericType);
     }
 
-    private static boolean hasCollectionWriter(Class type, Type genericType) {
+    private static boolean hasCollectionWriter(QsonGenerator generator, Class type, Type genericType) {
         if (!(genericType instanceof ParameterizedType)) return false;
         if (Map.class.isAssignableFrom(type)) {
             ParameterizedType pt = (ParameterizedType) genericType;
             Type valueType = pt.getActualTypeArguments()[1];
             Class valueClass = Types.getRawType(valueType);
-            return hasNestedWriter(valueClass, valueType);
+            return hasNestedWriter(generator, valueClass, valueType);
         } else if (Collection.class.isAssignableFrom(type)) {
             ParameterizedType pt = (ParameterizedType) genericType;
             Class valueClass = Types.getRawType(pt.getActualTypeArguments()[0]);
             Type valueGenericType = pt.getActualTypeArguments()[0];
-            return hasNestedWriter(valueClass, valueGenericType);
+            return hasNestedWriter(generator, valueClass, valueGenericType);
         } else {
             return false;
         }
     }
 
-    private static boolean hasNestedWriter(Class type, Type genericType) {
+    private static boolean hasNestedWriter(QsonGenerator generator, Class type, Type genericType) {
         if (Util.isDateType(type)) return true;
-        if (Util.isUserType(type)) return true;
+        if (Util.isUserType(generator, type)) return true;
         if (!Map.class.isAssignableFrom(type)
                 && !List.class.isAssignableFrom(type)
                 && !Set.class.isAssignableFrom(type)
@@ -784,12 +787,12 @@ public class Serializer {
             ParameterizedType pt = (ParameterizedType) genericType;
             Class valueClass = Types.getRawType(pt.getActualTypeArguments()[1]);
             Type valueGenericType = pt.getActualTypeArguments()[1];
-            return hasNestedWriter(valueClass, valueGenericType);
+            return hasNestedWriter(generator, valueClass, valueGenericType);
         } else if (Collection.class.isAssignableFrom(type)) {
             ParameterizedType pt = (ParameterizedType) genericType;
             Class valueClass = Types.getRawType(pt.getActualTypeArguments()[0]);
             Type valueGenericType = pt.getActualTypeArguments()[0];
-            return hasNestedWriter(valueClass, valueGenericType);
+            return hasNestedWriter(generator, valueClass, valueGenericType);
         }
         return false;
     }

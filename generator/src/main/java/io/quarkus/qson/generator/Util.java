@@ -51,7 +51,7 @@ public class Util {
     public static void addReference(QsonGenerator generator, Set<Type> referenceSet, Type type) {
         if (type instanceof Class) {
             Class clz = (Class)type;
-            if (generator.hasMappingFor(clz) || isUserType(clz)) {
+            if (generator.hasMappingFor(clz) || isUserType(generator, clz)) {
                 referenceSet.add(type);
             }
         } else if (type instanceof ParameterizedType) {
@@ -74,7 +74,7 @@ public class Util {
         return OffsetDateTime.class.equals(type) || Date.class.equals(type);
     }
 
-    public static boolean isUserType(Class type) {
+    public static boolean isUserType(QsonGenerator generator, Class type) {
         if (type.isPrimitive()) return false;
         if (type.equals(String.class)
                 || type.equals(Integer.class)
@@ -85,7 +85,7 @@ public class Util {
                 || type.equals(Double.class)
                 || type.equals(Float.class)
                 || type.equals(Character.class)
-                || isDateType(type)
+                || (isDateType(type) && !generator.hasMappingFor(type))
                 || Map.class.isAssignableFrom(type)
                 || List.class.isAssignableFrom(type)
                 || Set.class.isAssignableFrom(type)

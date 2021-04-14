@@ -4,8 +4,7 @@ import io.quarkus.qson.QsonIgnore;
 import io.quarkus.qson.QsonIgnoreRead;
 import io.quarkus.qson.QsonIgnoreWrite;
 import io.quarkus.qson.QsonProperty;
-import io.quarkus.qson.generator.Deserializer;
-import io.quarkus.qson.generator.PropertyReference;
+import io.quarkus.qson.generator.PropertyMapping;
 import io.quarkus.qson.generator.QsonMapper;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
@@ -81,7 +80,7 @@ public class PropertyAnnotationTest {
 
     @Test
     public void testMappingAndIgnore() throws Exception {
-        List<PropertyReference> properties = PropertyReference.getProperties(Pojo.class);
+        List<PropertyMapping> properties = PropertyMapping.getProperties(Pojo.class);
 
         QsonMapper mapper = new QsonMapper();
         String json = "{\n" +

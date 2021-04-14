@@ -48,14 +48,10 @@ import java.lang.reflect.Modifier;
 import java.lang.reflect.ParameterizedType;
 import java.lang.reflect.Type;
 import java.math.BigDecimal;
-import java.time.LocalDate;
-import java.time.LocalDateTime;
-import java.time.LocalTime;
 import java.time.OffsetDateTime;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Date;
-import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
@@ -80,18 +76,11 @@ public class Deserializer {
     public static final String DEFAULT_DATE_UTIL = "_defaultDateUtil";
     public static final String DEFAULT_OFFSET_DATE_TIME = "_defaultOffsetDateTime";
 
-    private boolean isDateTime() {
-        return targetType.equals(LocalDate.class)
-                || targetType.equals(LocalDateTime.class)
-                || targetType.equals(OffsetDateTime.class)
-                || targetType.equals(LocalTime.class);
-    }
-
     public static class Builder {
         Type type;
         ClassOutput output;
         String className;
-        List<PropertyReference> properties;
+        List<PropertyMapping> properties;
         Set<Type> referenced = new HashSet<>();
         Generator generator;
 
@@ -200,12 +189,12 @@ public class Deserializer {
                     }
 
                 }
-                // NOTE: keep full property list around just in case we're doing serialization
-                // and somebody wants to reuse.
-                List<PropertyReference> tmp = new ArrayList<>();
+
+                // remove any's from property list and sort properties by name
+                List<PropertyMapping> tmp = new ArrayList<>();
 
                 Method anySetter = null;
-                for (PropertyReference ref : properties) {
+                for (PropertyMapping ref : properties) {
                     if (ref.setter != null) {
                         if (ref.isAny) {
                             anySetter = ref.setter;
@@ -251,7 +240,7 @@ public class Deserializer {
 
     final Class targetType;
     final Type targetGenericType;
-    List<PropertyReference> properties;
+    List<PropertyMapping> properties;
     final ClassOutput classOutput;
     final String className;
     Method anyMethod;
@@ -259,7 +248,11 @@ public class Deserializer {
     QsonGenerator generator;
 
     private static String fqn(Class clz) {
-        return clz.getName() + "__Parser";
+        String prefix = "";
+        if (clz.getName().startsWith("java")) {
+            prefix = "io.quarkus.qson.";
+        }
+        return prefix + clz.getName() + "__Parser";
     }
 
     Deserializer(ClassOutput classOutput, Class targetType, Type targetGenericType) {
@@ -274,11 +267,11 @@ public class Deserializer {
     }
 
     ResultHandle parseValueClass(ClassMapping mapper, BytecodeCreator scope, _ParserContext ctx) {
-        if (mapper.getValueSetter() == null) {
+        if (mapper.getValueReader() == null) {
             throw new QsonException("There is no value setter for value class: " + mapper.getType().getName());
         }
-        if (mapper.getValueSetter() instanceof Method) {
-            Method setter = (Method)mapper.getValueSetter();
+        if (mapper.getValueReader() instanceof Method) {
+            Method setter = (Method)mapper.getValueReader();
             if (Modifier.isStatic(setter.getModifiers())) {
                 return scope.invokeStaticMethod(MethodDescriptor.ofMethod(setter), popValue(ctx, scope, setter.getParameterTypes()[0]));
             } else {
@@ -287,13 +280,13 @@ public class Deserializer {
                 return instance;
             }
         } else {
-            Constructor setter = (Constructor)mapper.getValueSetter();
+            Constructor setter = (Constructor)mapper.getValueReader();
             return scope.newInstance(MethodDescriptor.ofConstructor(mapper.getType(), setter.getParameterTypes()[0]), popValue(ctx, scope, setter.getParameterTypes()[0]));
         }
     }
 
     ResultHandle callValueClassStartState(_ParserContext ctx, BytecodeCreator scope, ClassMapping mapper) {
-        Class type = mapper.getValueSetterType();
+        Class type = mapper.getValueReaderType();
         if (type.equals(String.class)) {
             FieldDescriptor parserField = FieldDescriptor.of(ObjectParser.class, "PARSER", ObjectParser.class);
             ResultHandle PARSER = scope.readStaticField(parserField);
@@ -441,7 +434,7 @@ public class Deserializer {
         staticConstructor.writeStaticField(PARSER.getFieldDescriptor(), instance);
 
         processDateProperties(staticConstructor);
-        for (PropertyReference ref : properties) {
+        for (PropertyMapping ref : properties) {
             collectionField(staticConstructor, ref);
             MethodCreator method = propertyEndMethod(ref);
             propertyEndFunction(ref, staticConstructor, method);
@@ -487,10 +480,10 @@ public class Deserializer {
     private void processDateProperties(MethodCreator staticConstructor) {
         FieldCreator defaultDateUtil = null;
         FieldCreator defaultOffsetDateTime = null;
-        for (PropertyReference ref : properties) {
+        for (PropertyMapping ref : properties) {
             if (Types.typeContainsType(ref.genericType, Date.class)) {
                 if (ref.dateFormat == null) {
-                    if (defaultDateUtil == null) {
+                    if (defaultDateUtil == null && !generator.hasMappingFor(Date.class)) {
                         defaultDateUtil = creator.getFieldCreator(DEFAULT_DATE_UTIL, ValueParser.class).setModifiers(ACC_STATIC | ACC_PRIVATE | ACC_FINAL);
                         staticConstructor.writeStaticField(defaultDateUtil.getFieldDescriptor(), allocateDateUtilParser(staticConstructor, generator.getDateFormat(), null));
                     }
@@ -500,7 +493,7 @@ public class Deserializer {
                 }
             } else if (Types.typeContainsType(ref.genericType, OffsetDateTime.class)) {
                 if (ref.dateFormat == null) {
-                    if (defaultOffsetDateTime == null) {
+                    if (defaultOffsetDateTime == null && !generator.hasMappingFor(OffsetDateTime.class)) {
                         defaultOffsetDateTime = creator.getFieldCreator(DEFAULT_OFFSET_DATE_TIME, ValueParser.class).setModifiers(ACC_STATIC | ACC_PRIVATE | ACC_FINAL);
                         staticConstructor.writeStaticField(defaultOffsetDateTime.getFieldDescriptor(), allocateOffsetDateTimeParser(staticConstructor, generator.getDateFormat(), null));
                     }
@@ -512,12 +505,12 @@ public class Deserializer {
         }
     }
 
-    private String getPropertyDateParser(PropertyReference ref) {
+    private String getPropertyDateParser(PropertyMapping ref) {
         return ref.getPropertyName() + "_dateParser";
     }
 
 
-    private void collectionField(MethodCreator staticConstructor, PropertyReference ref) {
+    private void collectionField(MethodCreator staticConstructor, PropertyMapping ref) {
         Type genericType = ref.genericType;
         Class type = ref.type;
         String property = ref.propertyName;
@@ -525,7 +518,7 @@ public class Deserializer {
 
     }
 
-    private void collectionField(MethodCreator staticConstructor, PropertyReference ref, Class type, Type genericType, String property) {
+    private void collectionField(MethodCreator staticConstructor, PropertyMapping ref, Class type, Type genericType, String property) {
         if (genericType instanceof ParameterizedType) {
             if (Map.class.isAssignableFrom(type)) {
                 ParameterizedType pt = (ParameterizedType) genericType;
@@ -623,7 +616,7 @@ public class Deserializer {
         }
     }
 
-    private ResultHandle collectionValueState(PropertyReference ref, Class type, Type genericType, BytecodeCreator scope, String property) {
+    private ResultHandle collectionValueState(PropertyMapping ref, Class type, Type genericType, BytecodeCreator scope, String property) {
         if (type.equals(String.class)
                 || type.equals(char.class) || type.equals(Character.class)
         ) {
@@ -679,10 +672,10 @@ public class Deserializer {
                 ResultHandle PARSER = scope.readStaticField(parserField);
                 return scope.readInstanceField(FieldDescriptor.of(GenericSetParser.class, "startList", ParserState.class), PARSER);
             }
-        } else if (type.equals(OffsetDateTime.class)) {
+        } else if (type.equals(OffsetDateTime.class) && !generator.hasMappingFor(type)) {
             ResultHandle PARSER = getOffsetDateTimeParser(ref, scope);
             return scope.readInstanceField(FieldDescriptor.of(ValueParser.class, "start", ParserState.class), PARSER);
-        } else if (type.equals(Date.class)) {
+        } else if (type.equals(Date.class) && !generator.hasMappingFor(type)) {
             ResultHandle PARSER = getDateUtilParser(ref, scope);
             return scope.readInstanceField(FieldDescriptor.of(ValueParser.class, "start", ParserState.class), PARSER);
         } else {
@@ -698,7 +691,7 @@ public class Deserializer {
          }
     }
 
-    private ResultHandle getDateUtilParser(PropertyReference ref, BytecodeCreator scope) {
+    private ResultHandle getDateUtilParser(PropertyMapping ref, BytecodeCreator scope) {
         String field = DEFAULT_DATE_UTIL;
         if (ref != null && ref.getDateFormat() != null) {
             field = getPropertyDateParser(ref);
@@ -707,7 +700,7 @@ public class Deserializer {
         return scope.readStaticField(parserField);
     }
 
-    private ResultHandle continueValueState(PropertyReference ref, Class type, Type genericType, BytecodeCreator scope, String property) {
+    private ResultHandle continueValueState(PropertyMapping ref, Class type, Type genericType, BytecodeCreator scope, String property) {
         if (type.equals(String.class)
                 || type.equals(char.class) || type.equals(Character.class)
         ) {
@@ -763,10 +756,10 @@ public class Deserializer {
                 ResultHandle PARSER = scope.readStaticField(parserField);
                 return scope.readInstanceField(FieldDescriptor.of(GenericSetParser.class, "continueStartList", ParserState.class), PARSER);
             }
-        } else if (type.equals(OffsetDateTime.class)) {
+        } else if (type.equals(OffsetDateTime.class) && !generator.hasMappingFor(type)) {
             ResultHandle PARSER = getOffsetDateTimeParser(ref, scope);
             return scope.readInstanceField(FieldDescriptor.of(ValueParser.class, "continueStart", ParserState.class), PARSER);
-        } else if (type.equals(Date.class)) {
+        } else if (type.equals(Date.class) && !generator.hasMappingFor(type)) {
             ResultHandle PARSER = getDateUtilParser(ref, scope);
             return scope.readInstanceField(FieldDescriptor.of(ValueParser.class, "continueStart", ParserState.class), PARSER);
         } else {
@@ -782,7 +775,7 @@ public class Deserializer {
         }
     }
 
-    private ResultHandle getOffsetDateTimeParser(PropertyReference ref, BytecodeCreator scope) {
+    private ResultHandle getOffsetDateTimeParser(PropertyMapping ref, BytecodeCreator scope) {
         String field = DEFAULT_OFFSET_DATE_TIME;
         if (ref != null && ref.getDateFormat() != null) {
             field = getPropertyDateParser(ref);
@@ -803,7 +796,7 @@ public class Deserializer {
         staticConstructor.writeStaticField(endField.getFieldDescriptor(), endFunction.getInstance());
     }
 
-    private void propertyEndFunction(PropertyReference setter, MethodCreator staticConstructor, MethodCreator method) {
+    private void propertyEndFunction(PropertyMapping setter, MethodCreator staticConstructor, MethodCreator method) {
         String endName = endProperty(setter);
         FieldCreator endField = creator.getFieldCreator(endName, ParserState.class).setModifiers(ACC_STATIC | ACC_PRIVATE);
         FunctionCreator endFunction = staticConstructor.createFunction(ParserState.class);
@@ -815,7 +808,7 @@ public class Deserializer {
         staticConstructor.writeStaticField(endField.getFieldDescriptor(), endFunction.getInstance());
     }
 
-    private MethodCreator propertyEndMethod(PropertyReference setter) {
+    private MethodCreator propertyEndMethod(PropertyMapping setter) {
         String endName = endProperty(setter);
         MethodCreator method = creator.getMethodCreator(endName, void.class, ParserContext.class);
         method.setModifiers(ACC_STATIC | ACC_FINAL | ACC_PUBLIC);
@@ -829,7 +822,7 @@ public class Deserializer {
         return method;
     }
 
-    private ResultHandle popSetterValue(_ParserContext ctx, PropertyReference setter, BytecodeCreator scope) {
+    private ResultHandle popSetterValue(_ParserContext ctx, PropertyMapping setter, BytecodeCreator scope) {
         Class type = setter.type;
         return popValue(ctx, scope, type);
     }
@@ -870,7 +863,7 @@ public class Deserializer {
         }
     }
 
-    private String endProperty(PropertyReference setter) {
+    private String endProperty(PropertyMapping setter) {
         return setter.propertyName + "End";
     }
 
@@ -897,26 +890,26 @@ public class Deserializer {
         }
     }
 
-    private void chooseField(BytecodeCreator scope, _ParserContext ctx, ResultHandle stateIndex, List<PropertyReference> setters, int offset) {
+    private void chooseField(BytecodeCreator scope, _ParserContext ctx, ResultHandle stateIndex, List<PropertyMapping> setters, int offset) {
         if (setters.size() == 1) {
-            PropertyReference setter = setters.get(0);
+            PropertyMapping setter = setters.get(0);
             compareToken(scope, ctx, stateIndex, offset, setter);
             return;
         }
         ResultHandle c = ctx.tokenCharAt(scope, offset);
         for (int i = 0; i < setters.size(); i++) {
-            PropertyReference setter = setters.get(i);
+            PropertyMapping setter = setters.get(i);
             if (offset >= setter.jsonName.length()) {
                 compareToken(scope, ctx, stateIndex, offset, setter);
                 continue;
             }
             char ch = setter.jsonName.charAt(offset);
-            List<PropertyReference> sameChars = new ArrayList<>();
+            List<PropertyMapping> sameChars = new ArrayList<>();
             sameChars.add(setter);
             BytecodeCreator ifScope = scope.createScope();
             BranchResult branchResult = ifScope.ifIntegerEqual(c, ifScope.load(ch));
             for (i = i + 1; i < setters.size(); i++) {
-                PropertyReference next = setters.get(i);
+                PropertyMapping next = setters.get(i);
                 if (offset < next.jsonName.length() && next.jsonName.charAt(offset) == ch) {
                     sameChars.add(next);
                 } else {
@@ -930,13 +923,13 @@ public class Deserializer {
 
     }
 
-    private void compareToken(BytecodeCreator scope, _ParserContext ctx, ResultHandle stateIndex, int offset, PropertyReference setter) {
+    private void compareToken(BytecodeCreator scope, _ParserContext ctx, ResultHandle stateIndex, int offset, PropertyMapping setter) {
         BytecodeCreator ifScope = scope.createScope();
         ResultHandle check = ctx.compareToken(ifScope, ifScope.load(offset), ifScope.load(setter.jsonName.substring(offset)));
         matchHandler(ctx, stateIndex, setter, ifScope.ifNonZero(check).trueBranch());
     }
 
-    private void matchHandler(_ParserContext ctx, ResultHandle stateIndex, PropertyReference setter, BytecodeCreator scope) {
+    private void matchHandler(_ParserContext ctx, ResultHandle stateIndex, PropertyMapping setter, BytecodeCreator scope) {
         BytecodeCreator ifScope = scope.createScope();
         MethodDescriptor valueSeparator = valueSeparator();
         ResultHandle passed = ifScope.invokeVirtualMethod(valueSeparator, scope.getThis(), ctx.ctx);
@@ -960,7 +953,7 @@ public class Deserializer {
         scope.returnValue(scope.load(true));
     }
 
-    private ResultHandle continueState(PropertyReference setter, BytecodeCreator scope) {
+    private ResultHandle continueState(PropertyMapping setter, BytecodeCreator scope) {
         Class type = setter.type;
         Type genericType = setter.genericType;
         if (type.equals(String.class)
@@ -1027,10 +1020,10 @@ public class Deserializer {
             FieldDescriptor parserField = FieldDescriptor.of(GenericParser.class, "PARSER", GenericParser.class);
             ResultHandle PARSER = scope.readStaticField(parserField);
             return scope.readInstanceField(FieldDescriptor.of(GenericParser.class, "continueStart", ParserState.class), PARSER);
-        } else if (type.equals(OffsetDateTime.class)) {
+        } else if (type.equals(OffsetDateTime.class) && !generator.hasMappingFor(type)) {
             ResultHandle PARSER = getOffsetDateTimeParser(setter, scope);
             return scope.readInstanceField(FieldDescriptor.of(ValueParser.class, "continueStart", ParserState.class), PARSER);
-        } else if (type.equals(Date.class)) {
+        } else if (type.equals(Date.class) && !generator.hasMappingFor(type)) {
             ResultHandle PARSER = getDateUtilParser(setter, scope);
             return scope.readInstanceField(FieldDescriptor.of(ValueParser.class, "continueStart", ParserState.class), PARSER);
         } else {
@@ -1046,7 +1039,7 @@ public class Deserializer {
         }
     }
 
-    private ResultHandle callStartState(_ParserContext ctx, PropertyReference setter, BytecodeCreator scope) {
+    private ResultHandle callStartState(_ParserContext ctx, PropertyMapping setter, BytecodeCreator scope) {
         Class type = setter.type;
         Type genericType = setter.genericType;
         if (type.equals(String.class)
@@ -1116,11 +1109,11 @@ public class Deserializer {
             ResultHandle PARSER = scope.readStaticField(parserField);
             MethodDescriptor descriptor = MethodDescriptor.ofMethod(GenericParser.class, "start", boolean.class, ParserContext.class);
             return scope.invokeVirtualMethod(descriptor, PARSER, ctx.ctx);
-        } else if (type.equals(OffsetDateTime.class)) {
+        } else if (type.equals(OffsetDateTime.class) && !generator.hasMappingFor(type)) {
             ResultHandle PARSER = getOffsetDateTimeParser(setter, scope);
             MethodDescriptor descriptor = MethodDescriptor.ofMethod(ValueParser.class, "start", boolean.class.getName(), ParserContext.class.getName());
             return scope.invokeVirtualMethod(descriptor, PARSER, ctx.ctx);
-        } else if (type.equals(Date.class)) {
+        } else if (type.equals(Date.class) && !generator.hasMappingFor(type)) {
             ResultHandle PARSER = getDateUtilParser(setter, scope);
             MethodDescriptor descriptor = MethodDescriptor.ofMethod(ValueParser.class, "start", boolean.class.getName(), ParserContext.class.getName());
             return scope.invokeVirtualMethod(descriptor, PARSER, ctx.ctx);

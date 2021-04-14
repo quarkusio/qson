@@ -24,7 +24,7 @@ import java.util.Set;
  * Java mapping metadata for a json property.
  *
  */
-public class PropertyReference {
+public class PropertyMapping {
     Method getter;
     Method setter;
     Type genericType;
@@ -123,27 +123,27 @@ public class PropertyReference {
         this.datePattern = datePattern;
     }
 
-    public static List<PropertyReference> getProperties(Class type) {
+    public static List<PropertyMapping> getProperties(Class type) {
         if (type.equals(Object.class)) return Collections.emptyList();
-        LinkedHashMap<String, PropertyReference> properties = getPropertyMap(type);
+        LinkedHashMap<String, PropertyMapping> properties = getPropertyMap(type);
         return new ArrayList<>(properties.values());
     }
 
-    public static LinkedHashMap<String, PropertyReference> getPropertyMap(Class type) {
+    public static LinkedHashMap<String, PropertyMapping> getPropertyMap(Class type) {
         if (type.equals(Object.class)) return new LinkedHashMap<>();
-        LinkedHashMap<String, PropertyReference> properties = new LinkedHashMap<>();
+        LinkedHashMap<String, PropertyMapping> properties = new LinkedHashMap<>();
         Set<String> ignored = new HashSet<>();
         for (Method m : type.getMethods()) {
             if (m.isAnnotationPresent(QsonAny.class)) {
                 if (m.getParameterTypes().length == 2
                     && m.getParameterTypes()[0].equals(String.class)
                         && m.getParameterTypes()[1].equals(Object.class)) {
-                    PropertyReference ref = new PropertyReference();
+                    PropertyMapping ref = new PropertyMapping();
                     ref.setter = m;
                     ref.isAny = true;
                     properties.put("@QsonAnySetter", ref);
                 } else if (m.getParameterTypes().length == 0 && m.getReturnType().equals(Map.class)) {
-                    PropertyReference ref = new PropertyReference();
+                    PropertyMapping ref = new PropertyMapping();
                     ref.getter = m;
                     ref.isAny = true;
                     properties.put("@QsonAnyGetter", ref);
@@ -168,7 +168,7 @@ public class PropertyReference {
                 };
                 Class paramType = m.getParameterTypes()[0];
                 Type paramGenericType = m.getGenericParameterTypes()[0];
-                PropertyReference ref = properties.get(javaName);
+                PropertyMapping ref = properties.get(javaName);
                 if (ref != null) {
                     if (ref.setter != null) {
                         throw new QsonException("Duplicate setter methods: " + type.getName() + "." + m.getName());
@@ -177,7 +177,7 @@ public class PropertyReference {
                         throw new QsonException("Type mismatch between getter and setter methods: "+ type.getName() + "." + m.getName());
                     }
                 } else {
-                    ref = new PropertyReference();
+                    ref = new PropertyMapping();
                     ref.type = paramType;
                     ref.genericType = paramGenericType;
                     ref.propertyName = javaName;
@@ -221,7 +221,7 @@ public class PropertyReference {
                 };
                 Class mType = m.getReturnType();
                 Type mGenericType = m.getGenericReturnType();
-                PropertyReference ref = properties.get(javaName);
+                PropertyMapping ref = properties.get(javaName);
                 if (ref != null) {
                     if (ref.getter != null) {
                         throw new QsonException("Duplicate getter methods: " + type.getName() + "." + m.getName());
@@ -230,7 +230,7 @@ public class PropertyReference {
                         throw new QsonException("Type mismatch between getter and setter methods: "+ type.getName() + "." + m.getName());
                     }
                 } else {
-                    ref = new PropertyReference();
+                    ref = new PropertyMapping();
                     ref.type = mType;
                     ref.genericType = mGenericType;
                     ref.propertyName = javaName;
@@ -255,7 +255,7 @@ public class PropertyReference {
         Class target = type;
         while (target != null && !target.equals(Object.class)) {
             for (Field field : target.getDeclaredFields()) {
-                PropertyReference ref = properties.get(field.getName());
+                PropertyMapping ref = properties.get(field.getName());
                 if (ref == null) continue;
                 if (ignored.contains(field.getName())) continue;
                 if (field.isAnnotationPresent(QsonIgnore.class)) {
@@ -275,7 +275,7 @@ public class PropertyReference {
             }
             target = target.getSuperclass();
         }
-        for (PropertyReference ref : properties.values()) {
+        for (PropertyMapping ref : properties.values()) {
             QsonProperty property = null;
             if (ref.fieldAnnotation != null) {
                 if (property != null) {

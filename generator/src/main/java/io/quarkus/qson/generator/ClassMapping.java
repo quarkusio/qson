@@ -1,6 +1,5 @@
 package io.quarkus.qson.generator;
 
-import io.quarkus.qson.QsonDate;
 import io.quarkus.qson.QsonException;
 import io.quarkus.qson.QsonValue;
 
@@ -18,16 +17,15 @@ import java.util.List;
 public class ClassMapping {
     Class type;
     boolean isValue;
-    Member valueSetter;
-    Method valueGetter;
+    Member valueReader;
+    Method valueWriter;
     QsonGenerator generator;
 
 
 
-    boolean scanProperties = true;
     boolean propertiesScanned;
     boolean qsonValueScanned;
-    LinkedHashMap<String, PropertyReference> properties = new LinkedHashMap<>();
+    LinkedHashMap<String, PropertyMapping> properties = new LinkedHashMap<>();
 
     ClassMapping(QsonGenerator gen, Class type) {
         this.generator = gen;
@@ -52,7 +50,7 @@ public class ClassMapping {
      */
     public ClassMapping scanProperties() {
         if (propertiesScanned) return this;
-        LinkedHashMap<String, PropertyReference> tmp = PropertyReference.getPropertyMap(type);
+        LinkedHashMap<String, PropertyMapping> tmp = PropertyMapping.getPropertyMap(type);
         tmp.putAll(properties);
         properties = tmp;
         propertiesScanned = true;
@@ -71,11 +69,11 @@ public class ClassMapping {
             if (con.getParameterCount() == 0) {
                 hasConstructor = true;
             } else if (con.getParameterCount() == 1 && con.isAnnotationPresent(QsonValue.class)) {
-                if (valueSetter != null) {
+                if (valueReader != null) {
                     throw new QsonException("Cannot have two constructors with @QsonValue on it for class: " + type.getName());
                 }
                 hasConstructor = true;
-                valueSetter(con);
+                valueReader(con);
             }
         }
         if (!hasConstructor) throw new QsonException(type.getName() + " does not have a default or noarg public constructor");
@@ -83,15 +81,15 @@ public class ClassMapping {
         for (Method method : type.getMethods()) {
             if (method.isAnnotationPresent(QsonValue.class)) {
                 if (method.getParameterCount() == 0) {
-                    if (valueGetter != null) {
+                    if (valueWriter != null) {
                         throw new QsonException("Cannot have multiple @QsonValue annotations for write value for class: " + type.getName());
                     }
-                    valueGetter(method);
+                    valueWriter(method);
                 } else if (method.getParameterCount() == 1) {
-                    if (valueSetter != null) {
+                    if (valueReader != null) {
                         throw new QsonException("Cannot have multiple @QsonValue annotations for read value for class: " + type.getName());
                     }
-                    valueSetter(method);
+                    valueReader(method);
                 }
             }
         }
@@ -99,36 +97,79 @@ public class ClassMapping {
         return this;
     }
 
-
-    public List<PropertyReference> getProperties() {
+    /**
+     * List of java properties that will map to corresponding json properties
+     *
+     * @return
+     */
+    public List<PropertyMapping> getProperties() {
         return new ArrayList<>(properties.values());
     }
 
-    public ClassMapping valueSetter(Member setter) {
+    /**
+     * Mark this class as a value class.  A class with no properties that is created from a single
+     * json value.  This method sets the method or constructor that will be used to create this
+     * type from a single json value
+     *
+     * For the reader it can be a constructor on the type, or a member method on the type.
+     * This member constructor or method must have one parameter, either a String or a primitive type.
+     * The method can also be a static method on any other class.  In this case, the static method
+     * must return the type and have one parameter that is a String or a primitive.
+     *
+     * @param setter
+     * @return
+     */
+    public ClassMapping valueReader(Member setter) {
+        if (setter == null) {
+            this.valueReader = null;
+            return this;
+        }
         isValue = true;
-        this.valueSetter = setter;
+        this.valueReader = setter;
         return this;
     }
 
-    public ClassMapping valueGetter(Method getter) {
+    /**
+     * Mark this class as a value class.  A class with no properties that is created from a single
+     * json value.  This method sets the method that will be used to write this type to a json value
+     *
+     * This member method on the type and it must take no parameters and returnsa string
+     * or a primitive value.  It can also be any arbitrary static method on any other class.  In this
+     * case it must return a String or primitive value and take the type as a parameter.
+     *
+     * @param getter
+     * @return
+     */
+    public ClassMapping valueWriter(Method getter) {
+        if (getter == null) {
+            this.valueWriter = null;
+            return this;
+        }
         isValue = true;
-        this.valueGetter = getter;
+        this.valueWriter = getter;
         return this;
     }
 
+    /**
+     * If this class has been marked as a value class, it removes the reader and writer
+     * and marks this class as a regular user class.
+     *
+     * @return
+     */
     public ClassMapping clearValueMapping() {
         isValue = false;
-        this.valueSetter = this.valueGetter = null;
+        this.valueReader = this.valueWriter = null;
         return this;
     }
 
-    public ClassMapping addProperty(PropertyReference ref) {
+    /**
+     * Add a property mapping for this class
+     *
+     * @param ref
+     * @return
+     */
+    public ClassMapping addProperty(PropertyMapping ref) {
         properties.put(ref.propertyName, ref);
-        return this;
-    }
-
-    public ClassMapping scanProperties(boolean scan) {
-        this.scanProperties = scan;
         return this;
     }
 
@@ -136,29 +177,52 @@ public class ClassMapping {
         return type;
     }
 
+    /**
+     * Is this mapping a value mapping?
+     *
+     * @return
+     */
     public boolean isValue() {
         return isValue;
     }
 
-    public Member getValueSetter() {
-        return valueSetter;
+    /**
+     * Returns the constructor or method that will be used if this mapping is a value mapping.
+     * Otherwise returns null
+     *
+     * @return
+     */
+    public Member getValueReader() {
+        return valueReader;
     }
 
-    public Class getValueSetterType() {
-        if (getValueSetter() == null) {
+    /**
+     * If this mapping is a value mapping, it will return the reader method or constructor that
+     * will be used to unmarshall json
+     *
+     * @return
+     */
+    public Class getValueReaderType() {
+        if (getValueReader() == null) {
             throw new QsonException("There is no value setter for value class: " + getType().getName());
         }
-        if (getValueSetter() instanceof Method) {
-            Method setter = (Method)getValueSetter();
+        if (getValueReader() instanceof Method) {
+            Method setter = (Method) getValueReader();
             return setter.getParameterTypes()[0];
         } else {
-            Constructor setter = (Constructor)getValueSetter();
+            Constructor setter = (Constructor) getValueReader();
             return setter.getParameterTypes()[0];
         }
     }
 
-    public Method getValueGetter() {
-        return valueGetter;
+    /**
+     * If this mapping is a value mapping, this will return the method that will be used
+     * to serialize this type.
+     *
+     * @return
+     */
+    public Method getValueWriter() {
+        return valueWriter;
     }
 
     public QsonGenerator getGenerator() {

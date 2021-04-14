@@ -7,6 +7,7 @@ import io.quarkus.qson.generator.QsonMapper;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
 
+import java.lang.reflect.Method;
 import java.text.SimpleDateFormat;
 import java.util.Date;
 import java.util.List;
@@ -188,6 +189,34 @@ public class DateUtilTest {
         Assertions.assertEquals(now, date.getDates().get(1));
         Assertions.assertEquals("2021 12 12", new SimpleDateFormat("yyyy MM dd").format(date.getPatterned()));
     }
+
+    public static Date fromMillis(long millis) {
+        return new Date(millis);
+    }
+
+    public static long toMillis(Date date) {
+        return date.toInstant().toEpochMilli();
+    }
+
+    @Test
+    public void testCustomValueMapping() throws Exception {
+        Date now = new Date();
+        String json = "{ \"date\": " + now.toInstant().toEpochMilli() + "}";
+        QsonMapper mapper = new QsonMapper();
+
+        Method fromMillis = DateUtilTest.class.getMethod("fromMillis", long.class);
+        Method toMillis = DateUtilTest.class.getMethod("toMillis", Date.class);
+
+        mapper.valueMappingFor(Date.class, fromMillis, toMillis);
+
+        MyDate date = mapper.read(json, MyDate.class);
+        Assertions.assertEquals(now, date.getDate());
+        json = mapper.writeString(date);
+        date = mapper.read(json, MyDate.class);
+        Assertions.assertEquals(now, date.getDate());
+    }
+
+
 
 
 

@@ -7,6 +7,7 @@ import io.quarkus.qson.generator.QsonMapper;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
 
+import java.lang.reflect.Method;
 import java.time.Instant;
 import java.time.OffsetDateTime;
 import java.time.ZoneOffset;
@@ -196,6 +197,32 @@ public class OffsetDateTimeTest {
         Assertions.assertEquals(now, date.getDates().get(0));
         Assertions.assertEquals(now, date.getDates().get(1));
         Assertions.assertEquals("2021 12 12 03:23:23 Z", date.getPatterned().format(formatter));
+    }
+
+    public static OffsetDateTime fromMillis(long millis) {
+        return OffsetDateTime.ofInstant(Instant.ofEpochMilli(millis), ZoneOffset.UTC);
+    }
+
+    public static long toMillis(OffsetDateTime date) {
+        return date.toInstant().toEpochMilli();
+    }
+
+    @Test
+    public void testCustomValueMapping() throws Exception {
+        OffsetDateTime now = OffsetDateTime.ofInstant(Instant.ofEpochMilli(System.currentTimeMillis()), ZoneOffset.UTC);
+        String json = "{ \"date\": " + now.toInstant().toEpochMilli() + "}";
+        QsonMapper mapper = new QsonMapper();
+
+        Method fromMillis = OffsetDateTimeTest.class.getMethod("fromMillis", long.class);
+        Method toMillis = OffsetDateTimeTest.class.getMethod("toMillis", OffsetDateTime.class);
+
+        mapper.valueMappingFor(OffsetDateTime.class, fromMillis, toMillis);
+
+        MyDate date = mapper.read(json, MyDate.class);
+        Assertions.assertEquals(now, date.getDate());
+        json = mapper.writeString(date);
+        date = mapper.read(json, MyDate.class);
+        Assertions.assertEquals(now, date.getDate());
     }
 
 

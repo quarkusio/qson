@@ -122,7 +122,7 @@ public class Serializer {
                                 continue;
                             }
                             tmp.add(ref);
-                            Util.addReference(referenced, ref.genericType);
+                            Util.addReference(generator, referenced, ref.genericType);
                         }
                     }
                     s.properties = tmp;
@@ -144,7 +144,7 @@ public class Serializer {
                         }
                         Serializer s = new Serializer(output, className, targetType, type);
                         s.generateCollection();
-                        Util.addReference(referenced, type);
+                        Util.addReference(generator, referenced, type);
                         return this;
                     } else {
                         className = GenericObjectWriter.class.getName();

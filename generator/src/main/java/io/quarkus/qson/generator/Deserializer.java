@@ -212,7 +212,7 @@ public class Deserializer {
                             continue;
                         }
                         tmp.add(ref);
-                        Util.addReference(referenced, ref.genericType);
+                        Util.addReference(generator, referenced, ref.genericType);
                     }
                 }
                 // make sure properties are sorted so key matching works.
@@ -238,7 +238,7 @@ public class Deserializer {
                     Deserializer deserializer = new Deserializer(output, className, Types.getRawType(type), type);
                     deserializer.generator = generator;
                     deserializer.generateCollection();
-                    Util.addReference(referenced, type);
+                    Util.addReference(generator, referenced, type);
                     return this;
                 }
             }

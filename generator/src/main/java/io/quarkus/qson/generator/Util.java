@@ -48,18 +48,18 @@ public class Util {
      * @param referenceSet
      * @param type
      */
-    public static void addReference(Set<Type> referenceSet, Type type) {
+    public static void addReference(QsonGenerator generator, Set<Type> referenceSet, Type type) {
         if (type instanceof Class) {
             Class clz = (Class)type;
-            if (isUserType(clz)) {
+            if (generator.hasMappingFor(clz) || isUserType(clz)) {
                 referenceSet.add(type);
             }
         } else if (type instanceof ParameterizedType) {
             ParameterizedType pt = (ParameterizedType)type;
             if (Map.class.isAssignableFrom(Types.getRawType(type))) {
-                addReference(referenceSet, pt.getActualTypeArguments()[1]);
+                addReference(generator,referenceSet, pt.getActualTypeArguments()[1]);
             } else {
-                addReference(referenceSet, pt.getActualTypeArguments()[0]);
+                addReference(generator,referenceSet, pt.getActualTypeArguments()[0]);
             }
         }
     }

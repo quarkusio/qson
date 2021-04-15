@@ -24,14 +24,6 @@ public class NioGeneratorTest {
     public void testDeserializer() throws Exception {
         Generator generator = new Generator();
         generator.serializer(Color.class).output(new TestClassOutput()).generate();
-        generator.serializer(PojoEnum.class).output(new TestClassOutput()).generate();
-        generator.deserializer(Simple.class).output(new TestClassOutput()).generate();
-        generator.deserializer(Single.class).output(new TestClassOutput()).generate();
-        generator.deserializer(Person2.class).output(new TestClassOutput()).generate();
-        generator.deserializer(PersonAny.class).output(new TestClassOutput()).generate();
-        generator.serializer(Single.class).output(new TestClassOutput()).generate();
-        generator.serializer(Person2.class).output(new TestClassOutput()).generate();
-        generator.serializer(PersonAny.class).output(new TestClassOutput()).generate();
     }
 
     @Test

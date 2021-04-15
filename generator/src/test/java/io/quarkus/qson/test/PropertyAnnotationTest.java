@@ -80,8 +80,6 @@ public class PropertyAnnotationTest {
 
     @Test
     public void testMappingAndIgnore() throws Exception {
-        List<PropertyMapping> properties = PropertyMapping.getProperties(Pojo.class);
-
         QsonMapper mapper = new QsonMapper();
         String json = "{\n" +
                 "  \"getter\": 42,\n" +
@@ -218,5 +216,61 @@ public class PropertyAnnotationTest {
         Assertions.assertFalse(json.contains("\"setterDeserializedOnly\""));
         Assertions.assertFalse(json.contains("\"getterDeserializedOnly\""));
         Assertions.assertFalse(json.contains("\"fieldDeserializedOnly\""));
+    }
+
+    public static class Custom {
+        private int implicit;
+        private long explicit;
+        private String val;
+
+        @QsonProperty
+        public int implicit() {
+            return implicit;
+        }
+
+        @QsonProperty
+        public Custom implicit(int implicit) {
+            this.implicit = implicit;
+            return this;
+        }
+
+        @QsonProperty("e")
+        public long explicit() {
+            return explicit;
+        }
+
+        @QsonProperty("e")
+        public Custom explicit(long explicit) {
+            this.explicit = explicit;
+            return this;
+        }
+
+        public String getVal() {
+            return val;
+        }
+
+        public void setVal(String val) {
+            this.val = val;
+        }
+    }
+
+    @Test
+    public void testNonTemplate() {
+        QsonMapper mapper = new QsonMapper();
+        String json = "{" +
+                "\"implicit\": 42," +
+                "\"e\": 41," +
+                "\"val\": \"val\"" +
+                "}";
+
+        Custom c = mapper.read(json, Custom.class);
+        Assertions.assertEquals(42, c.implicit());
+        Assertions.assertEquals(41, c.explicit());
+        Assertions.assertEquals("val", c.getVal());
+        json = mapper.writeString(c);
+        c = mapper.read(json, Custom.class);
+        Assertions.assertEquals(42, c.implicit());
+        Assertions.assertEquals(41, c.explicit());
+        Assertions.assertEquals("val", c.getVal());
     }
 }

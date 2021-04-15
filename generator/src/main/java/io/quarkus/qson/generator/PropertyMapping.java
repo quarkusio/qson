@@ -8,15 +8,14 @@ import io.quarkus.qson.QsonIgnoreRead;
 import io.quarkus.qson.QsonIgnoreWrite;
 import io.quarkus.qson.QsonProperty;
 
+import java.lang.annotation.Annotation;
+import java.lang.reflect.AnnotatedElement;
 import java.lang.reflect.Field;
 import java.lang.reflect.Method;
 import java.lang.reflect.Modifier;
 import java.lang.reflect.Type;
-import java.util.ArrayList;
-import java.util.Collections;
 import java.util.HashSet;
 import java.util.LinkedHashMap;
-import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
@@ -123,80 +122,27 @@ public class PropertyMapping {
         this.datePattern = datePattern;
     }
 
-    public static List<PropertyMapping> getProperties(Class type) {
-        if (type.equals(Object.class)) return Collections.emptyList();
-        LinkedHashMap<String, PropertyMapping> properties = getPropertyMap(type);
-        return new ArrayList<>(properties.values());
-    }
-
-    public static LinkedHashMap<String, PropertyMapping> getPropertyMap(Class type) {
-        if (type.equals(Object.class)) return new LinkedHashMap<>();
-        LinkedHashMap<String, PropertyMapping> properties = new LinkedHashMap<>();
-        Set<String> ignored = new HashSet<>();
+    public static LinkedHashMap<String, PropertyMapping> scanPropertes(Class type) {
+        LinkedHashMap<String, Method> getters = new LinkedHashMap<>();
+        LinkedHashMap<String, Method> setters = new LinkedHashMap<>();
+        LinkedHashMap<String, PropertyMapping> mappings = new LinkedHashMap<>();
         for (Method m : type.getMethods()) {
             if (m.isAnnotationPresent(QsonAny.class)) {
                 if (m.getParameterTypes().length == 2
-                    && m.getParameterTypes()[0].equals(String.class)
+                        && m.getParameterTypes()[0].equals(String.class)
                         && m.getParameterTypes()[1].equals(Object.class)) {
                     PropertyMapping ref = new PropertyMapping();
                     ref.setter = m;
                     ref.isAny = true;
-                    properties.put("@QsonAnySetter", ref);
+                    mappings.put("@QsonAnySetter", ref);
                 } else if (m.getParameterTypes().length == 0 && m.getReturnType().equals(Map.class)) {
                     PropertyMapping ref = new PropertyMapping();
                     ref.getter = m;
                     ref.isAny = true;
-                    properties.put("@QsonAnyGetter", ref);
-
+                    mappings.put("@QsonAnyGetter", ref);
                 } else {
                     throw new QsonException("Illegal use of @QsonAny: " + m.toString());
                 }
-                continue;
-            }
-            if (isSetter(m)) {
-                String javaName;
-                if (m.getName().length() > 4) {
-                    javaName = Character.toLowerCase(m.getName().charAt(3)) + m.getName().substring(4);
-                } else {
-                    javaName = m.getName().substring(3).toLowerCase();
-                }
-                if (ignored.contains(javaName)) continue;
-                if (m.isAnnotationPresent(QsonIgnore.class)) {
-                    ignored.add(javaName);
-                    properties.remove(javaName);
-                    continue;
-                };
-                Class paramType = m.getParameterTypes()[0];
-                Type paramGenericType = m.getGenericParameterTypes()[0];
-                PropertyMapping ref = properties.get(javaName);
-                if (ref != null) {
-                    if (ref.setter != null) {
-                        throw new QsonException("Duplicate setter methods: " + type.getName() + "." + m.getName());
-                    }
-                    if (!ref.type.equals(paramType) || !ref.genericType.equals(paramGenericType)) {
-                        throw new QsonException("Type mismatch between getter and setter methods: "+ type.getName() + "." + m.getName());
-                    }
-                } else {
-                    ref = new PropertyMapping();
-                    ref.type = paramType;
-                    ref.genericType = paramGenericType;
-                    ref.propertyName = javaName;
-                    ref.jsonName = javaName;
-                    properties.put(javaName, ref);
-                }
-                if (m.isAnnotationPresent(QsonIgnoreRead.class)) {
-                    ref.ignoreRead = true;
-                }
-                if (m.isAnnotationPresent(QsonIgnoreWrite.class)) {
-                    ref.ignoreWrite = true;
-                }
-                if (m.isAnnotationPresent(QsonDate.class)) {
-                    QsonDate date = m.getAnnotation(QsonDate.class);
-                    ref.dateFormat = date.format();
-                    if (!date.pattern().isEmpty()) ref.datePattern = date.pattern();
-                }
-                ref.setter = m;
-                ref.setterAnnotation = m.getAnnotation(QsonProperty.class);
             } else if (isGetter(m)) {
                 String javaName;
                 if (m.getName().startsWith("is")) {
@@ -206,117 +152,201 @@ public class PropertyMapping {
                         javaName = m.getName().substring(2).toLowerCase();
                     }
 
-                } else {
+                } else if (m.getName().startsWith("get")) {
                     if (m.getName().length() > 4) {
                         javaName = Character.toLowerCase(m.getName().charAt(3)) + m.getName().substring(4);
                     } else {
                         javaName = m.getName().substring(3).toLowerCase();
                     }
-                }
-                if (ignored.contains(javaName)) continue;
-                if (m.isAnnotationPresent(QsonIgnore.class)) {
-                    ignored.add(javaName);
-                    properties.remove(javaName);
-                    continue;
-                };
-                Class mType = m.getReturnType();
-                Type mGenericType = m.getGenericReturnType();
-                PropertyMapping ref = properties.get(javaName);
-                if (ref != null) {
-                    if (ref.getter != null) {
-                        throw new QsonException("Duplicate getter methods: " + type.getName() + "." + m.getName());
-                    }
-                    if (!ref.type.equals(mType) || !ref.genericType.equals(mGenericType)) {
-                        throw new QsonException("Type mismatch between getter and setter methods: "+ type.getName() + "." + m.getName());
-                    }
                 } else {
-                    ref = new PropertyMapping();
-                    ref.type = mType;
-                    ref.genericType = mGenericType;
-                    ref.propertyName = javaName;
-                    ref.jsonName = javaName;
-                    properties.put(javaName, ref);
+                    throw new QsonException("Unreachable");
                 }
-                if (m.isAnnotationPresent(QsonIgnoreRead.class)) {
-                    ref.ignoreRead = true;
+                getters.put(javaName, m);
+            } else if (isSetter(m)) {
+                String javaName;
+                if (m.getName().length() > 4) {
+                    javaName = Character.toLowerCase(m.getName().charAt(3)) + m.getName().substring(4);
+                } else {
+                    javaName = m.getName().substring(3).toLowerCase();
                 }
-                if (m.isAnnotationPresent(QsonIgnoreWrite.class)) {
-                    ref.ignoreWrite = true;
-                }
-                if (m.isAnnotationPresent(QsonDate.class)) {
-                    QsonDate date = m.getAnnotation(QsonDate.class);
-                    ref.dateFormat = date.format();
-                    if (!date.pattern().isEmpty()) ref.datePattern = date.pattern();
-                }
-                ref.getter = m;
-                ref.getterAnnotation = m.getAnnotation(QsonProperty.class);
+                setters.put(javaName, m);
             }
         }
-        Class target = type;
-        while (target != null && !target.equals(Object.class)) {
-            for (Field field : target.getDeclaredFields()) {
-                PropertyMapping ref = properties.get(field.getName());
-                if (ref == null) continue;
-                if (ignored.contains(field.getName())) continue;
-                if (field.isAnnotationPresent(QsonIgnore.class)) {
-                    properties.remove(field.getName());
-                    continue;
-                }
-                if (field.isAnnotationPresent(QsonProperty.class)) {
-                    QsonProperty property = field.getAnnotation(QsonProperty.class);
-                    ref.fieldAnnotation = property;
-                }
-                if (field.isAnnotationPresent(QsonIgnoreRead.class)) {
-                    ref.ignoreRead = true;
-                }
-                if (field.isAnnotationPresent(QsonIgnoreWrite.class)) {
-                    ref.ignoreWrite = true;
-                }
+        LinkedHashMap<String, Field> fields = new LinkedHashMap<>();
+        fields(fields, type);
+        Set<String> props = new HashSet<>();
+        props.addAll(fields.keySet());
+        props.addAll(setters.keySet());
+        props.addAll(getters.keySet());
+
+        for (String prop : props) {
+            Method getter = getters.get(prop);
+            Method setter = setters.get(prop);
+            Field field = fields.get(prop);
+
+            if ( (getter == null && setter == null)
+                    || (getter != null && getter.isAnnotationPresent(QsonIgnore.class))
+                    || (setter != null && setter.isAnnotationPresent(QsonIgnore.class))
+                    || (field != null && field.isAnnotationPresent(QsonIgnore.class))
+            ) {
+                continue; // @QsonIgnore
             }
-            target = target.getSuperclass();
+
+            String jsonName = checkQsonProperty(null, prop, type, getter);
+            jsonName = checkQsonProperty(jsonName, prop, type, setter);
+            jsonName = checkQsonProperty(jsonName, prop, type, field);
+            if (jsonName == null) jsonName = prop;
+            PropertyMapping ref = createPropertyMapping(prop, getter, setter, field, jsonName);
+            if (mappings.containsKey(jsonName)) {
+                throw new QsonException("Duplicate @QsonProperty values on java property " + prop + " for json name: " + jsonName);
+            }
+            mappings.put(jsonName, ref);
         }
-        for (PropertyMapping ref : properties.values()) {
-            QsonProperty property = null;
-            if (ref.fieldAnnotation != null) {
-                if (property != null) {
-                    throw new QsonException("Can only have one @QsonProperty annotation between field and setter/getter methods: " + ref.propertyName);
-                }
-                property = ref.fieldAnnotation;
 
-            }
-            if (ref.getterAnnotation != null) {
-                if (property != null) {
-                    throw new QsonException("Can only have one @QsonProperty annotation between field and setter/getter methods: " + ref.propertyName);
+        setters.clear();
+        getters.clear();
+        fields.clear();
+        for (Method m : type.getMethods()) {
+            if (m.isAnnotationPresent(QsonAny.class)) {
+                continue;
+            } else if (m.isAnnotationPresent(QsonProperty.class) && !isGetter(m) && isGetterSignature(m)) {
+                QsonProperty qp = m.getAnnotation(QsonProperty.class);
+                String jsonName = qp.value();
+                if (qp.value().isEmpty()) {
+                    jsonName = m.getName();
                 }
-                property = ref.getterAnnotation;
-
-            }
-            if (ref.setterAnnotation != null) {
-                if (property != null) {
-                    throw new QsonException("Can only have one @QsonProperty annotation between field and setter/getter methods: " + ref.propertyName);
+                if (mappings.containsKey(jsonName) || getters.containsKey(jsonName)) {
+                    throw new QsonException("Duplicate @QsonProperty values on: " + m.toString());
                 }
-                property = ref.setterAnnotation;
-
-            }
-            if (ref.ignoreRead) ref.setter = null;
-            if (ref.ignoreWrite) ref.getter = null;
-            if (property != null) {
-                if (!property.value().isEmpty()) ref.jsonName = property.value();
+                getters.put(jsonName, m);
+            } else if (m.isAnnotationPresent(QsonProperty.class) && !isSetter(m) && isSetterSignature(m)) {
+                QsonProperty qp = m.getAnnotation(QsonProperty.class);
+                String jsonName = qp.value();
+                if (qp.value().isEmpty()) {
+                    jsonName = m.getName();
+                }
+                if (mappings.containsKey(jsonName) || setters.containsKey(jsonName)) {
+                    throw new QsonException("Duplicate @QsonProperty values on: " + m.toString());
+                }
+                setters.put(jsonName, m);
             }
         }
-        return properties;
+        props = new HashSet<>();
+        props.addAll(setters.keySet());
+        props.addAll(getters.keySet());
+        for (String jsonName : props) {
+            Method getter = getters.get(jsonName);
+            Method setter = setters.get(jsonName);
+            String prop = getter != null ? getter.getName() : setter.getName();
+            PropertyMapping ref = createPropertyMapping(prop, getter, setter, null, jsonName);
+            mappings.put(jsonName, ref);
+        }
+
+        return mappings;
     }
 
-    static boolean isSetter(Method m) {
-        return Modifier.isPublic(m.getModifiers()) && !Modifier.isStatic(m.getModifiers()) && m.getName().startsWith("set") && m.getName().length() > "set".length()
+    private static PropertyMapping createPropertyMapping(String prop, Method getter, Method setter, Field field, String jsonName) {
+        Class propertyType;
+        Type propertyGenericType;
+        if (getter != null) {
+            propertyType = getter.getReturnType();
+            propertyGenericType = getter.getGenericReturnType();
+        } else {
+            propertyType = setter.getParameterTypes()[0];
+            propertyGenericType = setter.getGenericParameterTypes()[0];
+        }
+        PropertyMapping ref = new PropertyMapping();
+        ref.getter = getter;
+        ref.setter = setter;
+        ref.type = propertyType;
+        ref.genericType = propertyGenericType;
+        ref.propertyName = prop;
+        ref.jsonName = jsonName;
+        if (hasAnnotation(QsonIgnoreRead.class, getter, setter, field)) {
+            ref.ignoreRead = true;
+            ref.setter = null;
+        }
+        if (hasAnnotation(QsonIgnoreWrite.class, getter, setter, field)) {
+            ref.ignoreWrite = true;
+            ref.getter = null;
+        }
+        if (hasAnnotation(QsonDate.class, getter, setter, field)) {
+            QsonDate date = getAnnotation(QsonDate.class, getter, setter, field);
+            ref.dateFormat = date.format();
+            if (!date.pattern().isEmpty()) ref.datePattern = date.pattern();
+        }
+        return ref;
+    }
+
+    private static boolean hasAnnotation(Class<? extends Annotation> annotation, AnnotatedElement... elements) {
+        for (AnnotatedElement e : elements) {
+            if (e != null && e.isAnnotationPresent(annotation)) return true;
+        }
+        return false;
+    }
+
+    private static <T extends Annotation> T getAnnotation(Class<T> annotation, AnnotatedElement... elements) {
+        T val = null;
+        for (AnnotatedElement e : elements) {
+            if (e != null && e.isAnnotationPresent(annotation)) {
+                if (val == null) {
+                    val = e.getAnnotation(annotation);
+                } else {
+                    throw new QsonException("Duplicate @" + annotation.getName() + " on " + e.toString());
+                }
+            };
+        }
+        return val;
+    }
+
+    private static String checkQsonProperty(String jsonName, String prop, Class type, AnnotatedElement member) {
+        if (member != null && member.isAnnotationPresent(QsonProperty.class)) {
+            QsonProperty qp = member.getAnnotation(QsonProperty.class);
+            if (!qp.value().isEmpty()) {
+                if (jsonName != null && !jsonName.equals(qp.value())) {
+                    throw new QsonException("Conflicting @QsonProperty values: " + type.getName() + "." + prop);
+                }
+                jsonName = qp.value();
+            }
+        }
+        return jsonName;
+    }
+
+    private static void fields(Map<String, Field> fields, Class target) {
+        if (Object.class.equals(target)) return;
+        else fields(fields, target.getSuperclass());
+
+        for (Field field : target.getDeclaredFields()) {
+            if (field.isAnnotationPresent(QsonIgnore.class)
+                    || field.isAnnotationPresent(QsonProperty.class)
+                    || field.isAnnotationPresent(QsonIgnoreRead.class)
+                    || field.isAnnotationPresent(QsonIgnoreWrite.class)
+                    || field.isAnnotationPresent(QsonDate.class)
+               ) {
+                fields.put(field.getName(), field);
+            }
+        }
+    }
+
+
+    static boolean isSetterSignature(Method m) {
+        return Modifier.isPublic(m.getModifiers()) && !Modifier.isStatic(m.getModifiers())
                 && m.getParameterCount() == 1;
     }
 
+    private static boolean isSetter(Method m) {
+        return isSetterSignature(m) &&
+                m.getName().startsWith("set") && m.getName().length() > "set".length();
+    }
+
     static boolean isGetter(Method m) {
-        return Modifier.isPublic(m.getModifiers()) && !Modifier.isStatic(m.getModifiers()) && ((m.getName().startsWith("get") && m.getName().length() > "get".length()) || (m.getName().startsWith("is")) && m.getName().length() > "is".length())
+        return isGetterSignature(m) &&
+                ((m.getName().startsWith("get") && m.getName().length() > "get".length()) || (m.getName().startsWith("is")) && m.getName().length() > "is".length())
+                ;
+    }
+    static boolean isGetterSignature(Method m) {
+        return Modifier.isPublic(m.getModifiers()) && !Modifier.isStatic(m.getModifiers())
                 && m.getParameterCount() == 0 && !m.getReturnType().equals(void.class)
                 && !m.getDeclaringClass().equals(Object.class);
     }
-
-
 }

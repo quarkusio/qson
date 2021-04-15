@@ -8,7 +8,7 @@ a small set of classes (metaspace size), low memory footprint, and zero reflecti
 
 ## Limitations
 
-* must use public getter and setter methods
+* must use public getter and setter methods that are prefixed with `get`, `is`, or `set`, or that are annotated with @QsonProperty
 * only public classes
 * Does not support polymorphism
 * Only UTF-8 encoding supported

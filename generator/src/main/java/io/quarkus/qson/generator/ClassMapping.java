@@ -39,7 +39,7 @@ public class ClassMapping {
      */
     public ClassMapping scan() {
         scanQsonValue();
-        scanProperties();
+        if (!isValue) scanProperties();
         return this;
     }
 
@@ -50,7 +50,7 @@ public class ClassMapping {
      */
     public ClassMapping scanProperties() {
         if (propertiesScanned) return this;
-        LinkedHashMap<String, PropertyMapping> tmp = PropertyMapping.getPropertyMap(type);
+        LinkedHashMap<String, PropertyMapping> tmp = PropertyMapping.scanPropertes(type);
         tmp.putAll(properties);
         properties = tmp;
         propertiesScanned = true;

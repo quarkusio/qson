@@ -215,9 +215,4 @@ public class DateUtilTest {
         date = mapper.read(json, MyDate.class);
         Assertions.assertEquals(now, date.getDate());
     }
-
-
-
-
-
 }

@@ -3,12 +3,9 @@ package io.quarkus.qson.generator;
 import io.quarkus.qson.GenericType;
 import io.quarkus.qson.QsonException;
 import io.quarkus.qson.util.Types;
-import io.quarkus.qson.deserializer.ByteArrayParserContext;
-import io.quarkus.qson.deserializer.QsonParser;
-import io.quarkus.qson.serializer.ByteArrayJsonWriter;
-import io.quarkus.qson.serializer.JsonByteWriter;
-import io.quarkus.qson.serializer.QsonObjectWriter;
-import io.quarkus.qson.serializer.OutputStreamJsonWriter;
+import io.quarkus.qson.parser.QsonParser;
+import io.quarkus.qson.writer.JsonByteWriter;
+import io.quarkus.qson.writer.QsonObjectWriter;
 
 import java.io.IOException;
 import java.io.InputStream;
@@ -177,7 +174,7 @@ public class QsonMapper extends Generator implements QsonGenerator {
     private String generateDeserializers(Type genericType) {
         String key = key(genericType);
         if (generatedDeserializers.containsKey(key)) return generatedDeserializers.get(key);
-        Deserializer.Builder builder = deserializer(genericType).output(cl).generate();
+        ParserGenerator.Builder builder = parser(genericType).output(cl).generate();
         generatedDeserializers.put(key, builder.className());
         for (Type entry : builder.referenced()) {
             String refKey = key(entry);
@@ -348,7 +345,7 @@ public class QsonMapper extends Generator implements QsonGenerator {
     private String generateSerializers(Type genericType) {
         String key = key(genericType);
         if (generatedSerializers.containsKey(key)) return generatedSerializers.get(key);
-        Serializer.Builder builder = serializer(genericType).output(cl).generate();
+        WriterGenerator.Builder builder = writer(genericType).output(cl).generate();
         generatedSerializers.put(key, builder.className());
         for (Type entry : builder.referenced()) {
             String refKey = key(entry);

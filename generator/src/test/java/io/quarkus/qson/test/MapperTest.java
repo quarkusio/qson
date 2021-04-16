@@ -1,12 +1,12 @@
 package io.quarkus.qson.test;
 
 import io.quarkus.qson.GenericType;
-import io.quarkus.qson.deserializer.ByteArrayParserContext;
-import io.quarkus.qson.deserializer.QsonParser;
+import io.quarkus.qson.parser.ByteArrayParserContext;
+import io.quarkus.qson.parser.QsonParser;
 import io.quarkus.qson.generator.QsonMapper;
-import io.quarkus.qson.serializer.ByteArrayJsonWriter;
-import io.quarkus.qson.serializer.JsonByteWriter;
-import io.quarkus.qson.serializer.QsonObjectWriter;
+import io.quarkus.qson.writer.ByteArrayJsonWriter;
+import io.quarkus.qson.writer.JsonByteWriter;
+import io.quarkus.qson.writer.QsonObjectWriter;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
 

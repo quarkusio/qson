@@ -1,11 +1,12 @@
 package io.quarkus.qson.runtime;
 
-import io.quarkus.qson.deserializer.ByteArrayParserContext;
-import io.quarkus.qson.deserializer.QsonParser;
-import io.quarkus.qson.serializer.ByteArrayJsonWriter;
-import io.quarkus.qson.serializer.JsonByteWriter;
-import io.quarkus.qson.serializer.QsonObjectWriter;
-import io.quarkus.qson.serializer.OutputStreamJsonWriter;
+import io.quarkus.qson.GenericType;
+import io.quarkus.qson.parser.ByteArrayParserContext;
+import io.quarkus.qson.parser.QsonParser;
+import io.quarkus.qson.writer.ByteArrayJsonWriter;
+import io.quarkus.qson.writer.JsonByteWriter;
+import io.quarkus.qson.writer.QsonObjectWriter;
+import io.quarkus.qson.writer.OutputStreamJsonWriter;
 
 import javax.enterprise.context.ApplicationScoped;
 import java.io.IOException;
@@ -28,90 +29,7 @@ public class QuarkusQsonMapper {
     public QsonParser parserFor(String typename) {
         return QuarkusQsonRegistry.getParser(typename);
     }
-
-    /**
-     * Deserialize a complete byte buffer into the specified type.
-     *
-     * @param fullBuffer
-     * @param typename
-     * @return
-     */
-    public <T> T read(byte[] fullBuffer, String typename) {
-        QsonParser parser = parserFor(typename);
-        ByteArrayParserContext ctx = new ByteArrayParserContext(parser);
-        return ctx.finish(fullBuffer);
-    }
-
-    /**
-     * Deserialize a complete json string into the specified type
-     * @param json
-     * @param typename
-     * @param <T>
-     * @return
-     */
-    public <T> T read(String json, String typename) {
-        return read(json.getBytes(JsonByteWriter.UTF8), typename);
-    }
-
-    /**
-     * Deserialize the specified type from an InputStream
-     *
-     * @param is
-     * @param typename
-     * @param <T>
-     * @return
-     * @throws IOException
-     */
-    public <T> T read(InputStream is, String typename) throws IOException {
-        QsonParser parser = parserFor(typename);
-        ByteArrayParserContext ctx = new ByteArrayParserContext(parser);
-        return ctx.finish(is);
-    }
-
     public QsonObjectWriter writerFor(String typename) {
         return QuarkusQsonRegistry.getWriter(typename);
-    }
-
-    /**
-     * Write target object to OutputStream.  Uses UTF-8 encoding.
-     *
-     * @param typename
-     * @param target
-     * @param stream
-     */
-    public void writeStream(String typename, Object target, OutputStream stream) {
-        QsonObjectWriter objectWriter = writerFor(typename);
-        OutputStreamJsonWriter jsonWriter = new OutputStreamJsonWriter(stream);
-        objectWriter.write(jsonWriter, target);
-    }
-
-
-    /**
-     * Serialize target object to a byte array. Uses UTF-8 encoding.
-     *
-     * @param typename
-     * @param target
-     * @return
-     */
-    public byte[] writeBytes(String typename, Object target) {
-        QsonObjectWriter objectWriter = writerFor(typename);
-        ByteArrayJsonWriter jsonWriter = new ByteArrayJsonWriter();
-        objectWriter.write(jsonWriter, target);
-        return jsonWriter.toByteArray();
-    }
-
-    /**
-     * Serialize target to a json string. Uses UTF-8 encoding.
-     *
-     * @param typename
-     * @param target
-     * @return
-     */
-    public String writeString(String typename, Object target) {
-        try {
-            return new String(writeBytes(typename, target), JsonByteWriter.UTF8);
-        } catch (Exception e) {
-            throw new RuntimeException(e);
-        }
     }
 }

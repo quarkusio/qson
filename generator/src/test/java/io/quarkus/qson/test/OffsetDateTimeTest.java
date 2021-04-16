@@ -1,6 +1,5 @@
 package io.quarkus.qson.test;
 
-import io.quarkus.qson.GenericType;
 import io.quarkus.qson.QsonDate;
 import io.quarkus.qson.generator.Generator;
 import io.quarkus.qson.generator.QsonMapper;
@@ -74,7 +73,7 @@ public class OffsetDateTimeTest {
     public void generateClass() throws Exception {
         Generator generator = new Generator();
         generator.dateFormat(QsonDate.Format.MILLISECONDS);
-        generator.serializer(MyDate.class).output(new TestClassOutput()).generate();
+        generator.writer(MyDate.class).output(new TestClassOutput()).generate();
     }
 
 

@@ -1,15 +1,15 @@
 package io.quarkus.qson.test;
 
 import io.quarkus.qson.GenericType;
-import io.quarkus.qson.deserializer.ByteArrayParserContext;
-import io.quarkus.qson.deserializer.QsonParser;
+import io.quarkus.qson.parser.ByteArrayParserContext;
+import io.quarkus.qson.parser.QsonParser;
 import io.quarkus.qson.generator.Generator;
 import io.quarkus.qson.generator.QsonMapper;
-import io.quarkus.qson.generator.Serializer;
-import io.quarkus.qson.generator.Deserializer;
-import io.quarkus.qson.serializer.ByteArrayJsonWriter;
-import io.quarkus.qson.serializer.JsonByteWriter;
-import io.quarkus.qson.serializer.QsonObjectWriter;
+import io.quarkus.qson.generator.WriterGenerator;
+import io.quarkus.qson.generator.ParserGenerator;
+import io.quarkus.qson.writer.ByteArrayJsonWriter;
+import io.quarkus.qson.writer.JsonByteWriter;
+import io.quarkus.qson.writer.QsonObjectWriter;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
 
@@ -23,7 +23,7 @@ public class NioGeneratorTest {
     @Test
     public void testDeserializer() throws Exception {
         Generator generator = new Generator();
-        generator.serializer(Color.class).output(new TestClassOutput()).generate();
+        generator.writer(Color.class).output(new TestClassOutput()).generate();
     }
 
     @Test
@@ -31,9 +31,9 @@ public class NioGeneratorTest {
         GenericType<List<Person2>> type = new GenericType<List<Person2>>() {
         };
         Generator generator = new Generator();
-        Deserializer.Builder builder = generator.deserializer(type).output(new TestClassOutput());
+        ParserGenerator.Builder builder = generator.parser(type).output(new TestClassOutput());
         builder.generate();
-        Serializer.Builder sBuilder = generator.serializer(type).output(new TestClassOutput());
+        WriterGenerator.Builder sBuilder = generator.writer(type).output(new TestClassOutput());
         sBuilder.generate();
     }
 

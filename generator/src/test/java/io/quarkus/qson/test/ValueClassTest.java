@@ -189,13 +189,13 @@ public class ValueClassTest {
     public void generateClass() throws Exception {
         Generator generator = new Generator();
         myStringValueMapping(generator);
-        generator.deserializer(MyConstructorStringValue.class).output(new TestClassOutput()).generate();
-        generator.deserializer(MyMethodStringValue.class).output(new TestClassOutput()).generate();
-        generator.deserializer(MyStringValue.class).output(new TestClassOutput()).generate();
-        generator.serializer(MyStringValue.class).output(new TestClassOutput()).generate();
-        generator.deserializer(MyMethodIntValue.class).output(new TestClassOutput()).generate();
-        generator.deserializer(ContainsValue.class).output(new TestClassOutput()).generate();
-        generator.deserializer(new GenericType<List<MyMethodStringValue>>() {}).output(new TestClassOutput()).generate();
+        generator.parser(MyConstructorStringValue.class).output(new TestClassOutput()).generate();
+        generator.parser(MyMethodStringValue.class).output(new TestClassOutput()).generate();
+        generator.parser(MyStringValue.class).output(new TestClassOutput()).generate();
+        generator.writer(MyStringValue.class).output(new TestClassOutput()).generate();
+        generator.parser(MyMethodIntValue.class).output(new TestClassOutput()).generate();
+        generator.parser(ContainsValue.class).output(new TestClassOutput()).generate();
+        generator.parser(new GenericType<List<MyMethodStringValue>>() {}).output(new TestClassOutput()).generate();
     }
 
     @Test

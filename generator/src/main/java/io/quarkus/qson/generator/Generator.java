@@ -87,18 +87,18 @@ public class Generator implements QsonGenerator {
         return dateFormat;
     }
 
-    public Deserializer.Builder deserializer(Type generic) {
-        return new Deserializer.Builder(this).type(generic);
+    public ParserGenerator.Builder parser(Type generic) {
+        return new ParserGenerator.Builder(this).type(generic);
     }
 
-    public Deserializer.Builder deserializer(GenericType generic) {
-        return new Deserializer.Builder(this).type(generic.getType());
+    public ParserGenerator.Builder parser(GenericType generic) {
+        return new ParserGenerator.Builder(this).type(generic.getType());
     }
 
-    public Serializer.Builder serializer(Type genericType) {
-        return new Serializer.Builder(this).type(genericType);
+    public WriterGenerator.Builder writer(Type genericType) {
+        return new WriterGenerator.Builder(this).type(genericType);
     }
-    public Serializer.Builder serializer(GenericType genericType) {
-        return new Serializer.Builder(this).type(genericType.getType());
+    public WriterGenerator.Builder writer(GenericType genericType) {
+        return new WriterGenerator.Builder(this).type(genericType.getType());
     }
 }

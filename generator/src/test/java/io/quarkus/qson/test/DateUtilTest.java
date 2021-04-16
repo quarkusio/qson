@@ -1,7 +1,7 @@
 package io.quarkus.qson.test;
 
 import io.quarkus.qson.QsonDate;
-import io.quarkus.qson.deserializer.DateUtil;
+import io.quarkus.qson.parser.DateUtil;
 import io.quarkus.qson.generator.Generator;
 import io.quarkus.qson.generator.QsonMapper;
 import org.junit.jupiter.api.Assertions;
@@ -71,7 +71,7 @@ public class DateUtilTest {
     @Test
     public void generateClass() throws Exception {
         Generator generator = new Generator();
-        generator.deserializer(MyAnnotated.class).output(new TestClassOutput()).generate();
+        generator.parser(MyAnnotated.class).output(new TestClassOutput()).generate();
     }
 
 

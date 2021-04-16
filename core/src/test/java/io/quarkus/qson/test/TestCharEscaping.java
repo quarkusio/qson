@@ -3,10 +3,10 @@ package io.quarkus.qson.test;
 import com.fasterxml.jackson.databind.DeserializationFeature;
 import com.fasterxml.jackson.databind.MapperFeature;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import io.quarkus.qson.deserializer.ByteArrayParserContext;
-import io.quarkus.qson.deserializer.GenericParser;
-import io.quarkus.qson.serializer.ByteArrayJsonWriter;
-import io.quarkus.qson.serializer.GenericObjectWriter;
+import io.quarkus.qson.parser.ByteArrayParserContext;
+import io.quarkus.qson.parser.GenericParser;
+import io.quarkus.qson.writer.ByteArrayJsonWriter;
+import io.quarkus.qson.writer.GenericObjectWriter;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
 
@@ -14,7 +14,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Random;
 
-import static io.quarkus.qson.serializer.JsonByteWriter.UTF8;
+import static io.quarkus.qson.writer.JsonByteWriter.UTF8;
 
 public class TestCharEscaping
 {

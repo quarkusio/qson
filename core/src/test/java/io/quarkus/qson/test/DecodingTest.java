@@ -1,6 +1,6 @@
 package io.quarkus.qson.test;
 
-import io.quarkus.qson.deserializer.ParsePrimitives;
+import io.quarkus.qson.parser.ParsePrimitives;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
 

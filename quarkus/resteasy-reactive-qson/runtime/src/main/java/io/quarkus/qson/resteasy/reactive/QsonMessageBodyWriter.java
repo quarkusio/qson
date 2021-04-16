@@ -2,8 +2,8 @@ package io.quarkus.qson.resteasy.reactive;
 
 import io.quarkus.qson.resteasy.QsonResteasyUtil;
 import io.quarkus.qson.runtime.QuarkusQsonRegistry;
-import io.quarkus.qson.serializer.ByteArrayJsonWriter;
-import io.quarkus.qson.serializer.QsonObjectWriter;
+import io.quarkus.qson.writer.ByteArrayJsonWriter;
+import io.quarkus.qson.writer.QsonObjectWriter;
 import org.jboss.resteasy.reactive.server.spi.ResteasyReactiveResourceInfo;
 import org.jboss.resteasy.reactive.server.spi.ServerMessageBodyWriter;
 import org.jboss.resteasy.reactive.server.spi.ServerRequestContext;

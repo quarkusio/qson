@@ -184,6 +184,13 @@ public class ParserGenerator {
                         deserializer.generateValueClass();
                         className = fqn(targetType);
                         return this;
+                    } else if (mapping.isTransformed()) {
+                        ParserGenerator deserializer = new ParserGenerator(output, targetType, type);
+                        deserializer.mapping = mapping;
+                        referenced.add(mapping.getTransformerClass());
+                        deserializer.generateTransformedClass();
+                        className = fqn(targetType);
+                        return this;
                     } else {
                         properties = mapping.getProperties();
                     }
@@ -232,7 +239,6 @@ public class ParserGenerator {
                 }
             }
             throw new QsonException("Deserializer generation unsupported for generic type: " + type.getTypeName());
-
         }
     }
 
@@ -354,6 +360,49 @@ public class ParserGenerator {
         }
         creator.close();
     }
+
+    void generateTransformedClass() {
+        creator = ClassCreator.builder().classOutput(classOutput)
+                .className(className)
+                .superClass(ValueParser.class).build();
+        FieldCreator PARSER = creator.getFieldCreator("PARSER", fqn()).setModifiers(ACC_STATIC | ACC_PUBLIC);
+        MethodCreator staticConstructor = creator.getMethodCreator(CLINIT, void.class);
+        staticConstructor.setModifiers(ACC_STATIC);
+        ResultHandle instance = staticConstructor.newInstance(MethodDescriptor.ofConstructor(fqn()));
+        staticConstructor.writeStaticField(PARSER.getFieldDescriptor(), instance);
+        staticConstructor.returnValue(null);
+
+        {
+            MethodCreator method = creator.getMethodCreator("value", Object.class, ParserContext.class);
+            _ParserContext ctx = new _ParserContext(method.getMethodParam(0));
+            ResultHandle transformer = ctx.popTarget(method);
+            method.returnValue(method.invokeVirtualMethod(MethodDescriptor.ofMethod(mapping.getTransformer()),
+                    transformer
+            ));
+        }
+
+
+        {
+            MethodCreator method = creator.getMethodCreator("start", boolean.class, ParserContext.class);
+            _ParserContext ctx = new _ParserContext(method.getMethodParam(0));
+            ResultHandle stateIndex = ctx.stateIndex(method);
+            BytecodeCreator ifScope = method.createScope();
+            FieldDescriptor parserField = FieldDescriptor.of(fqn(mapping.getTransformerClass()), "PARSER", fqn(mapping.getTransformerClass()));
+            ResultHandle tPARSER = ifScope.readStaticField(parserField);
+            MethodDescriptor descriptor = MethodDescriptor.ofMethod(fqn(mapping.getTransformerClass()), "start", boolean.class.getName(), ParserContext.class.getName());
+            ResultHandle passed = ifScope.invokeVirtualMethod(descriptor, tPARSER, ctx.ctx);
+            ifScope = ifScope.ifZero(passed).trueBranch();
+            ctx.pushState(ifScope,
+                    ifScope.readInstanceField(FieldDescriptor.of(fqn(), "continueEndValue", ParserState.class), ifScope.getThis()),
+                    stateIndex);
+
+            ifScope.returnValue(ifScope.load(false));
+            method.invokeVirtualMethod(MethodDescriptor.ofMethod(fqn(), "endValue", void.class, ParserContext.class), method.getThis(), ctx.ctx);
+            method.returnValue(method.load(true));
+        }
+        creator.close();
+    }
+
 
     void generateCollection() {
         creator = ClassCreator.builder().classOutput(classOutput)

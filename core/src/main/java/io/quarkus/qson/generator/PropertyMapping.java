@@ -7,6 +7,7 @@ import io.quarkus.qson.QsonIgnore;
 import io.quarkus.qson.QsonIgnoreRead;
 import io.quarkus.qson.QsonIgnoreWrite;
 import io.quarkus.qson.QsonProperty;
+import io.quarkus.qson.QsonTransformer;
 
 import java.lang.annotation.Annotation;
 import java.lang.reflect.AnnotatedElement;
@@ -340,8 +341,9 @@ public class PropertyMapping {
     }
 
     static boolean isGetter(Method m) {
-        return isGetterSignature(m) &&
-                ((m.getName().startsWith("get") && m.getName().length() > "get".length()) || (m.getName().startsWith("is")) && m.getName().length() > "is".length())
+        return isGetterSignature(m)
+                && !m.isAnnotationPresent(QsonTransformer.class)
+                && ((m.getName().startsWith("get") && m.getName().length() > "get".length()) || (m.getName().startsWith("is")) && m.getName().length() > "is".length())
                 ;
     }
     static boolean isGetterSignature(Method m) {

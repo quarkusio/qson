@@ -1,11 +1,13 @@
 package io.quarkus.qson.generator;
 
 import io.quarkus.qson.QsonException;
+import io.quarkus.qson.QsonTransformer;
 import io.quarkus.qson.QsonValue;
 
 import java.lang.reflect.Constructor;
 import java.lang.reflect.Member;
 import java.lang.reflect.Method;
+import java.lang.reflect.Modifier;
 import java.util.ArrayList;
 import java.util.LinkedHashMap;
 import java.util.List;
@@ -20,6 +22,9 @@ public class ClassMapping {
     Member valueReader;
     Method valueWriter;
     QsonGenerator generator;
+    boolean isTransformed;
+    Method transformer;
+    Class transformerClass;
 
 
 
@@ -173,8 +178,93 @@ public class ClassMapping {
         return this;
     }
 
+    /**
+     * Specify a class that will be used for parses in place of this type.
+     * This transformer class must have a method on it that returns an instance
+     * of the type of this ClassMapping.
+     *
+     * This is useful for scenarios where you have a thirdparty class that you cannot modify
+     * that cannot be mapped using standard Qson. For example, a class that does not have an
+     * empty parameter constructor or does not use standard get/set bean pattern
+     *
+     * Example:
+     * <pre>
+     * public class Thirdparty {
+     *     public Thirdparty(int x, String y) {
+     *
+     *     }
+     * }
+     *
+     * public class MyTransformer {
+     *     private int x;
+     *     private String y;
+     *
+     *     &#64;QsonTransformer
+     *     public Thirdparty createThirdparty() {
+     *         return new Thirdparty(x, y);
+     *     }
+     *
+     *
+     *     public int getX() { return x; }
+     *     public void setX(int x) { this.x = x; }
+     *
+     *     public String getY() { return y; }
+     *     public void setX(String y) { this.y = y; }
+     * }
+     *
+     * QsonMapper mapper = new QsonMapper();
+     * mapper.overrideMappingFor(Thirdparty.class).transformer(MyTransformer.class);
+     * </pre>
+     *
+     * @param transformer
+     * @return
+     */
+    public ClassMapping transformer(Class transformer) {
+        for (Method m : transformer.getMethods()) {
+            if (Modifier.isPublic(m.getModifiers())
+                && !Modifier.isStatic(m.getModifiers())
+                && type.equals(m.getReturnType())
+                && m.getParameterCount() == 0
+                && m.isAnnotationPresent(QsonTransformer.class)
+            ) {
+                this.isTransformed = true;
+                this.transformerClass = transformer;
+                this.transformer = m;
+                return this;
+            }
+        }
+        throw new QsonException("There is no method in transformer " + transformer.getName() + " that meets criteria to transform " + this.type.getName());
+    }
+
     public Class getType() {
         return type;
+    }
+
+    /**
+     * Does this class have a transformer?
+     *
+     * @return
+     */
+    public boolean isTransformed() {
+        return isTransformed;
+    }
+
+    /**
+     * Method on transformer class to use to convert to the type of this ClassMapping
+     *
+     * @return
+     */
+    public Method getTransformer() {
+        return transformer;
+    }
+
+    /**
+     * Transformer class to use to convert to the type of this ClassMapping
+     *
+     * @return
+     */
+    public Class getTransformerClass() {
+        return transformerClass;
     }
 
     /**

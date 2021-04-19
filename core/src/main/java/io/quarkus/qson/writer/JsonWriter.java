@@ -3,9 +3,27 @@ package io.quarkus.qson.writer;
 import java.util.Collection;
 import java.util.Map;
 
+/**
+ * Abstraction for writing json to a stream, buffer, etc.
+ *
+ */
 public interface JsonWriter {
+    void writeBytes(byte[] bytes);
+    void writeByte(int b);
+
     void writeLCurley();
     void writeRCurley();
+
+    void writeLBracket();
+
+    void writeRBracket();
+
+    void writeSeparator();
+
+    void writeComma();
+
+    void writeQuote();
+
     void write(short val);
     void write(int val);
     void write(long val);
@@ -13,7 +31,15 @@ public interface JsonWriter {
     void write(byte val);
     void write(float val);
     void write(double val);
+    /**
+     * Writes a quoted character as string with character escape codes where approriate
+     * @param val
+     */
     void write(char val);
+    /**
+     * Writes a quoted character as string with character escape codes where approriate
+     * @param val
+     */
     void write(Character val);
     void write(Short val);
     void write(Integer val);
@@ -22,6 +48,11 @@ public interface JsonWriter {
     void write(Byte val);
     void write(Float val);
     void write(Double val);
+
+    /**
+     * Writes a quoted string with character escape codes where approriate
+     * @param val
+     */
     void write(String val);
 
     void write(Enum e);

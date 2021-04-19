@@ -3,8 +3,11 @@ package io.quarkus.qson.generator;
 import io.quarkus.qson.QsonException;
 import io.quarkus.qson.QsonTransformer;
 import io.quarkus.qson.QsonValue;
+import io.quarkus.qson.writer.JsonWriter;
+import io.quarkus.qson.writer.QsonObjectWriter;
 
 import java.lang.reflect.Constructor;
+import java.lang.reflect.Field;
 import java.lang.reflect.Member;
 import java.lang.reflect.Method;
 import java.lang.reflect.Modifier;
@@ -25,6 +28,9 @@ public class ClassMapping {
     boolean isTransformed;
     Method transformer;
     Class transformerClass;
+    boolean hasCustomWriter;
+    Class<? extends QsonObjectWriter> customWriter;
+    Field customWriterField;
 
 
 
@@ -81,8 +87,6 @@ public class ClassMapping {
                 valueReader(con);
             }
         }
-        if (!hasConstructor) throw new QsonException(type.getName() + " does not have a default or noarg public constructor");
-
         for (Method method : type.getMethods()) {
             if (method.isAnnotationPresent(QsonValue.class)) {
                 if (method.getParameterCount() == 0) {
@@ -164,6 +168,37 @@ public class ClassMapping {
     public ClassMapping clearValueMapping() {
         isValue = false;
         this.valueReader = this.valueWriter = null;
+        return this;
+    }
+
+    /**
+     * Manually define custom writer.  Must have a public no-arg constructor
+     * This is less efficient than providing a custom writer through a static field
+     * as Qson will have to allocate an instance every time you marshall this type.
+     *
+     * @param writer
+     * @return
+     */
+    public ClassMapping customWriter(Class<? extends QsonObjectWriter> writer) {
+        hasCustomWriter = true;
+        customWriter = writer;
+        return this;
+    }
+
+    /**
+     * Manually define custom writer referenced by a public static field.
+     * This is most efficient way to provide a custom writer for your class.
+     *
+     *
+     * @param writer
+     * @return
+     */
+    public ClassMapping customWriter(Field writer) {
+        if (!Modifier.isPublic(writer.getModifiers()) && !Modifier.isStatic(writer.getModifiers()) && !QsonObjectWriter.class.equals(writer.getType())) {
+            throw new QsonException("Custom writer field must be static, public, and be a QsonObjectWriter");
+        }
+        hasCustomWriter = true;
+        customWriterField = writer;
         return this;
     }
 
@@ -313,6 +348,18 @@ public class ClassMapping {
      */
     public Method getValueWriter() {
         return valueWriter;
+    }
+
+    public boolean hasCustomWriter() {
+        return hasCustomWriter;
+    }
+
+    public Class<? extends QsonObjectWriter> getCustomWriter() {
+        return customWriter;
+    }
+
+    public Field getCustomWriterField() {
+        return customWriterField;
     }
 
     public QsonGenerator getGenerator() {

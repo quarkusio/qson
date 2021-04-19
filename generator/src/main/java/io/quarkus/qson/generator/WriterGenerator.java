@@ -105,6 +105,10 @@ public class WriterGenerator {
                             s.generateValueClass();
                             className = fqn(targetType, type);
                             return this;
+                        } else if (classGen.hasCustomWriter()) {
+                            s.generateCustom();
+                            className = fqn(targetType, type);
+                            return this;
                         } else {
                             properties = classGen.getProperties();
                         }
@@ -311,6 +315,31 @@ public class WriterGenerator {
     void generate() {
         singleton();
         writeMethod();
+        creator.close();
+    }
+    void generateCustom() {
+        FieldCreator SERIALIZER = creator.getFieldCreator("SERIALIZER", fqn()).setModifiers(ACC_STATIC | ACC_PUBLIC);
+        MethodCreator staticConstructor = creator.getMethodCreator(CLINIT, void.class);
+        staticConstructor.setModifiers(ACC_STATIC);
+        ResultHandle instance = staticConstructor.newInstance(MethodDescriptor.ofConstructor(fqn()));
+        staticConstructor.writeStaticField(SERIALIZER.getFieldDescriptor(), instance);
+        staticConstructor.returnValue(null);
+
+        MethodCreator method = creator.getMethodCreator("write", void.class, JsonWriter.class, Object.class);
+        ResultHandle jsonWriter = method.getMethodParam(0);
+        ResultHandle target = method.getMethodParam(1);
+        ResultHandle wrapped;
+        if (mapping.getCustomWriter() != null) {
+            wrapped = method.newInstance(MethodDescriptor.ofConstructor(mapping.getCustomWriter()));
+        } else {
+            wrapped = method.readStaticField(FieldDescriptor.of(mapping.getCustomWriterField()));
+        }
+        method.invokeInterfaceMethod(MethodDescriptor.ofMethod(QsonObjectWriter.class, "write", void.class, JsonWriter.class, Object.class),
+                wrapped, jsonWriter, target
+                );
+        method.returnValue(null);
+
+
         creator.close();
     }
 

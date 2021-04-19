@@ -19,10 +19,6 @@ public abstract class JsonByteWriter implements JsonWriter {
 
     public static Charset UTF8 = Charset.forName("UTF-8");
 
-    abstract protected void writeBytes(byte[] bytes);
-    abstract protected void writeByte(int b);
-
-
     @Override
     public void writeLCurley() {
         writeByte(IntChar.INT_LCURLY);
@@ -31,6 +27,26 @@ public abstract class JsonByteWriter implements JsonWriter {
     @Override
     public void writeRCurley() {
         writeByte(IntChar.INT_RCURLY);
+    }
+    @Override
+    public void writeLBracket() {
+        writeByte(IntChar.INT_LBRACKET);
+    }
+    @Override
+    public void writeRBracket() {
+        writeByte(IntChar.INT_RBRACKET);
+    }
+    @Override
+    public void writeSeparator() {
+        writeByte(IntChar.INT_COLON);
+    }
+    @Override
+    public void writeComma() {
+        writeByte(IntChar.INT_COMMA);
+    }
+    @Override
+    public void writeQuote() {
+        writeByte(IntChar.INT_QUOTE);
     }
 
     @Override

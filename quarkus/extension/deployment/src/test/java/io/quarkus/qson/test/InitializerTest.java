@@ -15,7 +15,7 @@ import org.junit.jupiter.api.extension.RegisterExtension;
 import javax.inject.Inject;
 import java.util.Date;
 
-public class CustomMappingTest {
+public class InitializerTest {
     @RegisterExtension
     static final QuarkusUnitTest config = new QuarkusUnitTest()
             .setArchiveProducer(() -> ShrinkWrap.create(JavaArchive.class)

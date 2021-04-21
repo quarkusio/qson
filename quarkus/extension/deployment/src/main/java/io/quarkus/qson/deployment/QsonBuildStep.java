@@ -10,8 +10,10 @@ import io.quarkus.deployment.builditem.CombinedIndexBuildItem;
 import io.quarkus.deployment.builditem.GeneratedClassBuildItem;
 import io.quarkus.deployment.recording.RecorderContext;
 import io.quarkus.qson.Qson;
+import io.quarkus.qson.QsonCustomWriter;
 import io.quarkus.qson.QsonIgnore;
 import io.quarkus.qson.QsonProperty;
+import io.quarkus.qson.QsonTransformer;
 import io.quarkus.qson.generator.Generator;
 import io.quarkus.qson.runtime.QuarkusQsonGenerator;
 import io.quarkus.qson.runtime.QuarkusQsonInitializer;
@@ -42,6 +44,8 @@ import static io.quarkus.deployment.annotations.ExecutionTime.STATIC_INIT;
 
 public class QsonBuildStep {
     public static final DotName QSON = DotName.createSimple(Qson.class.getName());
+    public static final DotName QSON_TRANSFORMER = DotName.createSimple(QsonTransformer.class.getName());
+    public static final DotName QSON_CUSTOM_WRITER = DotName.createSimple(QsonCustomWriter.class.getName());
     public static final DotName QUARKUS_QSON_INITIALIZER = DotName.createSimple(QuarkusQsonInitializer.class.getName());
     public static final DotName QSON_PROPERTY = DotName.createSimple(QsonProperty.class.getName());
     public static final DotName QSON_IGNORE = DotName.createSimple(QsonIgnore.class.getName());
@@ -70,7 +74,32 @@ public class QsonBuildStep {
         register(genItem.getGenerator(), annotations, classes);
         annotations = combinedIndex.getIndex().getAnnotations(QSON_IGNORE);
         register(genItem.getGenerator(), annotations, classes);
+        registerTransformer(genItem.getGenerator(), combinedIndex);
+        registerCustomWriter(genItem.getGenerator(), combinedIndex);
         qson.produce(new QsonBuildItem());
+    }
+
+    private void registerTransformer(QuarkusQsonGeneratorImpl generator, CombinedIndexBuildItem combinedIndex) throws Exception {
+        Collection<AnnotationInstance> annotations = combinedIndex.getIndex().getAnnotations(QSON_TRANSFORMER);
+        for (AnnotationInstance ai : annotations) {
+            MethodInfo mi = ai.target().asMethod();
+            ClassInfo dec = mi.declaringClass();
+            Class declaring = Thread.currentThread().getContextClassLoader().loadClass(dec.name().toString());
+            Method method = declaring.getMethod(mi.name());
+            generator.overrideMappingFor(method.getReturnType()).transformer(declaring);
+            generator.register(method.getReturnType(), true, false);
+        }
+    }
+
+    private void registerCustomWriter(QuarkusQsonGeneratorImpl generator, CombinedIndexBuildItem combinedIndex) throws Exception {
+        Collection<AnnotationInstance> annotations = combinedIndex.getIndex().getAnnotations(QSON_CUSTOM_WRITER);
+        for (AnnotationInstance ai : annotations) {
+            ClassInfo dec = ai.target().asClass();
+            Class declaring = Thread.currentThread().getContextClassLoader().loadClass(dec.name().toString());
+            QsonCustomWriter ann = (QsonCustomWriter)declaring.getAnnotation(QsonCustomWriter.class);
+            generator.overrideMappingFor(ann.value()).customWriter(declaring);
+            generator.register(ann.value(), false, true);
+        }
     }
 
     private void registerQson(QuarkusQsonGeneratorImpl generator, Collection<AnnotationInstance> annotations, Set<String> classes) throws BuildException, ClassNotFoundException {

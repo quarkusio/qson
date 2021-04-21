@@ -55,18 +55,25 @@ public class QsonBuildStep {
     }
 
     @BuildStep
+    QsonGeneratorBuildItem publishGenerator() {
+        return new QsonGeneratorBuildItem(new QuarkusQsonGeneratorImpl());
+    }
+
+    @BuildStep
     void scan(BuildProducer<QsonBuildItem> qson,
+              QsonGeneratorBuildItem genItem,
               CombinedIndexBuildItem combinedIndex) throws Exception {
         Collection<AnnotationInstance> annotations = combinedIndex.getIndex().getAnnotations(QSON);
         Set<String> classes = new HashSet<>();
-        registerQson(qson, annotations, classes);
+        registerQson(genItem.getGenerator(), annotations, classes);
         annotations = combinedIndex.getIndex().getAnnotations(QSON_PROPERTY);
-        register(qson, annotations, classes);
+        register(genItem.getGenerator(), annotations, classes);
         annotations = combinedIndex.getIndex().getAnnotations(QSON_IGNORE);
-        register(qson, annotations, classes);
+        register(genItem.getGenerator(), annotations, classes);
+        qson.produce(new QsonBuildItem());
     }
 
-    private void registerQson(BuildProducer<QsonBuildItem> qson, Collection<AnnotationInstance> annotations, Set<String> classes) throws BuildException, ClassNotFoundException {
+    private void registerQson(QuarkusQsonGeneratorImpl generator, Collection<AnnotationInstance> annotations, Set<String> classes) throws BuildException, ClassNotFoundException {
         for (AnnotationInstance ai : annotations) {
             ClassInfo ci = ai.target().asClass();
             String className = ci.name().toString();
@@ -83,13 +90,13 @@ public class QsonBuildStep {
             boolean writer = generateWriter == null || generateWriter.asBoolean();
             if (!classes.contains(className)) {
                 Class clz = Thread.currentThread().getContextClassLoader().loadClass(className);
-                qson.produce(new QsonBuildItem(clz, parser, writer));
+                generator.register(clz, parser, writer);
                 classes.add(className);
             }
         }
     }
 
-    private void register(BuildProducer<QsonBuildItem> qson, Collection<AnnotationInstance> annotations, Set<String> classes) throws BuildException, ClassNotFoundException {
+    private void register(QuarkusQsonGeneratorImpl generator, Collection<AnnotationInstance> annotations, Set<String> classes) throws BuildException, ClassNotFoundException {
         for (AnnotationInstance ai : annotations) {
             ClassInfo ci = null;
             if (ai.target().kind() == AnnotationTarget.Kind.CLASS) {
@@ -111,7 +118,7 @@ public class QsonBuildStep {
             }
             if (!classes.contains(className)) {
                 Class clz = Thread.currentThread().getContextClassLoader().loadClass(className);
-                qson.produce(new QsonBuildItem(clz, true, true));
+                generator.register(clz, true, true);
                 classes.add(className);
             }
         }
@@ -119,10 +126,10 @@ public class QsonBuildStep {
 
     @BuildStep
     public GeneratedQsonClassesBuildItem generate(BuildProducer<GeneratedClassBuildItem> toGenerate,
-                         List<QsonBuildItem> classes,
+                                                  QsonGeneratorBuildItem genItem,
+                                                  List<QsonBuildItem> ignore,
                                                   CombinedIndexBuildItem combinedIndex) throws Exception {
-        if (classes == null) classes = Collections.emptyList();
-        QuarkusQsonGeneratorImpl generator = new QuarkusQsonGeneratorImpl();
+        QuarkusQsonGeneratorImpl generator = genItem.getGenerator();
 
         Collection<AnnotationInstance> annotations = combinedIndex.getIndex().getAnnotations(QUARKUS_QSON_INITIALIZER);
         for (AnnotationInstance ai : annotations) {
@@ -139,10 +146,6 @@ public class QsonBuildStep {
             Class initClass = Thread.currentThread().getContextClassLoader().loadClass(declaring.name().toString());
             Method m = initClass.getMethod(method.name(), QuarkusQsonGenerator.class);
             m.invoke(null, generator);
-        }
-        // squeeze duplicate entries
-        for (QsonBuildItem item : classes) {
-            generator.register(item.getGenericType(), item.isGenerateParser(), item.isGenerateWriter());
         }
 
         Map<String, String> generatedParsers = new HashMap<>();

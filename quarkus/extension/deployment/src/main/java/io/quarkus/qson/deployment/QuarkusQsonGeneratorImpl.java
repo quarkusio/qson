@@ -8,7 +8,7 @@ import java.lang.reflect.Type;
 import java.util.HashSet;
 import java.util.Set;
 
-class QuarkusQsonGeneratorImpl extends Generator implements QuarkusQsonGenerator {
+public class QuarkusQsonGeneratorImpl extends Generator implements QuarkusQsonGenerator {
     Set<Type> parsers = new HashSet<>();
     Set<Type> writers = new HashSet<>();
 

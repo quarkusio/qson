@@ -7,6 +7,8 @@ import io.quarkus.deployment.annotations.BuildProducer;
 import io.quarkus.deployment.annotations.BuildStep;
 import io.quarkus.deployment.builditem.CapabilityBuildItem;
 import io.quarkus.deployment.builditem.FeatureBuildItem;
+import io.quarkus.qson.deployment.QsonGeneratorBuildItem;
+import io.quarkus.qson.deployment.QuarkusQsonGeneratorImpl;
 import io.quarkus.qson.util.Types;
 import io.quarkus.qson.deployment.QsonBuildItem;
 import org.jboss.jandex.AnnotationInstance;
@@ -32,12 +34,14 @@ public class CommonQsonJaxrsBuildStep {
 
     @BuildStep
     public void findQsonClasses(BeanArchiveIndexBuildItem beanArchiveIndexBuildItem,
+                                QsonGeneratorBuildItem genItem,
                                 BuildProducer<QsonBuildItem> qson
                                             ) throws Exception {
         IndexView index = beanArchiveIndexBuildItem.getIndex();
+        QuarkusQsonGeneratorImpl generator = genItem.getGenerator();
         for (AnnotationInstance ai : index.getAnnotations(DotNames.GET)) {
             MethodInfo method = ai.target().asMethod();
-            registerProducesJson(index, qson, method);
+            registerProducesJson(index, generator, method);
         }
 
         Set<AnnotationInstance> methods = new HashSet<>();
@@ -47,14 +51,13 @@ public class CommonQsonJaxrsBuildStep {
         methods.addAll(index.getAnnotations(DotNames.PATCH));
         for (AnnotationInstance ai : methods) {
             MethodInfo method = ai.target().asMethod();
-            registerProducesJson(index, qson, method);
-            registerConsumesJson(index, qson, method);
+            registerProducesJson(index, generator, method);
+            registerConsumesJson(index, generator, method);
         }
-
-
+        qson.produce(new QsonBuildItem());
     }
 
-    private void registerProducesJson(IndexView index, BuildProducer<QsonBuildItem> qson, MethodInfo method) throws Exception {
+    private void registerProducesJson(IndexView index, QuarkusQsonGeneratorImpl generator, MethodInfo method) throws Exception {
         if (method.hasAnnotation(DotNames.PRODUCES)) {
             AnnotationInstance produces = method.annotation(DotNames.PRODUCES);
             if (isJsonMediaType(produces)) {
@@ -64,7 +67,7 @@ public class CommonQsonJaxrsBuildStep {
                 }
                 if (void.class.equals(m.getReturnType()) || Response.class.equals(m.getReturnType())) return;
                 java.lang.reflect.Type genericType = m.getGenericReturnType();
-                register(index, qson, method, genericType, false, true);
+                register(index, generator, method, genericType, false, true);
             }
         } else {
             AnnotationInstance produces = method.declaringClass().classAnnotation(DotNames.PRODUCES);
@@ -75,26 +78,26 @@ public class CommonQsonJaxrsBuildStep {
                 }
                 if (void.class.equals(m.getReturnType()) || Response.class.equals(m.getReturnType())) return;
                 java.lang.reflect.Type genericType = m.getGenericReturnType();
-                register(index, qson, method, genericType, false, true);
+                register(index, generator, method, genericType, false, true);
             }
         }
     }
 
-    private void register(IndexView index, BuildProducer<QsonBuildItem> qson, MethodInfo method, java.lang.reflect.Type genericType, boolean parser, boolean writer) throws ClassNotFoundException {
+    private void register(IndexView index, QuarkusQsonGeneratorImpl generator, MethodInfo method, java.lang.reflect.Type genericType, boolean parser, boolean writer) throws ClassNotFoundException {
         if (Types.containsTypeVariable(genericType)) {
             for (ClassInfo ci : index.getAllKnownSubclasses(method.declaringClass().name())) {
                 Class sub = Thread.currentThread().getContextClassLoader().loadClass(ci.name().toString());
                 genericType = TypeUtil.resolveTypeVariables(sub, genericType);
                 if (!Types.containsTypeVariable(genericType)) {
-                    qson.produce(new QsonBuildItem(genericType, parser, writer));
+                    generator.register(genericType, parser, writer);
                 }
             }
         } else {
-            qson.produce(new QsonBuildItem(genericType, parser, writer));
+            generator.register(genericType, parser, writer);
         }
     }
 
-    private void registerConsumesJson(IndexView index, BuildProducer<QsonBuildItem> qson, MethodInfo method) throws Exception {
+    private void registerConsumesJson(IndexView index, QuarkusQsonGeneratorImpl generator, MethodInfo method) throws Exception {
         if (method.hasAnnotation(DotNames.CONSUMES)) {
             AnnotationInstance consumes = method.annotation(DotNames.CONSUMES);
             if (isJsonMediaType(consumes)) {
@@ -105,7 +108,7 @@ public class CommonQsonJaxrsBuildStep {
                 int idx = findBodyParameter(m);
                 if (idx < 0) return;
                 java.lang.reflect.Type genericType = m.getGenericParameterTypes()[idx];
-                register(index, qson, method, genericType, true, false);
+                register(index, generator, method, genericType, true, false);
             }
         } else {
             AnnotationInstance consumes = method.declaringClass().classAnnotation(DotNames.CONSUMES);
@@ -117,7 +120,7 @@ public class CommonQsonJaxrsBuildStep {
                 int idx = findBodyParameter(m);
                 if (idx < 0) return;
                 java.lang.reflect.Type genericType = m.getGenericParameterTypes()[idx];
-                register(index, qson, method, genericType, true, false);
+                register(index, generator, method, genericType, true, false);
             }
         }
     }

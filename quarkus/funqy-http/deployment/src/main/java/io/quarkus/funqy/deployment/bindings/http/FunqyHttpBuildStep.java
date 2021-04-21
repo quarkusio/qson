@@ -13,6 +13,8 @@ import java.util.Optional;
 import io.quarkus.funqy.Context;
 import io.quarkus.qson.deployment.QsonBuildItem;
 import io.quarkus.qson.deployment.QsonCompletedBuildItem;
+import io.quarkus.qson.deployment.QsonGeneratorBuildItem;
+import io.quarkus.qson.deployment.QuarkusQsonGeneratorImpl;
 import io.quarkus.qson.util.Types;
 import io.smallrye.mutiny.Uni;
 import org.jboss.logging.Logger;
@@ -40,11 +42,13 @@ public class FunqyHttpBuildStep {
 
     @BuildStep
     public void generateJsonClasses(BuildProducer<QsonBuildItem> qson,
+                                    QsonGeneratorBuildItem genItem,
                                     Optional<FunctionInitializedBuildItem> hasFunctions,
                                     List<FunctionBuildItem> functions
                                     ) {
         if (!hasFunctions.isPresent() || hasFunctions.get() == null)
             return;
+        QuarkusQsonGeneratorImpl generator = genItem.getGenerator();
         for (FunctionBuildItem function : functions) {
             Class functionClass = null;
             try {
@@ -67,7 +71,7 @@ public class FunqyHttpBuildStep {
                         continue;
                     }
                     Type type = method.getGenericParameterTypes()[i];
-                    qson.produce(new QsonBuildItem(type, true, false));
+                    generator.register(type, true, false);
                 }
             }
             Class<?> returnType = method.getReturnType();
@@ -79,10 +83,11 @@ public class FunqyHttpBuildStep {
                     type = pt.getActualTypeArguments()[0];
                 }
                 if (!void.class.equals(returnType) && !Void.class.equals(returnType)) {
-                    qson.produce(new QsonBuildItem(type, false, true));
+                    generator.register(type, false, true);
                 }
             }
         }
+        qson.produce(new QsonBuildItem());
     }
 
     static boolean isContext(Annotation[] annotations) {

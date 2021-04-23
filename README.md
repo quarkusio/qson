@@ -1,6 +1,6 @@
 # QSON json mapper
 
-QSON is an object to json mapper.  It does bytecode generation of deserializer and serilizer classes using Gizmo.
+QSON is an object to json mapper.  It does bytecode generation of deserializer and serializer classes using Gizmo.
 QSON was born when it's author (Bill Burke) noticed that Jackson took up a decent portion of boot time for a simple Resteasy JAX-RS Quarkus application.
 While Jackson is a more mature json mapper and a de facto standard, QSON aims for better integration with
 Quarkus and Graal.  The primary goals of QSON are speed, both boot and runtime, limited heap allocations,
@@ -18,7 +18,7 @@ a small set of classes (metaspace size), low memory footprint, and zero reflecti
 
 Classes that you want to map to JSON must have a public getter method for each property you want to be able to serialize to JSON
 and a public setter method for those properties you want to be able to deserialize from JSON.  Any setter or getter method will
-be assumed to be something you want to map to JSON unless you use the `@io.quarkus.qson.QsonIgnore` annnotation on the setter or
+be assumed to be something you want to map to JSON unless you use the `@io.quarkus.qson.QsonIgnore` annotation on the setter or
 getter method, or the field of the property.  The json property name will be the same name as the Java property one.  You can use
 the `@io.quarkus.qson.QsonProperty` annotation to change the json property name mapping.
 
@@ -88,7 +88,7 @@ You must first pull in the QSON generator dependency
 </dependency>
 ```
 
-You and read and write json with the `io.quarkus.qson.QsonMapper` class.  Unforunately, this class does not work with
+You can read and write json with the `io.quarkus.qson.QsonMapper` class.  Unfortunately, this class does not work with
 Graal as it generates bytecode at runtime to serialize and deserialize your object instances.
 
 ```java

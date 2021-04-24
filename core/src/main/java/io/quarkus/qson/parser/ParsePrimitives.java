@@ -190,7 +190,7 @@ public class ParsePrimitives {
                     throw new QsonException("Illegal number format");
                 }
 
-                result *= (long) 10;
+                result *= 10L;
                 if (result < limit + (long) digit) {
                     throw new QsonException("Illegal number format");
                 }

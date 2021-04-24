@@ -4,6 +4,7 @@ import io.quarkus.qson.QsonException;
 import io.quarkus.qson.util.IntChar;
 
 import java.nio.charset.Charset;
+import java.nio.charset.StandardCharsets;
 import java.util.Collection;
 import java.util.Iterator;
 import java.util.List;
@@ -17,7 +18,7 @@ public abstract class JsonByteWriter implements JsonWriter {
     static final byte[] TRUE_PROPERTY_VALUE = {':', 't', 'r', 'u', 'e'};
     static final byte[] FALSE_PROPERTY_VALUE = {':', 'f', 'a', 'l', 's', 'e'};
 
-    public static Charset UTF8 = Charset.forName("UTF-8");
+    public static Charset UTF8 = StandardCharsets.UTF_8;
 
     @Override
     public void writeLCurley() {

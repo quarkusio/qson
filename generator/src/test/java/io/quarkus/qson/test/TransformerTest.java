@@ -4,7 +4,6 @@ import io.quarkus.qson.QsonTransformer;
 import io.quarkus.qson.generator.QsonMapper;
 import io.quarkus.qson.writer.JsonWriter;
 import io.quarkus.qson.writer.QsonObjectWriter;
-import io.quarkus.test.common.http.TestHTTPEndpoint;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
 

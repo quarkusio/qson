@@ -2,8 +2,8 @@ package io.quarkus.qson.generator;
 
 import io.quarkus.qson.GenericType;
 import io.quarkus.qson.QsonException;
-import io.quarkus.qson.util.Types;
 import io.quarkus.qson.parser.QsonParser;
+import io.quarkus.qson.util.Types;
 import io.quarkus.qson.writer.JsonByteWriter;
 import io.quarkus.qson.writer.QsonObjectWriter;
 

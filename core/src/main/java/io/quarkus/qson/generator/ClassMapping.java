@@ -3,7 +3,6 @@ package io.quarkus.qson.generator;
 import io.quarkus.qson.QsonException;
 import io.quarkus.qson.QsonTransformer;
 import io.quarkus.qson.QsonValue;
-import io.quarkus.qson.writer.JsonWriter;
 import io.quarkus.qson.writer.QsonObjectWriter;
 
 import java.lang.reflect.Constructor;

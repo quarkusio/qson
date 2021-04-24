@@ -1,9 +1,9 @@
 package io.quarkus.funqy.test;
 
-import javax.inject.Inject;
-
 import io.quarkus.funqy.Funq;
 import io.smallrye.mutiny.Uni;
+
+import javax.inject.Inject;
 
 public class GreetingFunctions {
     @Inject

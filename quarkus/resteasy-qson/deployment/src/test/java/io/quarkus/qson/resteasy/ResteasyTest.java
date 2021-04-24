@@ -5,11 +5,9 @@ import org.jboss.shrinkwrap.api.ShrinkWrap;
 import org.jboss.shrinkwrap.api.spec.JavaArchive;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.RegisterExtension;
-import static org.hamcrest.Matchers.equalTo;
-
-import javax.ws.rs.core.MediaType;
 
 import static io.restassured.RestAssured.given;
+import static org.hamcrest.Matchers.equalTo;
 
 public class ResteasyTest {
     @RegisterExtension

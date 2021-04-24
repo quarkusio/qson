@@ -4,8 +4,6 @@ import io.quarkus.qson.QsonDate;
 
 import java.lang.reflect.Member;
 import java.lang.reflect.Method;
-import java.text.DateFormat;
-import java.time.format.DateTimeFormatter;
 
 /**
  * Before bytecode generation you can set up global and per-type configuration and mapping metadata

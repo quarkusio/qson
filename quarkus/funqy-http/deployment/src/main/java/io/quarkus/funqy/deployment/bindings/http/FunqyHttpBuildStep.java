@@ -1,7 +1,28 @@
 package io.quarkus.funqy.deployment.bindings.http;
 
-import static io.quarkus.deployment.annotations.ExecutionTime.RUNTIME_INIT;
-import static io.quarkus.deployment.annotations.ExecutionTime.STATIC_INIT;
+import io.quarkus.arc.deployment.BeanContainerBuildItem;
+import io.quarkus.deployment.annotations.BuildProducer;
+import io.quarkus.deployment.annotations.BuildStep;
+import io.quarkus.deployment.annotations.Record;
+import io.quarkus.deployment.builditem.ExecutorBuildItem;
+import io.quarkus.deployment.builditem.FeatureBuildItem;
+import io.quarkus.deployment.builditem.ShutdownContextBuildItem;
+import io.quarkus.funqy.Context;
+import io.quarkus.funqy.deployment.FunctionBuildItem;
+import io.quarkus.funqy.deployment.FunctionInitializedBuildItem;
+import io.quarkus.funqy.runtime.bindings.http.FunqyHttpBindingRecorder;
+import io.quarkus.qson.deployment.QsonBuildItem;
+import io.quarkus.qson.deployment.QsonCompletedBuildItem;
+import io.quarkus.qson.deployment.QsonGeneratorBuildItem;
+import io.quarkus.qson.deployment.QuarkusQsonGeneratorImpl;
+import io.quarkus.qson.util.Types;
+import io.quarkus.vertx.core.deployment.CoreVertxBuildItem;
+import io.quarkus.vertx.http.deployment.RouteBuildItem;
+import io.quarkus.vertx.http.runtime.HttpBuildTimeConfig;
+import io.smallrye.mutiny.Uni;
+import io.vertx.core.Handler;
+import io.vertx.ext.web.RoutingContext;
+import org.jboss.logging.Logger;
 
 import java.lang.annotation.Annotation;
 import java.lang.reflect.Method;
@@ -10,31 +31,8 @@ import java.lang.reflect.Type;
 import java.util.List;
 import java.util.Optional;
 
-import io.quarkus.funqy.Context;
-import io.quarkus.qson.deployment.QsonBuildItem;
-import io.quarkus.qson.deployment.QsonCompletedBuildItem;
-import io.quarkus.qson.deployment.QsonGeneratorBuildItem;
-import io.quarkus.qson.deployment.QuarkusQsonGeneratorImpl;
-import io.quarkus.qson.util.Types;
-import io.smallrye.mutiny.Uni;
-import org.jboss.logging.Logger;
-
-
-import io.quarkus.arc.deployment.BeanContainerBuildItem;
-import io.quarkus.deployment.annotations.BuildProducer;
-import io.quarkus.deployment.annotations.BuildStep;
-import io.quarkus.deployment.annotations.Record;
-import io.quarkus.deployment.builditem.ExecutorBuildItem;
-import io.quarkus.deployment.builditem.FeatureBuildItem;
-import io.quarkus.deployment.builditem.ShutdownContextBuildItem;
-import io.quarkus.funqy.deployment.FunctionBuildItem;
-import io.quarkus.funqy.deployment.FunctionInitializedBuildItem;
-import io.quarkus.funqy.runtime.bindings.http.FunqyHttpBindingRecorder;
-import io.quarkus.vertx.core.deployment.CoreVertxBuildItem;
-import io.quarkus.vertx.http.deployment.RouteBuildItem;
-import io.quarkus.vertx.http.runtime.HttpBuildTimeConfig;
-import io.vertx.core.Handler;
-import io.vertx.ext.web.RoutingContext;
+import static io.quarkus.deployment.annotations.ExecutionTime.RUNTIME_INIT;
+import static io.quarkus.deployment.annotations.ExecutionTime.STATIC_INIT;
 
 public class FunqyHttpBuildStep {
     private static final Logger log = Logger.getLogger(FunqyHttpBuildStep.class);

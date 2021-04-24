@@ -3,7 +3,6 @@ package io.quarkus.qson.test;
 import io.quarkus.qson.QsonAny;
 
 import java.util.HashMap;
-import java.util.List;
 import java.util.Map;
 
 public class PersonAny extends Person2 {

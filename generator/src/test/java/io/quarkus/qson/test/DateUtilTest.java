@@ -1,9 +1,9 @@
 package io.quarkus.qson.test;
 
 import io.quarkus.qson.QsonDate;
-import io.quarkus.qson.parser.DateUtil;
 import io.quarkus.qson.generator.Generator;
 import io.quarkus.qson.generator.QsonMapper;
+import io.quarkus.qson.parser.DateUtil;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
 

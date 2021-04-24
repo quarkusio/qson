@@ -1,5 +1,7 @@
 package io.quarkus.qson.test;
+
 import io.quarkus.gizmo.ClassOutput;
+
 import java.io.File;
 import java.io.IOException;
 import java.io.Writer;

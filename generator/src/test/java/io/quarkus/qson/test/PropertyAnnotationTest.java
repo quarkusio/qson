@@ -4,12 +4,9 @@ import io.quarkus.qson.QsonIgnore;
 import io.quarkus.qson.QsonIgnoreRead;
 import io.quarkus.qson.QsonIgnoreWrite;
 import io.quarkus.qson.QsonProperty;
-import io.quarkus.qson.generator.PropertyMapping;
 import io.quarkus.qson.generator.QsonMapper;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
-
-import java.util.List;
 
 public class PropertyAnnotationTest {
     public static class Pojo {

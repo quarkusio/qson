@@ -1,10 +1,8 @@
 package io.quarkus.funqy.test;
 
-import static io.quarkus.funqy.test.PrimitiveFunctions.TEST_EXCEPTION_MSG;
-import static org.hamcrest.CoreMatchers.allOf;
-import static org.hamcrest.CoreMatchers.containsString;
-import static org.hamcrest.Matchers.equalTo;
-
+import io.quarkus.funqy.runtime.ApplicationException;
+import io.quarkus.test.QuarkusUnitTest;
+import io.restassured.RestAssured;
 import org.jboss.shrinkwrap.api.ShrinkWrap;
 import org.jboss.shrinkwrap.api.spec.JavaArchive;
 import org.junit.jupiter.api.Test;
@@ -12,9 +10,10 @@ import org.junit.jupiter.api.extension.RegisterExtension;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.ValueSource;
 
-import io.quarkus.funqy.runtime.ApplicationException;
-import io.quarkus.test.QuarkusUnitTest;
-import io.restassured.RestAssured;
+import static io.quarkus.funqy.test.PrimitiveFunctions.TEST_EXCEPTION_MSG;
+import static org.hamcrest.CoreMatchers.allOf;
+import static org.hamcrest.CoreMatchers.containsString;
+import static org.hamcrest.Matchers.equalTo;
 
 public class SimpleTest {
     @RegisterExtension

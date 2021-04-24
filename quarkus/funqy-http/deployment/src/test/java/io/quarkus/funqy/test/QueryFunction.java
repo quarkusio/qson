@@ -1,8 +1,8 @@
 package io.quarkus.funqy.test;
 
-import java.util.Map;
-
 import io.quarkus.funqy.Funq;
+
+import java.util.Map;
 
 public class QueryFunction {
 

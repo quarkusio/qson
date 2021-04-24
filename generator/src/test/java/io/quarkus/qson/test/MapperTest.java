@@ -1,9 +1,9 @@
 package io.quarkus.qson.test;
 
 import io.quarkus.qson.GenericType;
+import io.quarkus.qson.generator.QsonMapper;
 import io.quarkus.qson.parser.ByteArrayParserContext;
 import io.quarkus.qson.parser.QsonParser;
-import io.quarkus.qson.generator.QsonMapper;
 import io.quarkus.qson.writer.ByteArrayJsonWriter;
 import io.quarkus.qson.writer.JsonByteWriter;
 import io.quarkus.qson.writer.QsonObjectWriter;

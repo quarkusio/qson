@@ -1,5 +1,6 @@
 package io.quarkus.qson.test;
 
+import io.quarkus.qson.parser.BaseParser;
 import io.quarkus.qson.parser.ContextValue;
 import io.quarkus.qson.parser.GenericParser;
 import io.quarkus.qson.parser.ListParser;
@@ -7,7 +8,6 @@ import io.quarkus.qson.parser.MapParser;
 import io.quarkus.qson.parser.ObjectParser;
 import io.quarkus.qson.parser.ParserContext;
 import io.quarkus.qson.parser.ParserState;
-import io.quarkus.qson.parser.BaseParser;
 
 import java.util.List;
 import java.util.Map;

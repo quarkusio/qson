@@ -11,14 +11,14 @@ import io.quarkus.gizmo.MethodDescriptor;
 import io.quarkus.gizmo.ResultHandle;
 import io.quarkus.qson.QsonDate;
 import io.quarkus.qson.QsonException;
-import io.quarkus.qson.writer.DateNumberWriter;
-import io.quarkus.qson.writer.DateUtilStringWriter;
-import io.quarkus.qson.writer.OffsetDateTimeStringWriter;
 import io.quarkus.qson.util.Types;
 import io.quarkus.qson.writer.CollectionWriter;
+import io.quarkus.qson.writer.DateNumberWriter;
+import io.quarkus.qson.writer.DateUtilStringWriter;
 import io.quarkus.qson.writer.GenericObjectWriter;
 import io.quarkus.qson.writer.JsonWriter;
 import io.quarkus.qson.writer.MapWriter;
+import io.quarkus.qson.writer.OffsetDateTimeStringWriter;
 import io.quarkus.qson.writer.QsonObjectWriter;
 
 import java.lang.reflect.Method;
@@ -35,7 +35,6 @@ import java.util.Map;
 import java.util.Set;
 
 import static org.objectweb.asm.Opcodes.*;
-import static org.objectweb.asm.Opcodes.ACC_FINAL;
 
 public class WriterGenerator {
 

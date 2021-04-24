@@ -2,7 +2,6 @@ package io.quarkus.qson.test;
 
 import io.quarkus.qson.QsonCustomWriter;
 import io.quarkus.qson.QsonTransformer;
-import io.quarkus.qson.generator.QsonMapper;
 import io.quarkus.qson.runtime.QuarkusQsonMapper;
 import io.quarkus.qson.writer.JsonWriter;
 import io.quarkus.qson.writer.QsonObjectWriter;
@@ -14,7 +13,6 @@ import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.RegisterExtension;
 
 import javax.inject.Inject;
-import java.lang.reflect.Field;
 
 public class TransformerTest {
 
@@ -53,7 +51,7 @@ public class TransformerTest {
     @Test
     public void testTransformer() throws Exception {
         String json = "{ \"x\": 42 }";
-        Thirdparty t = mapper.parserFor(Thirdparty.class.getName()).readFrom(json);
+        Thirdparty t = mapper.parserFor(Thirdparty.class.getName()).read(json);
         Assertions.assertEquals(42, t.getX());
     }
 
@@ -68,7 +66,7 @@ public class TransformerTest {
 
     @Test
     public void testCustomWriter() throws Exception {
-        String json = mapper.writerFor(Thirdparty.class.getName()).writeValueAsString(new Thirdparty(-1));
+        String json = mapper.writerFor(Thirdparty.class.getName()).writeString(new Thirdparty(-1));
         Assertions.assertEquals("{ \"foobar\": 12 }", json);
     }
 }

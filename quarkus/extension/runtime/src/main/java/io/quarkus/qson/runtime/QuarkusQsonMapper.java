@@ -32,4 +32,10 @@ public class QuarkusQsonMapper {
     public QsonObjectWriter writerFor(String typename) {
         return QuarkusQsonRegistry.getWriter(typename);
     }
+    public QsonParser parserFor(Type type) {
+        return QuarkusQsonRegistry.getParser(type);
+    }
+    public QsonObjectWriter writerFor(Type type) {
+        return QuarkusQsonRegistry.getWriter(type);
+    }
 }

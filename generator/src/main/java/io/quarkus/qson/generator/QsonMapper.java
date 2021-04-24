@@ -105,7 +105,7 @@ public class QsonMapper extends Generator implements QsonGenerator {
      */
     public <T> T read(byte[] fullBuffer, Type genericType) {
         QsonParser parser = parserFor(genericType);
-        return parser.readFrom(fullBuffer);
+        return parser.read(fullBuffer);
     }
 
     /**
@@ -155,7 +155,7 @@ public class QsonMapper extends Generator implements QsonGenerator {
      */
     public <T> T read(InputStream is, Type genericType) throws IOException {
         QsonParser parser = parserFor(genericType);
-        return parser.readFrom(is);
+        return parser.read(is);
     }
 
     /**
@@ -247,7 +247,7 @@ public class QsonMapper extends Generator implements QsonGenerator {
      */
     public void writeStream(Type genericType, Object target, OutputStream stream) {
         QsonObjectWriter objectWriter = writerFor(genericType);
-        objectWriter.writeValue(stream, target);
+        objectWriter.writeStream(stream, target);
     }
 
     /**
@@ -282,7 +282,7 @@ public class QsonMapper extends Generator implements QsonGenerator {
      */
     public byte[] writeBytes(Type genericType, Object target) {
         QsonObjectWriter objectWriter = writerFor(genericType);
-        return objectWriter.writeValueAsBytes(target);
+        return objectWriter.writeBytes(target);
     }
 
     /**
@@ -318,7 +318,7 @@ public class QsonMapper extends Generator implements QsonGenerator {
      */
     public String writeString(Type genericType, Object target) {
         QsonObjectWriter objectWriter = writerFor(genericType);
-        return objectWriter.writeValueAsString(target);
+        return objectWriter.writeString(target);
     }
 
     /**

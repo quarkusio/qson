@@ -11,7 +11,7 @@ public interface QsonObjectWriter {
      * @param target
      * @return
      */
-    default byte[] writeValueAsBytes(Object target) {
+    default byte[] writeBytes(Object target) {
         ByteArrayJsonWriter writer = new ByteArrayJsonWriter(1024);
         write(writer, target);
         return writer.toByteArray();
@@ -25,7 +25,7 @@ public interface QsonObjectWriter {
      * @param os
      * @param target
      */
-    default void writeValue(OutputStream os, Object target) {
+    default void writeStream(OutputStream os, Object target) {
         BufferedStreamJsonWriter writer = new BufferedStreamJsonWriter(os);
         write(writer, target);
         writer.flush();
@@ -37,7 +37,7 @@ public interface QsonObjectWriter {
      * @param target
      * @return
      */
-    default String writeValueAsString(Object target) {
+    default String writeString(Object target) {
         ByteArrayJsonWriter writer = new ByteArrayJsonWriter();
         write(writer, target);
         return new String(writer.getBuffer(), 0, writer.size(), JsonByteWriter.UTF8);

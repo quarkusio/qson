@@ -33,7 +33,7 @@ public interface QsonParser {
      * @return
      * @throws IOException
      */
-    default <T> T readFrom(InputStream is) throws IOException {
+    default <T> T read(InputStream is) throws IOException {
         ByteArrayParserContext ctx = new ByteArrayParserContext(this);
         return ctx.finish(is);
     }
@@ -46,7 +46,7 @@ public interface QsonParser {
      * @return
      * @throws IOException
      */
-    default <T> T readFrom(byte[] bytes) {
+    default <T> T read(byte[] bytes) {
         ByteArrayParserContext ctx = new ByteArrayParserContext(this);
         return ctx.finish(bytes);
     }
@@ -59,7 +59,7 @@ public interface QsonParser {
      * @return
      * @throws IOException
      */
-    default <T> T readFrom(String string) throws IOException {
-        return readFrom(string.getBytes(JsonByteWriter.UTF8));
+    default <T> T read(String string) throws IOException {
+        return read(string.getBytes(JsonByteWriter.UTF8));
     }
 }

@@ -1,7 +1,6 @@
 package io.quarkus.qson.test;
 
 import io.quarkus.qson.QsonDate;
-import io.quarkus.qson.generator.QsonMapper;
 import io.quarkus.qson.runtime.QuarkusQsonGenerator;
 import io.quarkus.qson.runtime.QuarkusQsonInitializer;
 import io.quarkus.qson.runtime.QuarkusQsonMapper;
@@ -48,10 +47,10 @@ public class InitializerTest {
         Date now = new Date();
         String json = "{ \"date\": " + now.toInstant().toEpochMilli() + "}";
 
-        Mydate date = mapper.parserFor(Mydate.class.getName()).readFrom(json);
+        Mydate date = mapper.parserFor(Mydate.class.getName()).read(json);
         Assertions.assertEquals(now, date.getDate());
-        json = mapper.writerFor(Mydate.class.getName()).writeValueAsString(date);
-        date = mapper.parserFor(Mydate.class.getName()).readFrom(json);
+        json = mapper.writerFor(Mydate.class.getName()).writeString(date);
+        date = mapper.parserFor(Mydate.class.getName()).read(json);
         Assertions.assertEquals(now, date.getDate());
     }
 }

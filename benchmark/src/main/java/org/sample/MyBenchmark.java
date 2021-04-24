@@ -311,7 +311,7 @@ public class MyBenchmark {
 
     @Benchmark
     public Object testWriterQson(QsonWriter q) {
-        return q.objectWriter.writeValueAsBytes(q.person);
+        return q.objectWriter.writeBytes(q.person);
     }
 
     @Benchmark

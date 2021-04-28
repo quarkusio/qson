@@ -58,8 +58,12 @@ public class QsonBuildStep {
     }
 
     @BuildStep
-    QsonGeneratorBuildItem publishGenerator() {
-        return new QsonGeneratorBuildItem(new QuarkusQsonGeneratorImpl());
+    QsonGeneratorBuildItem publishGenerator(QsonBuildTimeConfig config) {
+        QuarkusQsonGeneratorImpl generator = new QuarkusQsonGeneratorImpl();
+        if (config.dateFormat.isPresent()) {
+            generator.dateFormat(config.dateFormat.get());
+        }
+        return new QsonGeneratorBuildItem(generator);
     }
 
     @BuildStep

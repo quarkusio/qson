@@ -19,7 +19,11 @@ a small set of classes (metaspace size), low memory footprint, and zero reflecti
 ## Basics
 
 Classes that you want to map to JSON must have a public getter method for each property you want to be able to serialize to JSON
-and a public setter method for those properties you want to be able to deserialize from JSON.  Any setter or getter method will
+and a public setter method for those properties you want to be able to deserialize from JSON.  
+If your getter and setter methods are not prefixed with `get`, `is`, or `set`, then you must
+mark it as a property using the `@QsonProperty` annotation.
+
+Every setter or getter method will
 be assumed to be something you want to map to JSON unless you use the `@io.quarkus.qson.QsonIgnore` annotation on the setter or
 getter method, or the field of the property.  The json property name will be the same name as the Java property one.  You can use
 the `@io.quarkus.qson.QsonProperty` annotation to change the json property name mapping.
@@ -206,7 +210,7 @@ you want to map to json.
 
 The `QsonGenerator.mappingFor(Class)` method will scan the class you pass as a parameter
 for qson annotations and return you a `io.quarkus.qson.generator.ClassMapping` instance
-where you can modify the mapping.  The `QsonGenerator.overrideMappingFor(Class)` does not
+from which you can modify this mapping.  The `QsonGenerator.overrideMappingFor(Class)` does not
 scan for annotations and just gives you a `ClassMapping` instance from which you can specify
 the whole mapping for your class.
 

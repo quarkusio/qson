@@ -44,7 +44,6 @@ public interface QsonParser {
      * @param bytes
      * @param <T>
      * @return
-     * @throws IOException
      */
     default <T> T read(byte[] bytes) {
         ByteArrayParserContext ctx = new ByteArrayParserContext(this);

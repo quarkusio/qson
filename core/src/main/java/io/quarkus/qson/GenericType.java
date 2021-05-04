@@ -17,7 +17,6 @@ import java.util.Stack;
  * <pre>
  *  GenericType&lt;List&lt;String&gt;&gt; stringListType = new GenericType&lt;List&lt;String&gt;&gt;() {};
  * </pre>
- * <p>
  */
 public class GenericType<T> {
 

@@ -12,6 +12,7 @@ a small set of classes (metaspace size), low memory footprint, and zero reflecti
 * only public classes
 * Does not support polymorphism
 * Only UTF-8 encoding supported
+* No array support yet  
 * Lacks other features something like Jackson may have.  Will be adding those features that do not degrade performance and memory footprint
 * Qson works best right now with Quarkus.  We don't have maven/gradle plugin integration yet to compile bytecode at buildtime in these non-Quarkus environments
 

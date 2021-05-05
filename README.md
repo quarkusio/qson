@@ -426,11 +426,20 @@ quarkus.qson.date-format=MILLISECONDS
 ```
 
 
-## Integration with JAX-RS and Resteasy
+## Integration with Quarkus JAX-RS support
 
-QSON works great with Resteasy and JAX-RS too (as well as our Spring MVC integration).  Simply include
+QSON works great with Resteasy Reactive, Resteasy class, and JAX-RS too (as well as our Spring MVC integration).  Simply include
 this dependency:
 
+Resteasy Reactive:
+```xml
+<dependency>
+    <groupId>io.quarkus.qson</groupId>
+    <artifactId>quarkus-resteasy-reactive-qson</artifactId>
+</dependency>
+```
+
+Resteasy classic:
 ```xml
 <dependency>
    <groupId>io.quarkus.qson</groupId>

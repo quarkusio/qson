@@ -36,6 +36,9 @@ import com.fasterxml.jackson.databind.MapperFeature;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.ObjectReader;
 import com.fasterxml.jackson.module.afterburner.AfterburnerModule;
+import com.google.gson.Gson;
+import com.google.gson.TypeAdapter;
+import com.google.gson.stream.JsonReader;
 import io.quarkus.qson.generator.QsonMapper;
 import io.quarkus.qson.parser.ByteArrayParserContext;
 import io.quarkus.qson.writer.QsonObjectWriter;
@@ -48,7 +51,9 @@ import org.openjdk.jmh.annotations.Setup;
 import org.openjdk.jmh.annotations.State;
 import org.openjdk.jmh.annotations.Warmup;
 
+import java.io.ByteArrayInputStream;
 import java.io.IOException;
+import java.io.InputStreamReader;
 import java.io.StringReader;
 
 @Fork(1)
@@ -285,10 +290,45 @@ public class MyBenchmark {
         }
     }
 
+    @State(Scope.Benchmark)
+    public static class GsonParser {
+        public Gson gson;
+        public TypeAdapter<Person2> typeAdapter;
+        public byte[] jsonBytes;
+
+
+        @Setup(Level.Trial)
+        public void setup() {
+            gson = new Gson();
+            try {
+                typeAdapter = gson.getAdapter(Person2.class);
+                jsonBytes = json.getBytes("UTF-8");
+                InputStreamReader reader = new InputStreamReader(new ByteArrayInputStream(jsonBytes));
+                Person2 obj = typeAdapter.read(gson.newJsonReader(reader));
+            } catch (Exception e) {
+                throw new RuntimeException();
+            }
+
+        }
+
+    }
+
+
+
     @Benchmark
     public Object testParserQson(QsonParser q) {
         ByteArrayParserContext ctx = new ByteArrayParserContext(q.parser);
         return ctx.finish(q.jsonBytes);
+    }
+
+    @Benchmark
+    public Object testParserGson(GsonParser g) {
+        InputStreamReader reader = new InputStreamReader(new ByteArrayInputStream(g.jsonBytes));
+        try {
+            return g.typeAdapter.read(new JsonReader(reader));
+        } catch (IOException e) {
+            throw new RuntimeException(e);
+        }
     }
 
     @Benchmark
@@ -308,6 +348,8 @@ public class MyBenchmark {
             throw new RuntimeException(e);
         }
     }
+
+
 
     @Benchmark
     public Object testWriterQson(QsonWriter q) {

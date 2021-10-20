@@ -1,7 +1,7 @@
 package io.quarkus.qson.resteasy.reactive;
 
 import io.quarkus.qson.resteasy.QsonResteasyUtil;
-import org.jboss.resteasy.reactive.server.providers.serialisers.json.AbstractJsonMessageBodyReader;
+import org.jboss.resteasy.reactive.common.providers.serialisers.AbstractJsonMessageBodyReader;
 import org.jboss.resteasy.reactive.server.spi.ResteasyReactiveResourceInfo;
 import org.jboss.resteasy.reactive.server.spi.ServerRequestContext;
 
@@ -14,16 +14,6 @@ import java.lang.annotation.Annotation;
 import java.lang.reflect.Type;
 
 public class QsonMessageBodyReader extends AbstractJsonMessageBodyReader {
-
-    @Override
-    public boolean isReadable(Class<?> type, Type genericType, ResteasyReactiveResourceInfo lazyMethod, MediaType mediaType) {
-        return QsonResteasyUtil.isReadable(genericType) && super.isReadable(type, genericType, lazyMethod, mediaType);
-    }
-
-    @Override
-    public Object readFrom(Class<Object> type, Type genericType, MediaType mediaType, ServerRequestContext context) throws WebApplicationException, IOException {
-        return QsonResteasyUtil.read(genericType, context.getInputStream());
-    }
 
     @Override
     public boolean isReadable(Class<?> type, Type genericType, Annotation[] annotations, MediaType mediaType) {

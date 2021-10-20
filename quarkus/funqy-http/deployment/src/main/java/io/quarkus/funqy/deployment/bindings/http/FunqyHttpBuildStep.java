@@ -112,15 +112,15 @@ public class FunqyHttpBuildStep {
     @BuildStep
     @Record(RUNTIME_INIT)
     public void boot(ShutdownContextBuildItem shutdown,
-            FunqyHttpBindingRecorder binding,
-            BuildProducer<FeatureBuildItem> feature,
-            BuildProducer<RouteBuildItem> routes,
-            CoreVertxBuildItem vertx,
-            Optional<FunctionInitializedBuildItem> hasFunctions,
-            List<FunctionBuildItem> functions,
-            BeanContainerBuildItem beanContainer,
-            HttpBuildTimeConfig httpConfig,
-            ExecutorBuildItem executorBuildItem) throws Exception {
+                     FunqyHttpBindingRecorder binding,
+                     BuildProducer<FeatureBuildItem> feature,
+                     BuildProducer<RouteBuildItem> routes,
+                     CoreVertxBuildItem vertx,
+                     Optional<FunctionInitializedBuildItem> hasFunctions,
+                     List<FunctionBuildItem> functions,
+                     BeanContainerBuildItem beanContainer,
+                     HttpBuildTimeConfig httpConfig,
+                     ExecutorBuildItem executorBuildItem) throws Exception {
 
         if (!hasFunctions.isPresent() || hasFunctions.get() == null)
             return;
@@ -141,7 +141,7 @@ public class FunqyHttpBuildStep {
             String name = function.getFunctionName() == null ? function.getMethodName() : function.getFunctionName();
             //String path = rootPath + name;
             String path = "/" + name;
-            routes.produce(new RouteBuildItem(path, handler, false));
+            routes.produce(RouteBuildItem.builder().route(path).handler(handler).build());
         }
     }
 }

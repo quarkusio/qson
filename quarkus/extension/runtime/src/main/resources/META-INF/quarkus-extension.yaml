@@ -3,7 +3,7 @@ name: "QSON"
 metadata:
   keywords:
   - "json"
-  guide: "https://quarkus.io/guides/qson"
+  guide: "https://github.com/quarkusio/qson#readme"
   categories:
   - "serialization"
   status: "experimental"

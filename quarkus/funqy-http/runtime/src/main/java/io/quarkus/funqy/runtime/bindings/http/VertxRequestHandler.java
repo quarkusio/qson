@@ -22,8 +22,8 @@ import io.vertx.core.http.HttpMethod;
 import io.vertx.ext.web.RoutingContext;
 import org.jboss.logging.Logger;
 
-import javax.enterprise.inject.Instance;
-import javax.enterprise.inject.spi.CDI;
+import jakarta.enterprise.inject.Instance;
+import jakarta.enterprise.inject.spi.CDI;
 import java.util.concurrent.Executor;
 import java.util.function.Consumer;
 

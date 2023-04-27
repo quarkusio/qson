@@ -3,7 +3,7 @@ package io.quarkus.qson.runtime;
 import io.quarkus.qson.parser.QsonParser;
 import io.quarkus.qson.writer.QsonObjectWriter;
 
-import javax.enterprise.context.ApplicationScoped;
+import jakarta.enterprise.context.ApplicationScoped;
 import java.lang.reflect.Type;
 
 /**

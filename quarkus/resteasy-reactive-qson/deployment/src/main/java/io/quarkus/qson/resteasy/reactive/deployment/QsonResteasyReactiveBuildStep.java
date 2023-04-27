@@ -9,7 +9,7 @@ import io.quarkus.qson.resteasy.reactive.QsonMessageBodyWriter;
 import io.quarkus.resteasy.reactive.spi.MessageBodyReaderBuildItem;
 import io.quarkus.resteasy.reactive.spi.MessageBodyWriterBuildItem;
 
-import javax.ws.rs.core.MediaType;
+import jakarta.ws.rs.core.MediaType;
 import java.util.Collections;
 
 public class QsonResteasyReactiveBuildStep {

@@ -3,7 +3,7 @@ package io.quarkus.funqy.test;
 import io.quarkus.funqy.Funq;
 import io.smallrye.mutiny.Uni;
 
-import javax.inject.Inject;
+import jakarta.inject.Inject;
 
 public class GreetingFunctions {
     @Inject

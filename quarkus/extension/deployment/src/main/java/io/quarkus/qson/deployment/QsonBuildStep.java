@@ -21,6 +21,7 @@ import io.quarkus.qson.runtime.QuarkusQsonInitializer;
 import io.quarkus.qson.runtime.QuarkusQsonMapper;
 import io.quarkus.qson.runtime.QuarkusQsonRegistry;
 import io.quarkus.qson.util.Types;
+import java.util.Objects;
 import org.jboss.jandex.AnnotationInstance;
 import org.jboss.jandex.AnnotationTarget;
 import org.jboss.jandex.AnnotationValue;
@@ -46,6 +47,7 @@ public class QsonBuildStep {
     public static final DotName QSON_TRANSFORMER = DotName.createSimple(QsonTransformer.class.getName());
     public static final DotName QSON_CUSTOM_WRITER = DotName.createSimple(QsonCustomWriter.class.getName());
     public static final DotName QUARKUS_QSON_INITIALIZER = DotName.createSimple(QuarkusQsonInitializer.class.getName());
+    public static final DotName QUARKUS_QSON_GENERATOR = DotName.createSimple(QuarkusQsonGenerator.class.getName());
     public static final DotName QSON_PROPERTY = DotName.createSimple(QsonProperty.class.getName());
     public static final DotName QSON_IGNORE = DotName.createSimple(QsonIgnore.class.getName());
 
@@ -171,7 +173,7 @@ public class QsonBuildStep {
                     || !Modifier.isStatic(method.flags())
                     || method.returnType().kind() != org.jboss.jandex.Type.Kind.VOID
                     || method.parameters().size() != 1
-                    || method.parameters().get(0).kind() != org.jboss.jandex.Type.Kind.CLASS
+                    || !Objects.equals(method.parameters().get(0).type().name(), QUARKUS_QSON_GENERATOR)
             ) {
                 throw new BuildException("Bad signature for @QuarkusQsonInitializer annotated method: " + method.toString(), Collections.emptyList());
             }

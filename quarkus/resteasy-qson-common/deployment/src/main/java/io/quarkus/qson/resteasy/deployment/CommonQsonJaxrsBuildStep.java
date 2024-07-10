@@ -12,11 +12,12 @@ import org.jboss.jandex.AnnotationValue;
 import org.jboss.jandex.ClassInfo;
 import org.jboss.jandex.IndexView;
 import org.jboss.jandex.MethodInfo;
+import org.jboss.jandex.MethodParameterInfo;
 import org.jboss.jandex.Type;
 
-import javax.ws.rs.core.Context;
-import javax.ws.rs.core.MediaType;
-import javax.ws.rs.core.Response;
+import jakarta.ws.rs.core.Context;
+import jakarta.ws.rs.core.MediaType;
+import jakarta.ws.rs.core.Response;
 import java.lang.annotation.Annotation;
 import java.lang.reflect.Method;
 import java.util.Arrays;
@@ -144,7 +145,7 @@ public class CommonQsonJaxrsBuildStep {
             return declaring.getDeclaredMethod(method.name());
         }
         List<Class> params = new LinkedList<>();
-        for (Type type : method.parameters()) {
+        for (Type type : method.parameterTypes()) {
             params.add(tcl.loadClass(type.name().toString()));
         }
         return declaring.getDeclaredMethod(method.name(), params.toArray(new Class[params.size()]));

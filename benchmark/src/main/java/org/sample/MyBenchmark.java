@@ -31,11 +31,15 @@
 
 package org.sample;
 
+import com.dslplatform.json.DslJson;
+import com.dslplatform.json.runtime.Settings;
 import com.fasterxml.jackson.databind.DeserializationFeature;
 import com.fasterxml.jackson.databind.MapperFeature;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.ObjectReader;
+import com.fasterxml.jackson.databind.module.SimpleModule;
 import com.fasterxml.jackson.module.afterburner.AfterburnerModule;
+import com.fasterxml.jackson.module.blackbird.BlackbirdModule;
 import com.google.gson.Gson;
 import com.google.gson.TypeAdapter;
 import com.google.gson.stream.JsonReader;
@@ -50,6 +54,7 @@ import org.openjdk.jmh.annotations.Scope;
 import org.openjdk.jmh.annotations.Setup;
 import org.openjdk.jmh.annotations.State;
 import org.openjdk.jmh.annotations.Warmup;
+import org.sample.jackson.Person2Deserializer;
 
 import java.io.ByteArrayInputStream;
 import java.io.IOException;
@@ -180,6 +185,24 @@ public class MyBenchmark {
         }
     }
 
+    @State(Scope.Benchmark)
+    public static class BlackbirdWriter {
+        public com.fasterxml.jackson.databind.ObjectWriter objectWriter;
+        public Person2 person;
+
+        @Setup(Level.Trial)
+        public void setup() {
+            ObjectMapper mapper = new ObjectMapper().configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false)
+                    .configure(MapperFeature.ACCEPT_CASE_INSENSITIVE_PROPERTIES, false);
+            mapper.registerModule(new BlackbirdModule());
+            objectWriter = mapper.writerFor(Person2.class);
+            try {
+                person = mapper.readerFor(Person2.class).readValue(new StringReader(json));
+            } catch (IOException e) {
+                throw new RuntimeException(e);
+            }
+        }
+    }
 
     @State(Scope.Benchmark)
     public static class SimpleQsonWriter {
@@ -291,6 +314,62 @@ public class MyBenchmark {
     }
 
     @State(Scope.Benchmark)
+    public static class BlackbirdParser {
+        public ObjectReader reader;
+        public byte[] jsonBytes;
+
+        @Setup(Level.Trial)
+        public void setup() {
+            ObjectMapper mapper = new ObjectMapper().configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false)
+                    .configure(MapperFeature.ACCEPT_CASE_INSENSITIVE_PROPERTIES, false);
+            mapper.registerModule(new BlackbirdModule());
+            reader = mapper.readerFor(Person2.class);
+            try {
+                jsonBytes = json.getBytes("UTF-8");
+            } catch (Exception e) {
+                throw new RuntimeException();
+            }
+        }
+    }
+
+    @State(Scope.Benchmark)
+    public static class JacksonCustomParser {
+        public ObjectReader reader;
+        public byte[] jsonBytes;
+
+        @Setup(Level.Trial)
+        public void setup() {
+            ObjectMapper mapper = new ObjectMapper().configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false)
+                    .configure(MapperFeature.ACCEPT_CASE_INSENSITIVE_PROPERTIES, false);
+            SimpleModule module = new SimpleModule();
+            module.addDeserializer(Person2.class, new Person2Deserializer());
+            mapper.registerModule(module);
+            reader = mapper.readerFor(Person2.class);
+            try {
+                jsonBytes = json.getBytes("UTF-8");
+            } catch (Exception e) {
+                throw new RuntimeException();
+            }
+        }
+    }
+
+    @State(Scope.Benchmark)
+    public static class DslJsonParser {
+        public DslJson<Person2> reader;
+        public byte[] jsonBytes;
+
+        @Setup(Level.Trial)
+        public void setup() {
+            reader = new DslJson<>(Settings.basicSetup());
+            try {
+                jsonBytes = json.getBytes("UTF-8");
+            } catch (Exception e) {
+                throw new RuntimeException();
+            }
+        }
+    }
+
+    @State(Scope.Benchmark)
     public static class GsonParser {
         public Gson gson;
         public TypeAdapter<Person2> typeAdapter;
@@ -349,7 +428,32 @@ public class MyBenchmark {
         }
     }
 
+    @Benchmark
+    public Object testParserBlackbird(BlackbirdParser a) {
+        try {
+            return a.reader.readValue(a.jsonBytes);
+        } catch (IOException e) {
+            throw new RuntimeException(e);
+        }
+    }
 
+    @Benchmark
+    public Object testParserJacksonCustom(JacksonCustomParser a) {
+        try {
+            return a.reader.readValue(a.jsonBytes);
+        } catch (IOException e) {
+            throw new RuntimeException(e);
+        }
+    }
+
+    @Benchmark
+    public Object testParserDslJson(DslJsonParser a) {
+        try {
+            return a.reader.deserialize(Person2.class, new ByteArrayInputStream(a.jsonBytes));
+        } catch (IOException e) {
+            throw new RuntimeException(e);
+        }
+    }
 
     @Benchmark
     public Object testWriterQson(QsonWriter q) {
@@ -367,6 +471,15 @@ public class MyBenchmark {
 
     @Benchmark
     public Object testWriterAfterburner(AfterburnerWriter q) {
+        try {
+            return q.objectWriter.writeValueAsBytes(q.person);
+        } catch (IOException e) {
+            throw new RuntimeException(e);
+        }
+    }
+
+    @Benchmark
+    public Object testWriterBlackbird(BlackbirdWriter q) {
         try {
             return q.objectWriter.writeValueAsBytes(q.person);
         } catch (IOException e) {
